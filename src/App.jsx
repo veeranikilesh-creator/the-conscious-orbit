@@ -147,24 +147,15 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-screen bg-royal-mesh text-[#111827]">
-      {/* ============ SIDEBAR — Deep Royal Gradient & Metallic Gold ============ */}
-      <Sidebar
-        verticals={VERTICALS}
-        activeVertical={activeVertical}
-        setActiveVertical={setActiveVertical}
-        open={sidebarOpen}
-        setOpen={setSidebarOpen}
-        goHome={() => setPage('home')}
-      />
-
+    <div className="min-h-screen bg-royal-mesh text-[#111827] flex flex-col w-full">
       {/* ============ MAIN WORKSPACE ============ */}
-      <main className="flex-1 overflow-x-hidden flex flex-col">
-        {/* TOPBAR — Blurred Glass Header */}
+      <main className="flex-1 overflow-x-hidden flex flex-col w-full">
+        {/* TOPBAR — Full Width Glass Header with Highlighted Target Verticals Navbar */}
         <Topbar
           verticals={VERTICALS}
           activeVertical={activeVerticalObj}
           setActiveVertical={setActiveVertical}
+          goHome={() => setPage('home')}
         />
 
         <div className="flex-1 mx-auto w-full max-w-7xl space-y-8 px-5 py-8 md:px-8">
@@ -199,9 +190,9 @@ function App() {
                         onGenerate={() => setIsGenModalOpen(true)}
                       />
                       <div className="mt-10 flex items-center gap-4">
-                        <div className="h-px flex-1 bg-[#E6C878]/60" />
+                        <div className="h-px flex-1 bg-[#D4AF37]/50" />
                         <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">Function Engine</span>
-                        <div className="h-px flex-1 bg-[#E6C878]/60" />
+                        <div className="h-px flex-1 bg-[#D4AF37]/50" />
                       </div>
                       <StartupMarketEngine />
                     </>
@@ -232,12 +223,12 @@ function App() {
               <AiInsightWidget verticalName={activeVerticalObj?.name} />
 
               {/* AI Quick Actions Card */}
-              <GlassPanel className="p-5 space-y-3 border-[#D4AF37]/40">
+              <GlassPanel className="p-5 space-y-3 border-[#D4AF37]/50 bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white shadow-lg">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-[#7A0018]" />
-                  <h4 className="font-sans text-base font-bold text-[#111827]">AI Strategy Actions</h4>
+                  <Sparkles size={16} className="text-[#E6C878]" />
+                  <h4 className="font-sans text-base font-bold text-[#FFFFFF]">AI Strategy Actions</h4>
                 </div>
-                <p className="text-xs text-[#6B7280]">Quick AI shortcuts for the selected vertical.</p>
+                <p className="text-xs text-[#FECDD3]/80">Quick AI shortcuts for the selected vertical.</p>
                 <div className="space-y-2 pt-1">
                   {[
                     { label: 'Synthesize Market Fit', desc: 'Auto-map TAM/SAM/SOM' },
@@ -247,13 +238,13 @@ function App() {
                     <button
                       key={act.label}
                       onClick={() => setIsGenModalOpen(true)}
-                      className="group flex w-full items-center justify-between rounded-xl border border-[#E6C878]/70 bg-[#FFFCF7] p-3 text-left transition hover:border-[#D4AF37] hover:bg-[#FBF3D5] cursor-pointer"
+                      className="group flex w-full items-center justify-between rounded-xl border border-[#D4AF37]/40 bg-[#350310] p-3 text-left transition hover:border-[#D4AF37] hover:bg-[#7A0018] cursor-pointer"
                     >
                       <div>
-                        <p className="text-xs font-semibold text-[#111827] group-hover:text-[#7A0018]">{act.label}</p>
-                        <p className="font-mono text-[0.62rem] text-[#6B7280]">{act.desc}</p>
+                        <p className="text-xs font-bold text-[#FFFFFF] group-hover:text-[#E6C878]">{act.label}</p>
+                        <p className="font-mono text-[0.62rem] text-[#FECDD3]/70">{act.desc}</p>
                       </div>
-                      <ChevronRight size={14} className="text-[#6B7280] transition group-hover:translate-x-0.5 group-hover:text-[#7A0018]" />
+                      <ChevronRight size={14} className="text-[#E6C878] transition group-hover:translate-x-1" />
                     </button>
                   ))}
                 </div>
@@ -279,28 +270,112 @@ function App() {
 }
 
 /* ============================================================
+   TOPBAR — Prominently Highlighted Vertical Navigation Header
+   ============================================================ */
+function Topbar({ verticals, activeVertical, setActiveVertical, goHome }) {
+  return (
+    <header className="sticky top-0 z-30 border-b-2 border-[#D4AF37]/50 bg-[#FFFFFF]/95 px-5 py-4 backdrop-blur-xl md:px-8 text-[#111827] shadow-md">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
+        {/* Brand identity & Back Home Button */}
+        <button
+          onClick={goHome}
+          className="flex items-center gap-3 text-left transition hover:opacity-85 cursor-pointer group"
+        >
+          <OrbitBrand size={38} />
+          <div>
+            <span className="font-sans text-base font-bold text-[#111827] group-hover:text-[#7A0018] transition">The Conscious Orbit</span>
+            <p className="font-mono text-[0.58rem] uppercase tracking-[0.2em] text-[#7A0018]">Executive Suite</p>
+          </div>
+        </button>
+
+        {/* ULTRA-LUXURY HIGHLIGHTED TARGET VERTICALS NAVBAR WITH THICK 3PX GOLD BORDER & GLOW */}
+        <div className="relative flex items-center gap-1.5 rounded-2xl border-[3px] border-[#D4AF37] bg-gradient-to-r from-[#FCFAF7] via-[#FFFFFF] to-[#FBF3D5] p-2 shadow-[0_0_25px_rgba(212,175,55,0.45)] overflow-x-auto">
+          {/* Executive Label Badge */}
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 border-r border-[#D4AF37]/50 mr-1">
+            <Crown size={15} className="text-[#7A0018]" />
+            <span className="font-mono text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-[#7A0018]">
+              Verticals
+            </span>
+          </div>
+
+          {verticals.map((v) => {
+            const Icon = v.icon;
+            const active = activeVertical?.id === v.id;
+            return (
+              <button
+                key={v.id}
+                onClick={() => setActiveVertical(v.id)}
+                className={`group relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                  active
+                    ? 'text-[#FFFFFF]'
+                    : 'text-[#111827] hover:text-[#7A0018] hover:bg-[#FFF1F2]/80'
+                }`}
+              >
+                {active && (
+                  <motion.div
+                    layoutId="active-vertical-pill"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#8E1538] to-[#7A0018] border-2 border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.5)]"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                
+                <Icon
+                  size={16}
+                  className={`relative z-10 transition-transform group-hover:scale-110 ${
+                    active ? 'text-[#E6C878] drop-shadow-[0_0_6px_rgba(212,175,55,0.7)]' : 'text-[#7A0018]'
+                  }`}
+                />
+                
+                <span className="relative z-10 font-sans tracking-wide">{v.name}</span>
+                
+                {active && (
+                  <span className="relative z-10 h-2 w-2 rounded-full bg-[#E6C878] animate-pulse shadow-[0_0_6px_#E6C878]" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Quick Search & AI Pill */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={goHome}
+            className="flex items-center gap-1.5 rounded-xl border-2 border-[#D4AF37] bg-[#FCFAF7] px-3.5 py-1.5 text-xs font-bold text-[#7A0018] hover:bg-[#FFF1F2] transition cursor-pointer shadow-xs"
+          >
+            <Home size={14} /> Home
+          </button>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#D4AF37] bg-[#7A0018] font-mono text-sm font-bold text-[#FFFFFF] shadow-md">
+            AI
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ============================================================
    SIDEBAR — Premium Dark Red Gradient with Metallic Gold
    ============================================================ */
 function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, goHome }) {
   return (
     <aside
-      className={`sticky top-0 z-20 flex h-screen flex-col border-r border-[#D4AF37]/40 bg-gradient-to-b from-[#4C0519] via-[#7A0018] to-[#2A020D] text-[#FFFFFF] transition-all duration-300 ${
+      className={`sticky top-0 z-20 flex h-screen flex-col border-r border-[#D4AF37]/40 bg-[#FCFAF7] text-[#111827] transition-all duration-300 ${
         open ? 'w-72' : 'w-20'
       }`}
     >
       {/* Brand */}
       <button
         onClick={goHome}
-        className="group flex w-full items-center gap-3 px-5 py-6 text-left transition hover:bg-[#8E1538]/50 cursor-pointer"
+        className="group flex w-full items-center gap-3 px-5 py-6 text-left transition hover:bg-[#FFF1F2] cursor-pointer"
         title="Back to home"
       >
         <OrbitBrand size={38} />
         {open && (
           <div className="overflow-hidden">
-            <h1 className="font-sans text-lg font-bold leading-tight text-[#FFFFFF]">
+            <h1 className="font-sans text-lg font-bold leading-tight text-[#111827]">
               The Conscious Orbit
             </h1>
-            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#E6C878]">
+            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#7A0018]">
               Royal Red &amp; Gold Suite
             </p>
           </div>
@@ -318,7 +393,7 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {open && (
-          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">
+          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">
             Target Verticals
           </p>
         )}
@@ -332,7 +407,7 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
               className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 border cursor-pointer ${
                 active
                   ? 'bg-[#7A0018] text-[#FFFFFF] border-[#D4AF37] shadow-sm'
-                  : 'text-[#FECDD3] hover:text-[#FFFFFF] hover:bg-[#8E1538]/40 border-transparent'
+                  : 'text-[#4B5563] hover:text-[#7A0018] hover:bg-[#FFF1F2] border-transparent'
               }`}
             >
               {active && (
@@ -340,7 +415,7 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
               )}
               <Icon
                 size={18}
-                className={`shrink-0 ${active ? 'text-[#E6C878]' : 'text-[#FECDD3] group-hover:text-[#E6C878]'}`}
+                className={`shrink-0 ${active ? 'text-[#E6C878]' : 'text-[#7A0018] group-hover:text-[#8E1538]'}`}
               />
               {open && (
                 <span className="truncate text-sm font-medium">{v.name}</span>
@@ -353,14 +428,14 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
       {/* Footer */}
       {open && (
         <div className="space-y-1 px-3 pb-5">
-          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">
+          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">
             System
           </p>
           <button
             onClick={goHome}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#FECDD3] transition hover:bg-[#8E1538]/40 hover:text-[#FFFFFF] cursor-pointer"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#4B5563] transition hover:bg-[#FFF1F2] hover:text-[#7A0018] cursor-pointer"
           >
-            <Home size={18} className="text-[#E6C878]" />
+            <Home size={18} className="text-[#7A0018]" />
             Back to Home
           </button>
           {[
@@ -369,18 +444,18 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
           ].map((item) => (
             <button
               key={item.label}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#FECDD3] transition hover:bg-[#8E1538]/40 hover:text-[#FFFFFF] cursor-pointer"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#4B5563] transition hover:bg-[#FFF1F2] hover:text-[#7A0018] cursor-pointer"
             >
-              <item.icon size={18} className="text-[#E6C878]" />
+              <item.icon size={18} className="text-[#7A0018]" />
               {item.label}
             </button>
           ))}
-          <div className="mt-4 rounded-xl border border-[#D4AF37]/50 bg-[#8E1538]/40 p-3 shadow-2xs">
+          <div className="mt-4 rounded-xl border border-[#D4AF37]/50 bg-[#FFFFFF] p-3 shadow-xs">
             <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-[#E6C878]" />
-              <span className="font-mono text-xs font-semibold text-[#FFFFFF]">Executive AI Tier</span>
+              <Sparkles size={14} className="text-[#7A0018]" />
+              <span className="font-mono text-xs font-semibold text-[#111827]">Executive AI Tier</span>
             </div>
-            <p className="mt-1 text-[0.68rem] text-[#FECDD3]">
+            <p className="mt-1 text-[0.68rem] text-[#6B7280]">
               All 5 verticals &amp; tracks unlocked
             </p>
           </div>
@@ -390,56 +465,7 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
   );
 }
 
-/* ============================================================
-   TOPBAR — Glass Blurred Header with Thin Gold Border
-   ============================================================ */
-function Topbar({ verticals, activeVertical, setActiveVertical }) {
-  return (
-    <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-4 border-b border-[#D4AF37]/40 bg-[#FFFFFF]/90 px-5 py-3.5 backdrop-blur-xl md:px-8">
-      {/* Active Location & Quick Vertical Selector */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 text-sm text-[#6B7280]">
-          <LayoutDashboard size={16} className="text-[#7A0018]" />
-          <span className="font-sans font-bold text-[#111827]">Orbit Executive Suite</span>
-          <ChevronRight size={14} />
-        </div>
 
-        {/* Quick Vertical Switcher Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto rounded-xl border border-[#E6C878] bg-[#FFFCF7] p-1">
-          {verticals.map((v) => {
-            const active = activeVertical?.id === v.id;
-            return (
-              <button
-                key={v.id}
-                onClick={() => setActiveVertical(v.id)}
-                className={`rounded-lg px-2.5 py-1 font-mono text-[0.65rem] font-bold uppercase transition cursor-pointer ${
-                  active
-                    ? 'bg-[#7A0018] text-[#FFFFFF] shadow-xs border border-[#D4AF37]'
-                    : 'text-[#78350F] hover:text-[#7A0018]'
-                }`}
-              >
-                {v.name.split(' ')[0]}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <div className="hidden items-center gap-2 rounded-xl border border-[#E6C878] bg-[#FFFCF7] px-3 py-1.5 md:flex">
-          <Search size={15} className="text-[#7A0018]" />
-          <input
-            placeholder="Search ventures..."
-            className="w-32 bg-transparent font-sans text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:w-48 transition-all"
-          />
-        </div>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#D4AF37] bg-[#7A0018] font-mono text-sm font-bold text-[#FFFFFF] shadow-md">
-          AI
-        </div>
-      </div>
-    </header>
-  );
-}
 
 /* ============================================================
    MAIN-VIEW TABS — Pipeline / Intake / Board
@@ -451,7 +477,7 @@ function MainViewTabs({ mainView, setMainView }) {
     { id: 'board',    label: 'Tracking Board',      icon: ClipboardList },
   ];
   return (
-    <div className="flex flex-wrap gap-1 rounded-2xl border border-[#E6C878] bg-[#FFFFFF] p-1.5 backdrop-blur-md shadow-xs">
+    <div className="flex flex-wrap gap-1 rounded-2xl border border-[#D4AF37]/40 bg-[#FFFFFF] p-1.5 backdrop-blur-md shadow-xs">
       {tabs.map((tab) => {
         const active = mainView === tab.id;
         return (
@@ -459,7 +485,7 @@ function MainViewTabs({ mainView, setMainView }) {
             key={tab.id}
             onClick={() => setMainView(tab.id)}
             className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition cursor-pointer ${
-              active ? 'text-[#FFFFFF]' : 'text-[#6B7280] hover:text-[#111827]'
+              active ? 'text-[#FFFFFF]' : 'text-[#4B5563] hover:text-[#7A0018] hover:bg-[#FFF1F2]'
             }`}
           >
             {active && (
@@ -468,7 +494,7 @@ function MainViewTabs({ mainView, setMainView }) {
                 className="absolute inset-0 rounded-xl bg-[#7A0018] border border-[#D4AF37] shadow-xs"
               />
             )}
-            <tab.icon size={15} className="relative z-10" />
+            <tab.icon size={15} className={`relative z-10 ${active ? 'text-[#E6C878]' : 'text-[#7A0018]'}`} />
             <span className="relative z-10">{tab.label}</span>
           </button>
         );
@@ -486,33 +512,33 @@ function VerticalHero({ vertical, onOpenGenerate }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
     >
-      <GlassPanel className="relative overflow-hidden p-6 md:p-8 border-[#D4AF37]/45 bg-gradient-to-br from-[#FFFFFF] via-[#FFFCF7] to-[#FBF3D5]">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#D4AF37]/15 blur-3xl" />
+      <GlassPanel className="relative overflow-hidden p-6 md:p-8 border-[#D4AF37]/60 bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white shadow-xl">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#D4AF37]/20 blur-3xl" />
         
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37] bg-[#FFF1F2] text-[#7A0018] shadow-xs">
-              {Icon && <Icon className="h-8 w-8 text-[#7A0018]" />}
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37] bg-[#7A0018] text-[#E6C878] shadow-md">
+              {Icon && <Icon className="h-8 w-8 text-[#E6C878]" />}
             </div>
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <RoyalHeading level={2} shimmer>
+                <RoyalHeading level={2} shimmer className="text-[#FFFFFF]">
                   {vertical?.name}
                 </RoyalHeading>
-                <span className="rounded-md border border-[#D4AF37] bg-[#FBF3D5] px-2.5 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#7A0018]">
+                <span className="rounded-md border border-[#D4AF37] bg-[#7A0018] px-2.5 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#E6C878]">
                   Active Vertical
                 </span>
               </div>
-              <p className="max-w-xl text-sm text-[#4B5563] leading-relaxed">{vertical?.desc}</p>
+              <p className="max-w-xl text-sm text-[#FECDD3]/90 leading-relaxed">{vertical?.desc}</p>
             </div>
           </div>
 
           {/* Quick Metrics & CTA Group */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-            <div className="hidden sm:flex items-center gap-3 rounded-xl border border-[#E6C878] bg-[#FFFFFF] px-3.5 py-2">
+            <div className="hidden sm:flex items-center gap-3 rounded-xl border border-[#D4AF37]/40 bg-[#350310] px-3.5 py-2 text-white">
               <div className="text-left font-mono">
-                <p className="text-[0.6rem] uppercase tracking-wider text-[#6B7280]">Target Score</p>
-                <p className="text-xs font-bold text-[#059669]">86 / 100 Viable</p>
+                <p className="text-[0.6rem] uppercase tracking-wider text-[#E6C878]">Target Score</p>
+                <p className="text-xs font-bold text-[#34D399]">86 / 100 Viable</p>
               </div>
             </div>
             <GhostButton>
@@ -527,6 +553,8 @@ function VerticalHero({ vertical, onOpenGenerate }) {
     </motion.div>
   );
 }
+
+
 
 /* ============================================================
    THREE-LAYER INTAKE ENGINE
@@ -550,7 +578,7 @@ function ThreeLayerEngine({
       <div className="space-y-3">
         <LayerBadge n={1} title="Client Profile" hint="Captured once at signup" />
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-          <GlassPanel className="p-6 border-[#E6C878]">
+          <GlassPanel className="p-6 border-[#D4AF37]/50 bg-[#3B0413]/85 text-white">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Field label="Company Name">
                 <Input defaultValue="EcoFly Robotics" />
@@ -587,15 +615,15 @@ function ThreeLayerEngine({
       <div className="space-y-3">
         <LayerBadge n={2} title="Cluster Forms" hint="Report-specific inputs grouped by theme" />
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }}>
-          <GlassPanel className="overflow-hidden p-0 border-[#E6C878]">
+          <GlassPanel className="overflow-hidden p-0 border-[#D4AF37]/50 bg-[#350310]">
             {/* Tabs */}
-            <div className="flex flex-wrap gap-1 border-b border-[#E6C878] bg-[#FFFCF7] p-2">
+            <div className="flex flex-wrap gap-1 border-b border-[#D4AF37]/40 bg-[#4C0519]/90 p-2">
               {CLUSTER_TABS.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveCluster(tab.id)}
                   className={`relative rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer ${
-                    activeCluster === tab.id ? 'text-[#FFFFFF]' : 'text-[#6B7280] hover:text-[#111827]'
+                    activeCluster === tab.id ? 'text-[#FFFFFF]' : 'text-[#FECDD3] hover:text-[#FFFFFF]'
                   }`}
                 >
                   {activeCluster === tab.id && (
@@ -605,7 +633,7 @@ function ThreeLayerEngine({
                     />
                   )}
                   <span className="relative z-10 flex items-center gap-2">
-                    <span className={`font-mono text-[0.62rem] font-bold uppercase tracking-wider ${activeCluster === tab.id ? 'text-[#FFFFFF]' : 'text-[#7A0018]'}`}>
+                    <span className={`font-mono text-[0.62rem] font-bold uppercase tracking-wider ${activeCluster === tab.id ? 'text-[#FFFFFF]' : 'text-[#E6C878]'}`}>
                       {tab.cluster}
                     </span>
                     {tab.name}
@@ -679,19 +707,19 @@ function ThreeLayerEngine({
                   onClick={() => toggleTrack(track.id)}
                   className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition duration-200 cursor-pointer ${
                     selected
-                      ? 'border-[#D4AF37] bg-[#FFFFFF] shadow-md ring-1 ring-[#D4AF37]'
-                      : 'border-[#E6C878] bg-[#FFFCF7] hover:border-[#D4AF37]'
+                      ? 'border-[#D4AF37] bg-[#4C0519] shadow-md ring-1 ring-[#D4AF37]'
+                      : 'border-[#D4AF37]/40 bg-[#350310] hover:border-[#D4AF37]'
                   }`}
                 >
                   <div className="relative flex items-start justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E6C878] bg-[#FFF1F2] text-[#7A0018]">
-                      <Icon className="h-5 w-5 text-[#7A0018]" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/60 bg-[#7A0018] text-[#E6C878]">
+                      <Icon className="h-5 w-5 text-[#E6C878]" />
                     </div>
                     {selected && <CheckCircle2 className="h-5 w-5 text-[#10B981]" />}
                   </div>
-                  <h4 className="relative mt-4 font-sans text-lg font-bold text-[#111827]">{track.name}</h4>
-                  <p className="relative mt-1 text-xs text-[#4B5563]">{track.desc}</p>
-                  <span className="relative mt-3 inline-block font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">
+                  <h4 className="relative mt-4 font-sans text-lg font-bold text-[#FFFFFF]">{track.name}</h4>
+                  <p className="relative mt-1 text-xs text-[#FECDD3]/80">{track.desc}</p>
+                  <span className="relative mt-3 inline-block font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">
                     Flagship · Royal Red &amp; Gold
                   </span>
                 </button>
@@ -700,12 +728,12 @@ function ThreeLayerEngine({
           </div>
 
           {/* Build your own picker */}
-          <GlassPanel className="p-6 border-[#E6C878]">
+          <GlassPanel className="p-6 border-[#D4AF37]/50 bg-[#3B0413]">
             <div className="flex items-center gap-2">
-              <Zap size={16} className="text-[#7A0018]" />
-              <h4 className="font-sans text-lg font-bold text-[#111827]">Build Your Own Track</h4>
+              <Zap size={16} className="text-[#E6C878]" />
+              <h4 className="font-sans text-lg font-bold text-[#FFFFFF]">Build Your Own Track</h4>
             </div>
-            <p className="mt-1 text-sm text-[#4B5563]">Compose a custom report from modular components.</p>
+            <p className="mt-1 text-sm text-[#FECDD3]/80">Compose a custom report from modular components.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {BUILD_YOUR_OWN.map((mod) => {
                 const on = customPicks.includes(mod);
@@ -716,7 +744,7 @@ function ThreeLayerEngine({
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-sans text-xs font-medium transition cursor-pointer ${
                       on
                         ? 'border-[#D4AF37] bg-[#7A0018] text-[#FFFFFF]'
-                        : 'border-[#E6C878] bg-[#FFFCF7] text-[#4B5563] hover:border-[#D4AF37]'
+                        : 'border-[#D4AF37]/40 bg-[#350310] text-[#FECDD3] hover:border-[#D4AF37]'
                     }`}
                   >
                     {on && <CheckCircle2 size={12} className="text-[#FFFFFF]" />}
@@ -774,13 +802,13 @@ function GenericVerticalPanel({ vertical }) {
         {cards.map((c) => {
           const CIcon = c.icon;
           return (
-            <GlassPanel key={c.title} className="group p-5 transition hover:border-[#D4AF37]">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#E6C878] bg-[#FFF1F2] text-[#7A0018]">
-                <CIcon className="h-5 w-5 text-[#7A0018]" />
+            <GlassPanel key={c.title} className="group p-5 transition hover:border-[#D4AF37] bg-[#3B0413]/90 text-white">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D4AF37]/60 bg-[#7A0018] text-[#E6C878]">
+                <CIcon className="h-5 w-5 text-[#E6C878]" />
               </div>
-              <h4 className="mt-4 font-sans text-lg font-bold text-[#111827]">{c.title}</h4>
-              <p className="mt-1 text-sm text-[#4B5563]">{c.desc}</p>
-              <button className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#7A0018] transition hover:gap-2 cursor-pointer">
+              <h4 className="mt-4 font-sans text-lg font-bold text-[#FFFFFF]">{c.title}</h4>
+              <p className="mt-1 text-sm text-[#FECDD3]/80">{c.desc}</p>
+              <button className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#E6C878] transition hover:gap-2 cursor-pointer">
                 Explore <ChevronRight size={13} />
               </button>
             </GlassPanel>
@@ -814,20 +842,20 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
         {columns.map((col) => {
           const items = reports.filter((r) => r.status === col.status);
           return (
-            <div key={col.status} className="flex flex-col rounded-2xl border border-[#E6C878] bg-[#FFFFFF] shadow-xs">
+            <div key={col.status} className="flex flex-col rounded-2xl border border-[#D4AF37]/40 bg-[#350310] shadow-xs">
               {/* Column header */}
-              <div className="flex items-center justify-between border-b border-[#E6C878] px-4 py-3 bg-[#FFFCF7]">
+              <div className="flex items-center justify-between border-b border-[#D4AF37]/40 px-4 py-3 bg-[#4C0519]/90">
                 <div className="flex items-center gap-2">
                   <StatusDot status={col.status} />
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#111827]">{col.status}</span>
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#FFFFFF]">{col.status}</span>
                 </div>
-                <span className="rounded-md border border-[#E6C878] bg-[#FFFFFF] px-2 py-0.5 font-mono text-xs font-bold text-[#7A0018]">{items.length}</span>
+                <span className="rounded-md border border-[#D4AF37]/60 bg-[#7A0018] px-2 py-0.5 font-mono text-xs font-bold text-[#E6C878]">{items.length}</span>
               </div>
-              <div className="border-b border-[#E6C878] bg-[#FBF3D5]/60 px-4 py-2">
-                <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">
+              <div className="border-b border-[#D4AF37]/30 bg-[#2A020D]/60 px-4 py-2">
+                <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">
                   Action · {col.action}
                 </span>
-                <p className="mt-0.5 text-[0.68rem] text-[#6B7280]">{col.note}</p>
+                <p className="mt-0.5 text-[0.68rem] text-[#FECDD3]/70">{col.note}</p>
               </div>
 
               {/* Cards */}
@@ -841,31 +869,31 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.25 }}
-                      className="group rounded-xl border border-[#E6C878] bg-[#FFFFFF] p-3.5 transition hover:border-[#D4AF37] hover:shadow-sm"
+                      className="group rounded-xl border border-[#D4AF37]/40 bg-[#380312] p-3.5 transition hover:border-[#D4AF37] hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <h5 className="font-sans text-base font-bold leading-snug text-[#111827]">{r.name}</h5>
+                        <h5 className="font-sans text-base font-bold leading-snug text-[#FFFFFF]">{r.name}</h5>
                         <StatusBadge status={r.status} />
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {r.tags.map((t) => (
-                          <span key={t} className="rounded-md bg-[#FBF3D5] px-1.5 py-0.5 font-mono text-[0.62rem] text-[#78350F] border border-[#E6C878]">{t}</span>
+                          <span key={t} className="rounded-md bg-[#7A0018]/60 px-1.5 py-0.5 font-mono text-[0.62rem] text-[#E6C878] border border-[#D4AF37]/40">{t}</span>
                         ))}
                       </div>
 
                       {/* Score */}
                       {r.status === 'PUBLISHED' && r.score > 0 && (
                         <div className="mt-3 flex items-center gap-2">
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E5E7EB]">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#2A020D]">
                             <div
-                              className="h-full rounded-full bg-[#7A0018]"
+                              className="h-full rounded-full bg-[#E6C878]"
                               style={{ width: `${r.score}%` }}
                             />
                           </div>
-                          <span className="font-mono text-xs font-bold text-[#7A0018]">{r.score}</span>
+                          <span className="font-mono text-xs font-bold text-[#E6C878]">{r.score}</span>
                           <button
                             onClick={() => setExpandedReport(expandedReport === r.id ? null : r.id)}
-                            className="text-[#6B7280] transition hover:text-[#111827] cursor-pointer"
+                            className="text-[#FECDD3] transition hover:text-[#FFFFFF] cursor-pointer"
                             aria-label="Expand"
                           >
                             <ChevronDown size={14} className={`transition ${expandedReport === r.id ? 'rotate-180' : ''}`} />
@@ -881,21 +909,21 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="mt-3 space-y-2 rounded-lg border border-[#E6C878] bg-[#FFFCF7] p-3">
+                            <div className="mt-3 space-y-2 rounded-lg border border-[#D4AF37]/40 bg-[#4C0519]/80 p-3">
                               {[
                                 { k: 'Market Demand', v: 88 },
                                 { k: 'Tech Feasibility', v: 72 },
                                 { k: 'Unit Economics', v: 90 },
                               ].map((m) => (
                                 <div key={m.k} className="flex items-center gap-2 text-[0.68rem]">
-                                  <span className="w-28 text-[#6B7280]">{m.k}</span>
-                                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#E5E7EB]">
-                                    <div className="h-full bg-[#7A0018]" style={{ width: `${m.v}%` }} />
+                                  <span className="w-28 text-[#FECDD3]">{m.k}</span>
+                                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#2A020D]">
+                                    <div className="h-full bg-[#E6C878]" style={{ width: `${m.v}%` }} />
                                   </div>
-                                  <span className="w-7 text-right font-mono font-bold text-[#7A0018]">{m.v}</span>
+                                  <span className="w-7 text-right font-mono font-bold text-[#E6C878]">{m.v}</span>
                                 </div>
                               ))}
-                              <button className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#E6C878] bg-[#FFFFFF] py-2 font-mono text-xs font-semibold text-[#111827] transition hover:bg-[#FBF3D5] cursor-pointer">
+                              <button className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#D4AF37]/50 bg-[#7A0018] py-2 font-mono text-xs font-semibold text-[#FFFFFF] transition hover:bg-[#8E1538] cursor-pointer">
                                 <Download size={13} /> Download Artifact
                               </button>
                             </div>
@@ -908,15 +936,15 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                         <button
                           onClick={() => moveReport(r.id, -1)}
                           disabled={r.status === 'RECEIVED'}
-                          className="font-mono text-[0.62rem] text-[#6B7280] transition hover:text-[#111827] disabled:opacity-30 cursor-pointer"
+                          className="font-mono text-[0.62rem] text-[#FECDD3] transition hover:text-[#FFFFFF] disabled:opacity-30 cursor-pointer"
                         >
                           ← Back
                         </button>
-                        <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[#7A0018]">{r.vertical}</span>
+                        <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[#E6C878]">{r.vertical}</span>
                         <button
                           onClick={() => moveReport(r.id, 1)}
                           disabled={r.status === 'PUBLISHED'}
-                          className="font-mono text-[0.62rem] text-[#6B7280] transition hover:text-[#111827] disabled:opacity-30 cursor-pointer"
+                          className="font-mono text-[0.62rem] text-[#FECDD3] transition hover:text-[#FFFFFF] disabled:opacity-30 cursor-pointer"
                         >
                           Advance →
                         </button>
@@ -925,7 +953,7 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                   ))}
                 </AnimatePresence>
                 {items.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-[#E6C878] px-3 py-8 text-center text-xs text-[#6B7280]">
+                  <div className="rounded-xl border border-dashed border-[#D4AF37]/40 px-3 py-8 text-center text-xs text-[#FECDD3]/60">
                     No reports in this stage
                   </div>
                 )}
@@ -947,7 +975,7 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/50 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A0108]/75 p-4 backdrop-blur-xs"
       onClick={onClose}
     >
       <motion.div
@@ -955,24 +983,24 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.92, y: 16, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-[#D4AF37] bg-[#FFFFFF] shadow-2xl"
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-[#D4AF37] bg-gradient-to-b from-[#4C0519] via-[#3B0313] to-[#2A020D] text-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative flex items-center justify-between border-b border-[#E6C878] bg-[#FFFCF7] px-6 py-4">
+        <div className="relative flex items-center justify-between border-b border-[#D4AF37]/40 bg-[#2A020D]/90 px-6 py-4">
           <div className="relative flex items-center gap-2">
-            <Crown className="h-5 w-5 text-[#7A0018]" />
-            <h3 className="font-sans text-lg font-bold text-[#111827]">Generate AI Strategy Report</h3>
+            <Crown className="h-5 w-5 text-[#E6C878]" />
+            <h3 className="font-sans text-lg font-bold text-[#FFFFFF]">Generate AI Strategy Report</h3>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-[#6B7280] transition hover:bg-[#FBF3D5] hover:text-[#111827] cursor-pointer">
+          <button onClick={onClose} className="rounded-lg p-1 text-[#FECDD3] transition hover:bg-[#7A0018] hover:text-[#FFFFFF] cursor-pointer">
             <X size={18} />
           </button>
         </div>
 
         {/* Body */}
         <div className="px-6 py-6">
-          <p className="text-sm text-[#4B5563] leading-relaxed">
-            Compose a new report for the <strong className="text-[#111827]">{vertical?.name}</strong> vertical.
+          <p className="text-sm text-[#FECDD3]/90 leading-relaxed">
+            Compose a new report for the <strong className="text-[#E6C878]">{vertical?.name}</strong> vertical.
             Selected modules will be synthesized into a flagship deliverable.
           </p>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -981,18 +1009,18 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
               { icon: Sparkles, label: 'Synthesize' },
               { icon: Download, label: 'Deliver' },
             ].map((step, i) => (
-              <div key={step.label} className="rounded-xl border border-[#E6C878] bg-[#FFFCF7] p-3">
-                <step.icon size={16} className="mx-auto text-[#7A0018]" />
-                <p className="mt-1.5 font-mono text-[0.68rem] text-[#6B7280]">{i + 1}. {step.label}</p>
+              <div key={step.label} className="rounded-xl border border-[#D4AF37]/40 bg-[#350310] p-3">
+                <step.icon size={16} className="mx-auto text-[#E6C878]" />
+                <p className="mt-1.5 font-mono text-[0.68rem] text-[#FECDD3]">{i + 1}. {step.label}</p>
               </div>
             ))}
           </div>
           {loading && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[#4B5563]">
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[#E6C878]">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                className="h-4 w-4 rounded-full border-2 border-[#7A0018]/30 border-t-[#7A0018]"
+                className="h-4 w-4 rounded-full border-2 border-[#E6C878]/30 border-t-[#E6C878]"
               />
               Synthesizing neural insights...
             </div>
@@ -1000,7 +1028,7 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 border-t border-[#E6C878] bg-[#FFFCF7] px-6 py-4">
+        <div className="flex justify-end gap-3 border-t border-[#D4AF37]/40 bg-[#2A020D]/90 px-6 py-4">
           <GhostButton onClick={onClose}>Cancel</GhostButton>
           <RoyalButton onClick={onConfirm} disabled={loading}>
             <Sparkles size={15} /> {loading ? 'Generating…' : 'Confirm & Generate'}
@@ -1022,7 +1050,7 @@ function SectionTitle({ icon: Icon, kicker, title, subtitle, noMargin }) {
         <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">{kicker}</span>
       </div>
       <h2 className="mt-1 font-sans text-2xl font-bold leading-tight text-[#111827] md:text-3xl">{title}</h2>
-      {subtitle && <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">{subtitle}</p>}
+      {subtitle && <p className="mt-1 max-w-2xl text-sm text-[#4B5563]">{subtitle}</p>}
     </div>
   );
 }
@@ -1030,7 +1058,7 @@ function SectionTitle({ icon: Icon, kicker, title, subtitle, noMargin }) {
 function LayerBadge({ n, title, hint }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E6C878] bg-[#FFFCF7] font-mono text-sm font-bold text-[#7A0018]">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#D4AF37] bg-[#7A0018] font-mono text-sm font-bold text-[#E6C878]">
         {n}
       </div>
       <div>
@@ -1043,3 +1071,4 @@ function LayerBadge({ n, title, hint }) {
 }
 
 export default App;
+

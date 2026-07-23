@@ -96,21 +96,21 @@ export default function Login({ onLogin, onBack }) {
             </div>
           </div>
 
-          {/* ===== RIGHT — PRISTINE IVORY AUTH FORM CARD ===== */}
-          <div className="relative bg-[#FFFCF7] p-8 md:p-10">
+          {/* ===== RIGHT — RICH WINE RED AUTH FORM CARD ===== */}
+          <div className="relative bg-gradient-to-b from-[#3B0313] to-[#2A020D] p-8 md:p-10 text-white">
             {/* Mobile brand header */}
             <div className="mb-8 flex items-center justify-between lg:hidden">
               <div className="flex items-center gap-2">
                 <OrbitBrand size={32} />
-                <span className="font-sans text-sm font-bold text-[#111827]">Conscious Orbit</span>
+                <span className="font-sans text-sm font-bold text-[#FFFFFF]">Conscious Orbit</span>
               </div>
-              <button onClick={onBack} className="text-[#6B7280] transition hover:text-[#111827]">
+              <button onClick={onBack} className="text-[#FECDD3] transition hover:text-[#FFFFFF]">
                 <ArrowLeft size={18} />
               </button>
             </div>
 
             {/* Mode toggle */}
-            <div className="inline-flex rounded-xl border border-[#E6C878] bg-[#FFFFFF] p-1">
+            <div className="inline-flex rounded-xl border border-[#D4AF37]/50 bg-[#4C0519]/80 p-1">
               {[
                 { id: 'signin', label: 'Sign In' },
                 { id: 'signup', label: 'Create Account' },
@@ -121,7 +121,7 @@ export default function Login({ onLogin, onBack }) {
                     key={opt.id}
                     onClick={() => setMode(opt.id)}
                     className={`relative rounded-lg px-5 py-2 text-sm font-medium transition cursor-pointer ${
-                      active ? 'text-[#FFFFFF]' : 'text-[#6B7280] hover:text-[#111827]'
+                      active ? 'text-[#FFFFFF]' : 'text-[#FECDD3] hover:text-[#FFFFFF]'
                     }`}
                   >
                     {active && (
@@ -139,15 +139,15 @@ export default function Login({ onLogin, onBack }) {
             {/* Heading */}
             <div className="mt-6">
               <div className="flex items-center gap-2">
-                <Crown size={16} className="text-[#7A0018]" />
-                <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">
+                <Crown size={16} className="text-[#E6C878]" />
+                <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#E6C878]">
                   {mode === 'signin' ? 'Welcome Back' : 'Join the Orbit'}
                 </span>
               </div>
-              <h1 className="mt-2 font-sans text-3xl font-bold text-[#111827]">
+              <h1 className="mt-2 font-sans text-3xl font-bold text-[#FFFFFF]">
                 {mode === 'signin' ? 'Sign in to your suite' : 'Create your account'}
               </h1>
-              <p className="mt-2 text-sm text-[#6B7280]">
+              <p className="mt-2 text-sm text-[#FECDD3]/80">
                 {mode === 'signin'
                   ? 'Enter your credentials to access the executive dashboard.'
                   : 'Begin your venture intelligence journey in seconds.'}
@@ -197,7 +197,7 @@ export default function Login({ onLogin, onBack }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B7280] transition hover:text-[#111827] cursor-pointer"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#FECDD3]/70 transition hover:text-[#FFFFFF] cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -206,16 +206,16 @@ export default function Login({ onLogin, onBack }) {
 
               {mode === 'signin' && (
                 <div className="flex items-center justify-between text-xs">
-                  <label className="flex items-center gap-2 text-[#6B7280] cursor-pointer">
+                  <label className="flex items-center gap-2 text-[#FECDD3]/80 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={remember}
                       onChange={(e) => setRemember(e.target.checked)}
-                      className="rounded border-[#E6C878] bg-[#FFFFFF] text-[#7A0018] focus:ring-[#7A0018]"
+                      className="rounded border-[#D4AF37] bg-[#3B0413] text-[#7A0018] focus:ring-[#7A0018]"
                     />
                     Remember me
                   </label>
-                  <a href="#forgot" className="font-semibold text-[#7A0018] hover:underline">
+                  <a href="#forgot" className="font-semibold text-[#E6C878] hover:underline">
                     Forgot password?
                   </a>
                 </div>
@@ -248,13 +248,14 @@ export default function Login({ onLogin, onBack }) {
 function FormField({ label, icon: Icon, children }) {
   return (
     <div>
-      <label className="mb-1.5 block font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#78350F]">
+      <label className="mb-1.5 block font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#E6C878]">
         {label}
       </label>
       <div className="relative">
-        <Icon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7A0018]" />
+        <Icon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#E6C878]" />
         {children}
       </div>
     </div>
   );
 }
+

@@ -16,9 +16,10 @@ export default function PulpSenseHero({ onBookCall, onViewServices }) {
   ];
 
   return (
-    <div className="w-full bg-royal-mesh p-4 sm:p-6 md:p-10 font-sans text-[#111827] min-h-screen flex items-center justify-center">
+    <div className="w-full bg-[#FCFAF7] p-4 sm:p-6 md:p-10 font-sans text-[#111827] min-h-screen flex items-center justify-center">
       {/* Outer Rounded Container with 28px radius & Crimson Radial Glow */}
       <div className="relative w-full max-w-7xl overflow-hidden rounded-[28px] border border-[#D4AF37]/50 bg-[#FFFFFF] shadow-2xl transition-all duration-300">
+
         
         {/* Crimson Radial Background Glow at the bottom */}
         <div 
@@ -169,3 +170,5 @@ export default function PulpSenseHero({ onBookCall, onViewServices }) {
     </div>
   );
 }
+
+

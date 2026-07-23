@@ -84,31 +84,31 @@ const PIPELINE = [
 
 const COLOR_MAP = {
   royal: {
-    badge: 'bg-[#FFF1F2] text-[#7A0018] border-[#FECDD3]',
-    border: 'border-[#FECDD3]',
-    bg: 'bg-[#FFF1F2]',
-    text: 'text-[#7A0018]',
+    badge: 'bg-[#7A0018] text-[#FFFFFF] border-[#D4AF37]',
+    border: 'border-[#D4AF37]/50',
+    bg: 'bg-[#7A0018]',
+    text: 'text-[#E6C878]',
     fill: 'bg-[#7A0018]',
   },
   gold: {
-    badge: 'bg-[#FBF3D5] text-[#78350F] border-[#E6C878]',
-    border: 'border-[#E6C878]',
-    bg: 'bg-[#FBF3D5]',
-    text: 'text-[#78350F]',
+    badge: 'bg-[#78350F]/80 text-[#E6C878] border-[#E6C878]',
+    border: 'border-[#E6C878]/50',
+    bg: 'bg-[#78350F]',
+    text: 'text-[#E6C878]',
     fill: 'bg-[#D4AF37]',
   },
   purple: {
-    badge: 'bg-[#F5F3FF] text-[#7C3AED] border-[#DDD6FE]',
-    border: 'border-[#DDD6FE]',
-    bg: 'bg-[#F5F3FF]',
-    text: 'text-[#7C3AED]',
+    badge: 'bg-[#4C1D95]/80 text-[#DDD6FE] border-[#C084FC]',
+    border: 'border-[#C084FC]/50',
+    bg: 'bg-[#4C1D95]',
+    text: 'text-[#DDD6FE]',
     fill: 'bg-[#7C3AED]',
   },
   emerald: {
-    badge: 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]',
-    border: 'border-[#A7F3D0]',
-    bg: 'bg-[#ECFDF5]',
-    text: 'text-[#059669]',
+    badge: 'bg-[#065F46]/80 text-[#A7F3D0] border-[#34D399]',
+    border: 'border-[#34D399]/50',
+    bg: 'bg-[#065F46]',
+    text: 'text-[#A7F3D0]',
     fill: 'bg-[#059669]',
   },
 };
@@ -147,7 +147,7 @@ export default function VentureProcessor() {
           <h2 className="mt-1 font-sans text-2xl font-bold leading-tight text-[#111827] md:text-3xl">
             Venture Intelligence Pipeline
           </h2>
-          <p className="mt-1 max-w-xl text-sm text-[#6B7280]">
+          <p className="mt-1 max-w-xl text-sm text-[#4B5563]">
             Interactive four-stage pipeline: from raw discovery input to the final Conscious Orbital Score.
           </p>
         </div>
@@ -180,28 +180,28 @@ export default function VentureProcessor() {
               onClick={() => setActiveStage(i)}
               className={`group relative flex flex-col rounded-2xl border p-4 text-left transition-all duration-200 cursor-pointer ${
                 active
-                  ? 'border-[#D4AF37] bg-[#FFFFFF] shadow-md ring-1 ring-[#D4AF37]'
-                  : 'border-[#E6C878]/60 bg-[#FFFCF7] hover:border-[#D4AF37]'
+                  ? 'border-[#D4AF37] bg-[#4C0519] shadow-md ring-1 ring-[#D4AF37]'
+                  : 'border-[#D4AF37]/40 bg-[#350310] hover:border-[#D4AF37]'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#6B7280]">
+                <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#FECDD3]">
                   Stage 0{i + 1}
                 </span>
                 <span className={`rounded-md border px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider ${colors.badge}`}>
                   {p.stage}
                 </span>
               </div>
-              <h4 className="mt-3 font-sans text-base font-bold text-[#111827] group-hover:text-[#7A0018]">
+              <h4 className="mt-3 font-sans text-base font-bold text-[#FFFFFF] group-hover:text-[#E6C878]">
                 {p.title}
               </h4>
-              <p className="mt-1 font-mono text-[0.68rem] text-[#6B7280] truncate">
+              <p className="mt-1 font-mono text-[0.68rem] text-[#FECDD3]/70 truncate">
                 {p.input} → {p.output}
               </p>
               {active && (
                 <motion.div
                   layoutId="active-stage-indicator"
-                  className="mt-3 h-1 w-full rounded-full bg-[#7A0018]"
+                  className="mt-3 h-1 w-full rounded-full bg-[#E6C878]"
                 />
               )}
             </button>
@@ -231,15 +231,15 @@ export default function VentureProcessor() {
 function StageDetailCard({ stage, colors, index }) {
   const c = colors;
   return (
-    <GlassPanel className="overflow-hidden p-0 border-[#E6C878]/60">
-      <div className="flex items-center justify-between border-b border-[#E6C878]/60 bg-[#FFFCF7] px-6 py-4">
+    <GlassPanel className="overflow-hidden p-0 border-[#D4AF37]/50 bg-[#350310]">
+      <div className="flex items-center justify-between border-b border-[#D4AF37]/40 bg-[#4C0519]/90 px-6 py-4">
         <div className="flex items-center gap-3">
           <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${c.bg} font-mono text-sm font-bold ${c.text}`}>
             0{index + 1}
           </div>
           <div>
-            <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#6B7280]">Active Inspection</span>
-            <h4 className="font-sans text-lg font-bold text-[#111827]">{stage.title}</h4>
+            <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#FECDD3]">Active Inspection</span>
+            <h4 className="font-sans text-lg font-bold text-[#FFFFFF]">{stage.title}</h4>
           </div>
         </div>
         <span className={`rounded-md border px-2.5 py-0.5 font-mono text-[0.65rem] font-bold uppercase tracking-wider ${c.badge}`}>
@@ -249,18 +249,18 @@ function StageDetailCard({ stage, colors, index }) {
 
       <div className="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_1.2fr]">
         {/* Left */}
-        <div className="border-b border-[#E6C878]/60 p-6 lg:border-b-0 lg:border-r">
-          <p className="text-sm text-[#4B5563] leading-relaxed">{stage.desc}</p>
-          <h5 className="mt-5 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">Core Processing Modules</h5>
+        <div className="border-b border-[#D4AF37]/40 p-6 lg:border-b-0 lg:border-r">
+          <p className="text-sm text-[#FECDD3]/90 leading-relaxed">{stage.desc}</p>
+          <h5 className="mt-5 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">Core Processing Modules</h5>
           <div className="mt-3 space-y-2">
             {stage.modules.map((m) => (
-              <div key={m.name} className={`flex items-center gap-3 rounded-xl border ${c.border} bg-[#FFFFFF] p-3`}>
+              <div key={m.name} className={`flex items-center gap-3 rounded-xl border border-[#D4AF37]/40 bg-[#3B0413] p-3`}>
                 <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${c.bg}`}>
                   <m.icon size={16} className={c.text} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#111827]">{m.name}</p>
-                  <p className="font-mono text-[0.66rem] text-[#6B7280]">Module · {stage.stage}</p>
+                  <p className="text-sm font-semibold text-[#FFFFFF]">{m.name}</p>
+                  <p className="font-mono text-[0.66rem] text-[#FECDD3]/70">Module · {stage.stage}</p>
                 </div>
               </div>
             ))}
@@ -269,19 +269,19 @@ function StageDetailCard({ stage, colors, index }) {
 
         {/* Right */}
         <div className="p-6">
-          <h5 className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">Key Input / Output</h5>
+          <h5 className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">Key Input / Output</h5>
           <div className="mt-3 space-y-2">
             {stage.detail.map((d) => (
-              <div key={d.label} className="flex items-center justify-between gap-3 rounded-xl border border-[#E6C878]/60 bg-[#FFFCF7] px-4 py-2.5">
-                <span className="font-mono text-[0.7rem] uppercase tracking-wider text-[#6B7280]">{d.label}</span>
-                <span className="text-right text-sm font-semibold text-[#111827]">{d.value}</span>
+              <div key={d.label} className="flex items-center justify-between gap-3 rounded-xl border border-[#D4AF37]/40 bg-[#380312] px-4 py-2.5">
+                <span className="font-mono text-[0.7rem] uppercase tracking-wider text-[#FECDD3]">{d.label}</span>
+                <span className="text-right text-sm font-semibold text-[#FFFFFF]">{d.value}</span>
               </div>
             ))}
           </div>
-          <div className={`mt-4 flex items-center gap-2 rounded-xl border ${c.border} bg-[#FFFFFF] p-3`}>
-            <Zap size={14} className={c.text} />
-            <span className="text-xs text-[#4B5563]">
-              Output <strong className={c.text}>{stage.output}</strong> is forwarded to the next stage.
+          <div className={`mt-4 flex items-center gap-2 rounded-xl border border-[#D4AF37]/40 bg-[#4C0519]/80 p-3`}>
+            <Zap size={14} className="text-[#E6C878]" />
+            <span className="text-xs text-[#FECDD3]">
+              Output <strong className="text-[#E6C878]">{stage.output}</strong> is forwarded to the next stage.
             </span>
           </div>
         </div>
@@ -299,30 +299,30 @@ function ScoreAggregatorCard() {
   ];
 
   return (
-    <GlassPanel className="p-6 md:p-8 border-[#D4AF37]/50 bg-gradient-to-br from-[#FFFFFF] via-[#FFFCF7] to-[#FBF3D5]">
+    <GlassPanel className="p-6 md:p-8 border-[#D4AF37]/60 bg-gradient-to-br from-[#4C0519]/90 via-[#3B0413]/90 to-[#2A020D]/95 text-white">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Award size={16} className="text-[#7A0018]" />
-            <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">
+            <Award size={16} className="text-[#E6C878]" />
+            <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#E6C878]">
               Score Aggregator
             </span>
           </div>
-          <h3 className="mt-1 font-sans text-2xl font-bold text-[#111827]">Conscious Orbital Score Synthesis</h3>
-          <p className="mt-1 max-w-lg text-sm text-[#4B5563]">
+          <h3 className="mt-1 font-sans text-2xl font-bold text-[#FFFFFF]">Conscious Orbital Score Synthesis</h3>
+          <p className="mt-1 max-w-lg text-sm text-[#FECDD3]/80">
             Weighted formula synthesizing feasibility, TAM metrics, unit economics, and GTM readiness.
           </p>
         </div>
 
-        <div className="flex items-center gap-4 rounded-2xl border border-[#D4AF37] bg-[#FFFFFF] p-4 shadow-sm">
+        <div className="flex items-center gap-4 rounded-2xl border border-[#D4AF37] bg-[#7A0018]/80 p-4 shadow-md">
           <div className="text-center font-mono">
-            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#6B7280]">Final Score</p>
-            <p className="font-sans text-4xl font-extrabold text-[#7A0018]">86<span className="text-xs text-[#6B7280]">/100</span></p>
+            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#FECDD3]">Final Score</p>
+            <p className="font-sans text-4xl font-extrabold text-[#E6C878]">86<span className="text-xs text-[#FECDD3]">/100</span></p>
           </div>
-          <div className="h-10 w-px bg-[#E6C878]/60" />
+          <div className="h-10 w-px bg-[#D4AF37]/60" />
           <div className="text-center font-mono">
-            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#6B7280]">Decision</p>
-            <span className="rounded-md border border-[#A7F3D0] bg-[#ECFDF5] px-2 py-0.5 text-xs font-bold text-[#059669]">
+            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#FECDD3]">Decision</p>
+            <span className="rounded-md border border-[#34D399] bg-[#065F46]/90 px-2 py-0.5 text-xs font-bold text-[#A7F3D0]">
               1 · PROCEED
             </span>
           </div>
@@ -331,18 +331,18 @@ function ScoreAggregatorCard() {
 
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((m) => (
-          <div key={m.label} className="rounded-xl border border-[#E6C878]/60 bg-[#FFFFFF] p-3.5 shadow-2xs">
+          <div key={m.label} className="rounded-xl border border-[#D4AF37]/40 bg-[#350310] p-3.5 shadow-2xs">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5">
-                <m.icon size={14} className="text-[#7A0018]" />
-                <span className="font-mono text-[0.65rem] uppercase text-[#6B7280]">{m.label}</span>
+                <m.icon size={14} className="text-[#E6C878]" />
+                <span className="font-mono text-[0.65rem] uppercase text-[#FECDD3]">{m.label}</span>
               </div>
-              <span className="font-mono text-[0.6rem] text-[#6B7280]">{m.weight}</span>
+              <span className="font-mono text-[0.6rem] text-[#E6C878]">{m.weight}</span>
             </div>
             <div className="mt-2 flex items-center justify-between">
-              <span className="font-sans text-xl font-bold text-[#111827]">{m.value}</span>
-              <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#E5E7EB]">
-                <div className="h-full rounded-full bg-[#7A0018]" style={{ width: `${m.value}%` }} />
+              <span className="font-sans text-xl font-bold text-[#FFFFFF]">{m.value}</span>
+              <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#2A020D]">
+                <div className="h-full rounded-full bg-[#E6C878]" style={{ width: `${m.value}%` }} />
               </div>
             </div>
           </div>
@@ -351,3 +351,4 @@ function ScoreAggregatorCard() {
     </GlassPanel>
   );
 }
+

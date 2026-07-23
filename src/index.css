@@ -1,32 +1,35 @@
 @import "tailwindcss";
 
 @layer base {
-  /* Ultra-Luxury Red & Gold Design System Tokens */
+  /* Ultra-Luxury Rich Wine Red & Gold Design System Tokens */
   :root {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color-scheme: light;
   }
 
   :root {
-    /* Primary Deep Royal Red */
+    /* Primary Deep Royal Red & Rich Wine Tones */
     --color-royal-red: #7A0018;
     --color-wine-red: #8E1538;
     --color-royal-red-dark: #580011;
     
-    /* Secondary Deep Burgundy */
-    --color-burgundy-deep: #4C0519;
-    --color-burgundy-dark: #2A020D;
+    /* Ivory Background Tones */
+    --color-wine-bg: #FCFAF7;
+    --color-wine-dark: #FBF3D5;
+    --color-burgundy-deep: #7A0018;
+    --color-burgundy-dark: #4C0519;
     
     /* Accent Metallic Gold & Soft Champagne Gold */
     --color-gold-metallic: #D4AF37;
     --color-gold-champagne: #E6C878;
     --color-gold-light: #FBF3D5;
     
-    /* Surfaces */
-    --color-bg-ivory: #FFFCF7;
-    --color-bg-warm: #FCFAF7;
-    --color-text-charcoal: #111827;
-    --color-border-gold: rgba(212, 175, 55, 0.4);
+    /* Dark Wine Surfaces & Typography */
+    --color-bg-wine-card: #450517;
+    --color-bg-wine-surface: #380312;
+    --color-text-white: #FFFFFF;
+    --color-text-rose: #FECDD3;
+    --color-border-gold: rgba(212, 175, 55, 0.45);
   }
 
   body {
@@ -37,44 +40,48 @@
 }
 
 /* ============================================================
-   ULTRA-LUXURY RED & GOLD UTILITIES & LAYERED BACKGROUNDS
+   ULTRA-LUXURY RICH WINE RED & GOLD UTILITIES & LAYERED BACKGROUNDS
    ============================================================ */
 
-/* Layered Royal Mesh Background with Golden Radial Glow Orbs */
+/* Layered Ivory Background Mesh with Soft Crimson & Golden Radial Glow Orbs */
 .bg-royal-mesh {
   background-color: #FCFAF7;
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(142, 21, 56, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 90% 10%, rgba(212, 175, 55, 0.12) 0%, transparent 35%),
-    radial-gradient(circle at 50% 80%, rgba(122, 0, 24, 0.06) 0%, transparent 50%);
+    radial-gradient(circle at 10% 20%, rgba(122, 0, 24, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(212, 175, 55, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(142, 21, 56, 0.06) 0%, transparent 55%),
+    radial-gradient(circle at 80% 85%, rgba(251, 243, 213, 0.8) 0%, transparent 50%);
+  background-attachment: fixed;
 }
 
-/* Luxury Floating Card — 18px border radius, thin gold border & soft layered shadow */
+/* Luxury Floating Card — Rich Wine Red gradient with thin gold border & soft glow */
 .card-royal-luxury {
-  background: #FFFFFF;
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, rgba(68, 6, 25, 0.88) 0%, rgba(38, 2, 12, 0.94) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.45);
   border-radius: 18px;
-  box-shadow: 0 4px 20px -2px rgba(122, 0, 24, 0.04), 0 2px 6px -1px rgba(212, 175, 55, 0.06);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(122, 0, 24, 0.35);
   transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #FFFFFF;
 }
 
 .card-royal-luxury:hover {
   border-color: #D4AF37;
-  box-shadow: 0 14px 35px -5px rgba(122, 0, 24, 0.1), 0 0 25px rgba(212, 175, 55, 0.25);
+  box-shadow: 0 16px 45px -5px rgba(122, 0, 24, 0.6), 0 0 30px rgba(212, 175, 55, 0.4);
   transform: translateY(-3px);
 }
 
-/* Glassmorphism Luxury Panel */
+/* Glassmorphism Luxury Wine Red Panel */
 .glass-royal-luxury {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(53, 3, 16, 0.88);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  color: #FFFFFF;
 }
 
-/* Metallic Champagne Gold Shimmer Text */
+/* Metallic Champagne Gold & Crisp White Shimmer Text */
 .text-shimmer-champagne {
-  background: linear-gradient(135deg, #7A0018 0%, #D4AF37 45%, #E6C878 70%, #8E1538 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #E6C878 40%, #D4AF37 75%, #FFD1DC 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -83,20 +90,22 @@
 .field-luxury-gold:focus {
   outline: none;
   border-color: #D4AF37;
-  box-shadow: 0 0 0 3.5px rgba(212, 175, 55, 0.28);
+  box-shadow: 0 0 0 3.5px rgba(212, 175, 55, 0.35);
 }
 
 /* Royal Red Primary Button with Golden Hover Glow */
 .btn-royal-red {
-  background-color: #7A0018;
+  background: linear-gradient(135deg, #8E1538 0%, #7A0018 100%);
+  border: 1px solid rgba(212, 175, 55, 0.5);
   color: #FFFFFF;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 16px rgba(122, 0, 24, 0.32);
+  box-shadow: 0 4px 20px rgba(122, 0, 24, 0.5), 0 0 15px rgba(212, 175, 55, 0.2);
 }
 
 .btn-royal-red:hover {
-  background-color: #8E1538;
-  box-shadow: 0 0 25px rgba(212, 175, 55, 0.55), 0 8px 24px rgba(122, 0, 24, 0.4);
+  background: linear-gradient(135deg, #A31B42 0%, #8E1538 100%);
+  border-color: #D4AF37;
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.6), 0 8px 25px rgba(122, 0, 24, 0.6);
   transform: translateY(-1.5px);
 }
 
@@ -105,20 +114,20 @@
   transform: translateY(0);
 }
 
-/* Secondary White/Ivory Button with Gold Border */
+/* Secondary Translucent Wine Button with Gold Border */
 .btn-royal-gold-outline {
-  background-color: #FFFFFF;
+  background-color: rgba(76, 5, 25, 0.7);
   border: 1px solid #D4AF37;
-  color: #7A0018;
+  color: #E6C878;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.12);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 .btn-royal-gold-outline:hover {
-  background-color: #FFFCF7;
+  background-color: #7A0018;
   border-color: #E6C878;
-  color: #8E1538;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.35), 0 4px 14px rgba(122, 0, 24, 0.15);
+  color: #FFFFFF;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4), 0 4px 16px rgba(122, 0, 24, 0.4);
   transform: translateY(-1px);
 }
 
@@ -129,14 +138,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #FCFAF7;
+  background: #2A020D;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #E6C878;
+  background: #8E1538;
+  border: 1px solid #D4AF37;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #D4AF37;
+  background: #A31B42;
 }
+
