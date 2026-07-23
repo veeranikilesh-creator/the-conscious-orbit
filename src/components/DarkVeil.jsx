@@ -65,20 +65,19 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord){
     fragColor=cppn_fn(uv,0.1*sin(0.3*uTime),0.1*sin(0.69*uTime),0.1*sin(0.44*uTime));
 }
 
-// Royal gold ramp — maps a 0..1 value onto the site's crimson→amber→gold palette.
-// Keeps the CPPN motion but renders every pixel in the brand gold.
-vec3 goldRamp(float t){
-    vec3 c0=vec3(0.039,0.012,0.024);  // near-black crimson
-    vec3 c1=vec3(0.298,0.024,0.098);  // deep crimson  (#4c0519)
-    vec3 c2=vec3(0.706,0.196,0.035);  // amber-700     (#b45309)
-    vec3 c3=vec3(0.961,0.620,0.043);  // amber-500     (#f59f0b)
-    vec3 c4=vec3(1.0,0.808,0.282);    // amber-300     (#fcd34d)
-    vec3 c5=vec3(1.0,0.945,0.769);    // pale gold     (#fdeec4)
-    vec3 a=mix(c0,c1,smoothstep(0.0,0.2,t));
-    vec3 b=mix(a,c2,smoothstep(0.2,0.45,t));
-    vec3 c=mix(b,c3,smoothstep(0.45,0.7,t));
-    vec3 d=mix(c,c4,smoothstep(0.7,0.88,t));
-    return mix(d,c5,smoothstep(0.88,1.0,t));
+// Ultra-Luxury Red & Gold ambient ramp — maps a 0..1 value onto champagne gold, royal red, and burgundy palette
+vec3 royalLuxuryRamp(float t){
+    vec3 c0=vec3(1.000,0.988,0.969);  // warm ivory (#FFFCF7)
+    vec3 c1=vec3(0.902,0.784,0.471);  // champagne gold (#E6C878)
+    vec3 c2=vec3(0.831,0.686,0.216);  // metallic gold (#D4AF37)
+    vec3 c3=vec3(0.557,0.082,0.220);  // wine red (#8E1538)
+    vec3 c4=vec3(0.478,0.000,0.094);  // deep royal red (#7A0018)
+    vec3 c5=vec3(0.298,0.020,0.098);  // deep burgundy (#4C0519)
+    vec3 a=mix(c0,c1,smoothstep(0.0,0.25,t));
+    vec3 b=mix(a,c2,smoothstep(0.25,0.5,t));
+    vec3 c=mix(b,c3,smoothstep(0.5,0.75,t));
+    vec3 d=mix(c,c4,smoothstep(0.75,0.9,t));
+    return mix(d,c5,smoothstep(0.9,1.0,t));
 }
 
 void main(){
@@ -87,9 +86,9 @@ void main(){
     float scanline_val=sin(gl_FragCoord.y*uScanFreq)*0.5+0.5;
     col.rgb*=1.-(scanline_val*scanline_val)*uScan;
     col.rgb+=(rand(gl_FragCoord.xy+uTime)-0.5)*uNoise;
-    // Recolor the full range into royal gold using the CPPN luminance.
+    // Recolor into Ultra-Luxury Red & Gold tones using CPPN luminance.
     float l=clamp(dot(col.rgb,vec3(0.299,0.587,0.114)),0.0,1.0);
-    col.rgb=goldRamp(l);
+    col.rgb=royalLuxuryRamp(l);
     gl_FragColor=vec4(clamp(col.rgb,0.0,1.0),1.0);
 }
 `;

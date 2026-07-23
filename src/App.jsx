@@ -4,13 +4,14 @@ import {
   GraduationCap, Building2, Factory, Rocket, Crown,
   ChevronRight, Sparkles, FileText, LayoutDashboard, Settings,
   Layers, ClipboardList, Search, DollarSign, Cpu, Home,
-  Users, TrendingUp, Download, CheckCircle2,
+  TrendingUp, Download, CheckCircle2,
   Plus, X, ChevronDown, Target, Zap,
 } from 'lucide-react';
 import './App.css';
 import {
   GlassPanel, RoyalHeading, Field, Input, Textarea, Select,
   RoyalButton, GhostButton, StatusBadge, StatusDot, OrbitBrand,
+  AiPulseBadge, AiInsightWidget
 } from './components/ui.jsx';
 import VentureProcessor from './components/VentureProcessor.jsx';
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from './components/VerticalEngines.jsx';
@@ -18,8 +19,7 @@ import Homepage from './components/Homepage.jsx';
 import Login from './components/Login.jsx';
 
 /* ============================================================
-   THE CONSCIOUS ORBIT — Royal SaaS Dashboard
-   Verticals: Students · Institutions · MSMEs · Industries · Startups
+   THE CONSCIOUS ORBIT — Ultra-Luxury Red & Gold Executive Workspace
    ============================================================ */
 
 const VERTICALS = [
@@ -54,7 +54,6 @@ const BUILD_YOUR_OWN = [
   'Financial Model', 'Risk Register', 'User Personas', 'OKR Framework',
 ];
 
-// Seed report cards for the Kanban board
 const SEED_REPORTS = [
   { id: 'r1', name: 'EcoFly Medical Drones', vertical: 'startups', tags: ['Logistics', 'Healthcare'], status: 'PUBLISHED',  score: 86 },
   { id: 'r2', name: 'Apex AI Recruiter',      vertical: 'startups', tags: ['HR Tech', 'SaaS'],       status: 'PROCESSED', score: 72 },
@@ -100,9 +99,9 @@ function App() {
       setReports((prev) => [
         {
           id: `r${Date.now()}`,
-          name: 'New Royal Report',
+          name: 'AI Strategy Report',
           vertical: activeVertical,
-          tags: ['Draft'],
+          tags: ['AI Analysis'],
           status: 'RECEIVED',
           score: 0,
         },
@@ -115,7 +114,7 @@ function App() {
 
   const activeVerticalObj = VERTICALS.find((v) => v.id === activeVertical);
 
-  // ---- Page-level routing (no router lib needed) ----
+  // ---- Page routing ----
   if (page === 'home') {
     return (
       <AnimatePresence mode="wait">
@@ -148,8 +147,8 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-screen text-stone-100">
-      {/* ============ SIDEBAR ============ */}
+    <div className="flex min-h-screen bg-royal-mesh text-[#111827]">
+      {/* ============ SIDEBAR — Deep Royal Gradient & Metallic Gold ============ */}
       <Sidebar
         verticals={VERTICALS}
         activeVertical={activeVertical}
@@ -159,61 +158,108 @@ function App() {
         goHome={() => setPage('home')}
       />
 
-      {/* ============ MAIN ============ */}
-      <main className="flex-1 overflow-x-hidden">
-        <Topbar activeVertical={activeVerticalObj} />
+      {/* ============ MAIN WORKSPACE ============ */}
+      <main className="flex-1 overflow-x-hidden flex flex-col">
+        {/* TOPBAR — Blurred Glass Header */}
+        <Topbar
+          verticals={VERTICALS}
+          activeVertical={activeVerticalObj}
+          setActiveVertical={setActiveVertical}
+        />
 
-        <div className="mx-auto max-w-7xl space-y-8 px-5 py-8 md:px-8">
+        <div className="flex-1 mx-auto w-full max-w-7xl space-y-8 px-5 py-8 md:px-8">
           {/* VERTICAL HERO */}
-          <VerticalHero vertical={activeVerticalObj} />
+          <VerticalHero vertical={activeVerticalObj} onOpenGenerate={() => setIsGenModalOpen(true)} />
 
-          {/* MAIN-VIEW TABS */}
-          <MainViewTabs mainView={mainView} setMainView={setMainView} />
+          {/* MAIN VIEW NAVIGATION TABS */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <MainViewTabs mainView={mainView} setMainView={setMainView} />
+            <AiPulseBadge label="AI Co-Pilot Telemetry Active" />
+          </div>
 
-          {/* ---------- PIPELINE VIEW (processing architecture) ---------- */}
-          {mainView === 'pipeline' && <VentureProcessor />}
+          {/* DASHBOARD GRID PLACEMENT: Main View (8 cols) + AI Side Panel (4 cols) */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
+            {/* MAIN CONTENT AREA */}
+            <div className="space-y-8 lg:col-span-8">
+              {/* ---------- PIPELINE VIEW ---------- */}
+              {mainView === 'pipeline' && <VentureProcessor />}
 
-          {/* ---------- INTAKE VIEW (vertical-specific) ---------- */}
-          {mainView === 'intake' && (
-            <>
-              {activeVertical === 'startups' && (
+              {/* ---------- INTAKE VIEW ---------- */}
+              {mainView === 'intake' && (
                 <>
-                  <ThreeLayerEngine
-                    activeCluster={activeCluster}
-                    setActiveCluster={setActiveCluster}
-                    selectedTracks={selectedTracks}
-                    toggleTrack={toggleTrack}
-                    customPicks={customPicks}
-                    toggleCustom={toggleCustom}
-                    onGenerate={() => setIsGenModalOpen(true)}
-                  />
-                  <div className="mt-10 flex items-center gap-4">
-                    <div className="h-px flex-1 bg-amber-500/15" />
-                    <span className="text-[0.62rem] font-bold uppercase tracking-[0.2em] text-amber-300/50">Function Engine</span>
-                    <div className="h-px flex-1 bg-amber-500/15" />
-                  </div>
-                  <StartupMarketEngine />
+                  {activeVertical === 'startups' && (
+                    <>
+                      <ThreeLayerEngine
+                        activeCluster={activeCluster}
+                        setActiveCluster={setActiveCluster}
+                        selectedTracks={selectedTracks}
+                        toggleTrack={toggleTrack}
+                        customPicks={customPicks}
+                        toggleCustom={toggleCustom}
+                        onGenerate={() => setIsGenModalOpen(true)}
+                      />
+                      <div className="mt-10 flex items-center gap-4">
+                        <div className="h-px flex-1 bg-[#E6C878]/60" />
+                        <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">Function Engine</span>
+                        <div className="h-px flex-1 bg-[#E6C878]/60" />
+                      </div>
+                      <StartupMarketEngine />
+                    </>
+                  )}
+                  {activeVertical === 'msmes' && <MsmeOptimizationEngine />}
+                  {activeVertical === 'industries' && <IndustryAnalysisEngine />}
+                  {(activeVertical === 'students' || activeVertical === 'institutions') && (
+                    <GenericVerticalPanel vertical={activeVerticalObj} />
+                  )}
                 </>
               )}
-              {activeVertical === 'msmes' && <MsmeOptimizationEngine />}
-              {activeVertical === 'industries' && <IndustryAnalysisEngine />}
-              {(activeVertical === 'students' || activeVertical === 'institutions') && (
-                <GenericVerticalPanel vertical={activeVerticalObj} />
-              )}
-            </>
-          )}
 
-          {/* ---------- BOARD VIEW (kanban) ---------- */}
-          {mainView === 'board' && (
-            <KanbanBoard
-              reports={reports}
-              columns={KANBAN_COLUMNS}
-              moveReport={moveReport}
-              expandedReport={expandedReport}
-              setExpandedReport={setExpandedReport}
-              onGenerate={() => setIsGenModalOpen(true)}
-            />
-          )}
+              {/* ---------- BOARD VIEW ---------- */}
+              {mainView === 'board' && (
+                <KanbanBoard
+                  reports={reports}
+                  columns={KANBAN_COLUMNS}
+                  moveReport={moveReport}
+                  expandedReport={expandedReport}
+                  setExpandedReport={setExpandedReport}
+                  onGenerate={() => setIsGenModalOpen(true)}
+                />
+              )}
+            </div>
+
+            {/* AI INTELLIGENCE SIDE PANEL */}
+            <div className="space-y-6 lg:col-span-4">
+              <AiInsightWidget verticalName={activeVerticalObj?.name} />
+
+              {/* AI Quick Actions Card */}
+              <GlassPanel className="p-5 space-y-3 border-[#D4AF37]/40">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-[#7A0018]" />
+                  <h4 className="font-sans text-base font-bold text-[#111827]">AI Strategy Actions</h4>
+                </div>
+                <p className="text-xs text-[#6B7280]">Quick AI shortcuts for the selected vertical.</p>
+                <div className="space-y-2 pt-1">
+                  {[
+                    { label: 'Synthesize Market Fit', desc: 'Auto-map TAM/SAM/SOM' },
+                    { label: 'Audit Bottlenecks', desc: 'Isolate single points of failure' },
+                    { label: 'Generate Pitch Narrative', desc: 'Format investor-ready deck' },
+                  ].map((act) => (
+                    <button
+                      key={act.label}
+                      onClick={() => setIsGenModalOpen(true)}
+                      className="group flex w-full items-center justify-between rounded-xl border border-[#E6C878]/70 bg-[#FFFCF7] p-3 text-left transition hover:border-[#D4AF37] hover:bg-[#FBF3D5] cursor-pointer"
+                    >
+                      <div>
+                        <p className="text-xs font-semibold text-[#111827] group-hover:text-[#7A0018]">{act.label}</p>
+                        <p className="font-mono text-[0.62rem] text-[#6B7280]">{act.desc}</p>
+                      </div>
+                      <ChevronRight size={14} className="text-[#6B7280] transition group-hover:translate-x-0.5 group-hover:text-[#7A0018]" />
+                    </button>
+                  ))}
+                </div>
+              </GlassPanel>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -233,29 +279,29 @@ function App() {
 }
 
 /* ============================================================
-   SIDEBAR — royal left navigation with 5 verticals
+   SIDEBAR — Premium Dark Red Gradient with Metallic Gold
    ============================================================ */
 function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, goHome }) {
   return (
     <aside
-      className={`sticky top-0 z-20 flex h-screen flex-col border-r border-amber-500/15 bg-black/50 backdrop-blur-xl transition-all duration-300 ${
+      className={`sticky top-0 z-20 flex h-screen flex-col border-r border-[#D4AF37]/40 bg-gradient-to-b from-[#4C0519] via-[#7A0018] to-[#2A020D] text-[#FFFFFF] transition-all duration-300 ${
         open ? 'w-72' : 'w-20'
       }`}
     >
-      {/* Brand — click to return home */}
+      {/* Brand */}
       <button
         onClick={goHome}
-        className="group flex w-full items-center gap-3 px-5 py-6 text-left transition hover:bg-white/[0.03]"
+        className="group flex w-full items-center gap-3 px-5 py-6 text-left transition hover:bg-[#8E1538]/50 cursor-pointer"
         title="Back to home"
       >
-        <OrbitBrand size={40} />
+        <OrbitBrand size={38} />
         {open && (
           <div className="overflow-hidden">
-            <h1 className="font-serif text-lg font-bold leading-tight text-shimmer-gold">
+            <h1 className="font-sans text-lg font-bold leading-tight text-[#FFFFFF]">
               The Conscious Orbit
             </h1>
-            <p className="text-[0.62rem] uppercase tracking-[0.2em] text-stone-500">
-              Royal Strategy Suite
+            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#E6C878]">
+              Royal Red &amp; Gold Suite
             </p>
           </div>
         )}
@@ -263,7 +309,7 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
 
       <button
         onClick={() => setOpen((o) => !o)}
-        className="absolute -right-3 top-7 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-amber-500/40 bg-black/80 text-amber-300 backdrop-blur transition hover:bg-amber-500/20"
+        className="absolute -right-3 top-7 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-[#D4AF37] bg-[#7A0018] text-[#FFFFFF] shadow-md transition hover:bg-[#8E1538] cursor-pointer"
         aria-label="Toggle sidebar"
       >
         <ChevronRight size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -272,7 +318,7 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {open && (
-          <p className="px-3 pb-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-stone-600">
+          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">
             Target Verticals
           </p>
         )}
@@ -283,21 +329,18 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
             <button
               key={v.id}
               onClick={() => setActiveVertical(v.id)}
-              className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-300 border ${
+              className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 border cursor-pointer ${
                 active
-                  ? 'bg-gradient-to-r from-amber-500/20 to-rose-950/30 text-amber-300 border-amber-500/40 shadow-lg shadow-amber-950/20'
-                  : 'text-stone-400 hover:text-stone-200 hover:bg-stone-900/50 border-transparent'
+                  ? 'bg-[#7A0018] text-[#FFFFFF] border-[#D4AF37] shadow-sm'
+                  : 'text-[#FECDD3] hover:text-[#FFFFFF] hover:bg-[#8E1538]/40 border-transparent'
               }`}
             >
               {active && (
-                <motion.span
-                  layoutId="nav-active"
-                  className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-amber-300 to-amber-600 shadow-[0_0_12px_rgba(245,158,11,0.7)]"
-                />
+                <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-md bg-[#D4AF37]" />
               )}
               <Icon
                 size={18}
-                className={`shrink-0 ${active ? 'text-amber-400' : 'text-stone-500 group-hover:text-amber-300'}`}
+                className={`shrink-0 ${active ? 'text-[#E6C878]' : 'text-[#FECDD3] group-hover:text-[#E6C878]'}`}
               />
               {open && (
                 <span className="truncate text-sm font-medium">{v.name}</span>
@@ -310,14 +353,14 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
       {/* Footer */}
       {open && (
         <div className="space-y-1 px-3 pb-5">
-          <p className="px-3 pb-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-stone-600">
+          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">
             System
           </p>
           <button
             onClick={goHome}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-stone-200/50 transition hover:bg-white/5 hover:text-stone-100"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#FECDD3] transition hover:bg-[#8E1538]/40 hover:text-[#FFFFFF] cursor-pointer"
           >
-            <Home size={18} className="text-stone-600" />
+            <Home size={18} className="text-[#E6C878]" />
             Back to Home
           </button>
           {[
@@ -326,19 +369,19 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
           ].map((item) => (
             <button
               key={item.label}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-stone-200/50 transition hover:bg-white/5 hover:text-stone-100"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#FECDD3] transition hover:bg-[#8E1538]/40 hover:text-[#FFFFFF] cursor-pointer"
             >
-              <item.icon size={18} className="text-stone-600" />
+              <item.icon size={18} className="text-[#E6C878]" />
               {item.label}
             </button>
           ))}
-          <div className="mt-4 rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-3">
+          <div className="mt-4 rounded-xl border border-[#D4AF37]/50 bg-[#8E1538]/40 p-3 shadow-2xs">
             <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-amber-400" />
-              <span className="text-xs font-semibold text-stone-300">Royal Tier</span>
+              <Sparkles size={14} className="text-[#E6C878]" />
+              <span className="font-mono text-xs font-semibold text-[#FFFFFF]">Executive AI Tier</span>
             </div>
-            <p className="mt-1 text-[0.68rem] text-stone-200/50">
-              All flagship tracks unlocked
+            <p className="mt-1 text-[0.68rem] text-[#FECDD3]">
+              All 5 verticals &amp; tracks unlocked
             </p>
           </div>
         </div>
@@ -348,27 +391,50 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
 }
 
 /* ============================================================
-   TOPBAR
+   TOPBAR — Glass Blurred Header with Thin Gold Border
    ============================================================ */
-function Topbar({ activeVertical }) {
+function Topbar({ verticals, activeVertical, setActiveVertical }) {
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-amber-500/10 bg-black/30 px-5 py-4 backdrop-blur-xl md:px-8">
-      <div className="flex items-center gap-2 text-sm text-stone-200/50">
-        <LayoutDashboard size={16} className="text-amber-400" />
-        <span>Dashboard</span>
-        <ChevronRight size={14} />
-        <span className="font-medium text-stone-200">{activeVertical?.name}</span>
+    <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-4 border-b border-[#D4AF37]/40 bg-[#FFFFFF]/90 px-5 py-3.5 backdrop-blur-xl md:px-8">
+      {/* Active Location & Quick Vertical Selector */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+          <LayoutDashboard size={16} className="text-[#7A0018]" />
+          <span className="font-sans font-bold text-[#111827]">Orbit Executive Suite</span>
+          <ChevronRight size={14} />
+        </div>
+
+        {/* Quick Vertical Switcher Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto rounded-xl border border-[#E6C878] bg-[#FFFCF7] p-1">
+          {verticals.map((v) => {
+            const active = activeVertical?.id === v.id;
+            return (
+              <button
+                key={v.id}
+                onClick={() => setActiveVertical(v.id)}
+                className={`rounded-lg px-2.5 py-1 font-mono text-[0.65rem] font-bold uppercase transition cursor-pointer ${
+                  active
+                    ? 'bg-[#7A0018] text-[#FFFFFF] shadow-xs border border-[#D4AF37]'
+                    : 'text-[#78350F] hover:text-[#7A0018]'
+                }`}
+              >
+                {v.name.split(' ')[0]}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
       <div className="flex items-center gap-3">
-        <div className="hidden items-center gap-2 rounded-xl border border-amber-500/20 bg-black/40 px-3 py-2 md:flex">
-          <Search size={15} className="text-stone-600" />
+        <div className="hidden items-center gap-2 rounded-xl border border-[#E6C878] bg-[#FFFCF7] px-3 py-1.5 md:flex">
+          <Search size={15} className="text-[#7A0018]" />
           <input
-            placeholder="Search ventures…"
-            className="field-glow w-40 bg-transparent text-sm text-stone-100 placeholder:text-stone-300/30 focus:w-56"
+            placeholder="Search ventures..."
+            className="w-32 bg-transparent font-sans text-sm text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:w-48 transition-all"
           />
         </div>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-500/30 bg-gradient-to-br from-amber-500/30 to-amber-700/20 text-sm font-bold text-stone-300">
-          R
+        <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#D4AF37] bg-[#7A0018] font-mono text-sm font-bold text-[#FFFFFF] shadow-md">
+          AI
         </div>
       </div>
     </header>
@@ -376,7 +442,7 @@ function Topbar({ activeVertical }) {
 }
 
 /* ============================================================
-   MAIN-VIEW TABS — switch between Pipeline / Intake / Board
+   MAIN-VIEW TABS — Pipeline / Intake / Board
    ============================================================ */
 function MainViewTabs({ mainView, setMainView }) {
   const tabs = [
@@ -385,25 +451,25 @@ function MainViewTabs({ mainView, setMainView }) {
     { id: 'board',    label: 'Tracking Board',      icon: ClipboardList },
   ];
   return (
-    <div className="flex flex-wrap gap-1 rounded-2xl border border-amber-500/15 bg-black/40 p-1.5 backdrop-blur-xl">
+    <div className="flex flex-wrap gap-1 rounded-2xl border border-[#E6C878] bg-[#FFFFFF] p-1.5 backdrop-blur-md shadow-xs">
       {tabs.map((tab) => {
         const active = mainView === tab.id;
         return (
           <button
             key={tab.id}
             onClick={() => setMainView(tab.id)}
-            className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
-              active ? 'text-amber-900' : 'text-stone-400 hover:text-stone-100'
+            className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition cursor-pointer ${
+              active ? 'text-[#FFFFFF]' : 'text-[#6B7280] hover:text-[#111827]'
             }`}
           >
             {active && (
               <motion.span
                 layoutId="main-view-tab"
-                className="absolute inset-0 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 shadow-[0_0_18px_rgba(245,158,11,0.4)]"
+                className="absolute inset-0 rounded-xl bg-[#7A0018] border border-[#D4AF37] shadow-xs"
               />
             )}
-            <tab.icon size={15} className="relative" />
-            <span className="relative">{tab.label}</span>
+            <tab.icon size={15} className="relative z-10" />
+            <span className="relative z-10">{tab.label}</span>
           </button>
         );
       })}
@@ -411,36 +477,49 @@ function MainViewTabs({ mainView, setMainView }) {
   );
 }
 
-
-function VerticalHero({ vertical }) {
+function VerticalHero({ vertical, onOpenGenerate }) {
   const Icon = vertical?.icon;
   return (
     <motion.div
-      key={vertical.id}
+      key={vertical?.id}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.35 }}
     >
-      <GlassPanel className="relative overflow-hidden p-6 md:p-8">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-500/10 blur-3xl" />
-        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <GlassPanel className="relative overflow-hidden p-6 md:p-8 border-[#D4AF37]/45 bg-gradient-to-br from-[#FFFFFF] via-[#FFFCF7] to-[#FBF3D5]">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#D4AF37]/15 blur-3xl" />
+        
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/20 to-transparent">
-              {Icon && <Icon className="h-7 w-7 text-amber-400" />}
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37] bg-[#FFF1F2] text-[#7A0018] shadow-xs">
+              {Icon && <Icon className="h-8 w-8 text-[#7A0018]" />}
             </div>
-            <div>
-              <RoyalHeading level={2} shimmer>
-                {vertical?.name}
-              </RoyalHeading>
-              <p className="mt-1 max-w-xl text-sm text-stone-400">{vertical?.desc}</p>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <RoyalHeading level={2} shimmer>
+                  {vertical?.name}
+                </RoyalHeading>
+                <span className="rounded-md border border-[#D4AF37] bg-[#FBF3D5] px-2.5 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#7A0018]">
+                  Active Vertical
+                </span>
+              </div>
+              <p className="max-w-xl text-sm text-[#4B5563] leading-relaxed">{vertical?.desc}</p>
             </div>
           </div>
-          <div className="flex gap-3">
+
+          {/* Quick Metrics & CTA Group */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <div className="hidden sm:flex items-center gap-3 rounded-xl border border-[#E6C878] bg-[#FFFFFF] px-3.5 py-2">
+              <div className="text-left font-mono">
+                <p className="text-[0.6rem] uppercase tracking-wider text-[#6B7280]">Target Score</p>
+                <p className="text-xs font-bold text-[#059669]">86 / 100 Viable</p>
+              </div>
+            </div>
             <GhostButton>
-              <FileText size={15} /> Brief
+              <FileText size={15} /> Strategy Brief
             </GhostButton>
-            <RoyalButton>
-              <Sparkles size={15} /> New Engagement
+            <RoyalButton onClick={onOpenGenerate} className="shadow-md">
+              <Sparkles size={15} /> Run AI Analysis
             </RoyalButton>
           </div>
         </div>
@@ -450,7 +529,7 @@ function VerticalHero({ vertical }) {
 }
 
 /* ============================================================
-   THREE-LAYER INTAKE ENGINE (Startup vertical)
+   THREE-LAYER INTAKE ENGINE
    ============================================================ */
 function ThreeLayerEngine({
   activeCluster, setActiveCluster,
@@ -471,201 +550,193 @@ function ThreeLayerEngine({
       <div className="space-y-3">
         <LayerBadge n={1} title="Client Profile" hint="Captured once at signup" />
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-          <GlassPanel className="p-6">
+          <GlassPanel className="p-6 border-[#E6C878]">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Company Name">
-              <Input defaultValue="EcoFly Robotics" />
-            </Field>
-            <Field label="Industry">
-              <Select defaultValue="Logistics">
-                <option>Logistics</option><option>Healthcare</option><option>Fintech</option>
-                <option>SaaS</option><option>AgriTech</option>
-              </Select>
-            </Field>
-            <Field label="Stage">
-              <Select defaultValue="Seed">
-                <option>Idea</option><option>Pre-Seed</option><option>Seed</option>
-                <option>Series A</option><option>Growth</option>
-              </Select>
-            </Field>
-            <Field label="Geography">
-              <Input defaultValue="Bengaluru, IN" />
-            </Field>
-            <Field label="Business Model">
-              <Select defaultValue="B2B">
-                <option>B2B</option><option>B2C</option><option>B2B2C</option><option>Marketplace</option>
-              </Select>
-            </Field>
-            <Field label="Contact Info">
-              <Input defaultValue="founder@ecofly.io" />
-            </Field>
-          </div>
-        </GlassPanel>
-      </motion.div>
+              <Field label="Company Name">
+                <Input defaultValue="EcoFly Robotics" />
+              </Field>
+              <Field label="Industry">
+                <Select defaultValue="Logistics">
+                  <option>Logistics</option><option>Healthcare</option><option>Fintech</option>
+                  <option>SaaS</option><option>AgriTech</option>
+                </Select>
+              </Field>
+              <Field label="Stage">
+                <Select defaultValue="Seed">
+                  <option>Idea</option><option>Pre-Seed</option><option>Seed</option>
+                  <option>Series A</option><option>Growth</option>
+                </Select>
+              </Field>
+              <Field label="Geography">
+                <Input defaultValue="Bengaluru, IN" />
+              </Field>
+              <Field label="Business Model">
+                <Select defaultValue="B2B">
+                  <option>B2B</option><option>B2C</option><option>B2B2C</option><option>Marketplace</option>
+                </Select>
+              </Field>
+              <Field label="Contact Info">
+                <Input defaultValue="founder@ecofly.io" />
+              </Field>
+            </div>
+          </GlassPanel>
+        </motion.div>
       </div>
 
       {/* LAYER 2 — CLUSTER FORMS */}
       <div className="space-y-3">
         <LayerBadge n={2} title="Cluster Forms" hint="Report-specific inputs grouped by theme" />
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }}>
-          <GlassPanel className="overflow-hidden p-0">
-          {/* Tabs */}
-          <div className="flex flex-wrap gap-1 border-b border-amber-500/15 bg-black/30 p-2">
-            {CLUSTER_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveCluster(tab.id)}
-                className={`relative rounded-lg px-4 py-2 text-sm font-medium transition ${
-                  activeCluster === tab.id ? 'text-amber-900' : 'text-stone-400 hover:text-stone-100'
-                }`}
-              >
-                {activeCluster === tab.id && (
-                  <motion.span
-                    layoutId="cluster-tab"
-                    className="absolute inset-0 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 shadow-[0_0_18px_rgba(245,158,11,0.4)]"
-                  />
-                )}
-                <span className="relative flex items-center gap-2">
-                  <span className={`text-[0.62rem] font-bold uppercase tracking-wider ${activeCluster === tab.id ? 'text-amber-900/70' : 'text-amber-300/50'}`}>
-                    {tab.cluster}
+          <GlassPanel className="overflow-hidden p-0 border-[#E6C878]">
+            {/* Tabs */}
+            <div className="flex flex-wrap gap-1 border-b border-[#E6C878] bg-[#FFFCF7] p-2">
+              {CLUSTER_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveCluster(tab.id)}
+                  className={`relative rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer ${
+                    activeCluster === tab.id ? 'text-[#FFFFFF]' : 'text-[#6B7280] hover:text-[#111827]'
+                  }`}
+                >
+                  {activeCluster === tab.id && (
+                    <motion.span
+                      layoutId="cluster-tab"
+                      className="absolute inset-0 rounded-lg bg-[#7A0018] border border-[#D4AF37] shadow-xs"
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    <span className={`font-mono text-[0.62rem] font-bold uppercase tracking-wider ${activeCluster === tab.id ? 'text-[#FFFFFF]' : 'text-[#7A0018]'}`}>
+                      {tab.cluster}
+                    </span>
+                    {tab.name}
                   </span>
-                  {tab.name}
-                </span>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
 
-          {/* Tab body */}
-          <div className="p-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeCluster}
-                initial={{ opacity: 0, x: 12 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -12 }}
-                transition={{ duration: 0.25 }}
-                className="grid grid-cols-1 gap-4 md:grid-cols-2"
-              >
-                {activeCluster === 'market' && (
-                  <>
-                    <Field label="Problem statement">
-                      <Textarea defaultValue="Rural clinics wait hours for emergency blood & vaccine deliveries." className="min-h-[90px]" />
-                    </Field>
-                    <Field label="Specific pain point">
-                      <Textarea defaultValue="Last-mile cold-chain breaks spoil 30% of medical cargo." className="min-h-[90px]" />
-                    </Field>
-                    <Field label="Willingness-to-pay signals">
-                      <Input defaultValue="$15–25 per priority delivery" />
-                    </Field>
-                    <Field label="Ideal customer profile">
-                      <Input defaultValue="Regional health networks, 50+ clinics" />
-                    </Field>
-                  </>
-                )}
-                {activeCluster === 'viability' && (
-                  <>
-                    <Field label="Revenue model"><Input defaultValue="Per-delivery + monthly retainer" /></Field>
-                    <Field label="Unit economics (gross margin)"><Input defaultValue="62% at scale" /></Field>
-                    <Field label="Key costs"><Input defaultValue="Fleet, batteries, BVLOS compliance" /></Field>
-                    <Field label="Break-even timeline"><Input defaultValue="Month 18" /></Field>
-                  </>
-                )}
-                {activeCluster === 'launch' && (
-                  <>
-                    <Field label="Launch geography"><Input defaultValue="Karnataka pilot zone" /></Field>
-                    <Field label="Go-to-market motion"><Input defaultValue="Govt partnerships + NGO tenders" /></Field>
-                    <Field label="Key milestones (12mo)"><Textarea defaultValue="3 hubs live · 10 clinics onboarded · BVLOS certified" className="min-h-[70px]" /></Field>
-                    <Field label="Funding ask"><Input defaultValue="$1.2M seed" /></Field>
-                  </>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </GlassPanel>
-      </motion.div>
+            {/* Tab body */}
+            <div className="p-6">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeCluster}
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -12 }}
+                  transition={{ duration: 0.25 }}
+                  className="grid grid-cols-1 gap-4 md:grid-cols-2"
+                >
+                  {activeCluster === 'market' && (
+                    <>
+                      <Field label="Problem statement">
+                        <Textarea defaultValue="Rural clinics wait hours for emergency blood & vaccine deliveries." className="min-h-[90px]" />
+                      </Field>
+                      <Field label="Specific pain point">
+                        <Textarea defaultValue="Last-mile cold-chain breaks spoil 30% of medical cargo." className="min-h-[90px]" />
+                      </Field>
+                      <Field label="Willingness-to-pay signals">
+                        <Input defaultValue="$15–25 per priority delivery" />
+                      </Field>
+                      <Field label="Ideal customer profile">
+                        <Input defaultValue="Regional health networks, 50+ clinics" />
+                      </Field>
+                    </>
+                  )}
+                  {activeCluster === 'viability' && (
+                    <>
+                      <Field label="Revenue model"><Input defaultValue="Per-delivery + monthly retainer" /></Field>
+                      <Field label="Unit economics (gross margin)"><Input defaultValue="62% at scale" /></Field>
+                      <Field label="Key costs"><Input defaultValue="Fleet, batteries, BVLOS compliance" /></Field>
+                      <Field label="Break-even timeline"><Input defaultValue="Month 18" /></Field>
+                    </>
+                  )}
+                  {activeCluster === 'launch' && (
+                    <>
+                      <Field label="Launch geography"><Input defaultValue="Karnataka pilot zone" /></Field>
+                      <Field label="Go-to-market motion"><Input defaultValue="Govt partnerships + NGO tenders" /></Field>
+                      <Field label="Key milestones (12mo)"><Textarea defaultValue="3 hubs live · 10 clinics onboarded · BVLOS certified" className="min-h-[70px]" /></Field>
+                      <Field label="Funding ask"><Input defaultValue="$1.2M seed" /></Field>
+                    </>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </GlassPanel>
+        </motion.div>
       </div>
 
       {/* LAYER 3 — REPORT & TRACK CATALOGUE */}
       <div className="space-y-3">
         <LayerBadge n={3} title="Report & Track Catalogue" hint="Flagship tracks + build-your-own" />
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }} className="space-y-5">
-        {/* Flagship tracks */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {FLAGSHIP_TRACKS.map((track) => {
-            const Icon = track.icon;
-            const selected = selectedTracks.includes(track.id);
-            return (
-              <button
-                key={track.id}
-                onClick={() => toggleTrack(track.id)}
-                className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition ${
-                  selected
-                    ? 'border-amber-400/60 bg-gradient-to-br from-amber-500/15 to-amber-700/5 shadow-[0_0_28px_rgba(245,158,11,0.18)]'
-                    : 'border-amber-500/20 bg-black/40 hover:border-amber-400/40'
-                }`}
-              >
-                <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-amber-500/10 blur-2xl transition group-hover:bg-amber-500/20" />
-                <div className="relative flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-400/30 bg-amber-500/10">
-                    <Icon className="h-5 w-5 text-amber-400" />
-                  </div>
-                  {selected && <CheckCircle2 className="h-5 w-5 text-amber-400" />}
-                </div>
-                <h4 className="relative mt-4 font-serif text-lg font-bold text-stone-100">{track.name}</h4>
-                <p className="relative mt-1 text-xs text-stone-400">{track.desc}</p>
-                <span className="relative mt-3 inline-block text-[0.6rem] font-bold uppercase tracking-[0.18em] text-amber-300/70">
-                  Flagship · Premium
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Build your own picker */}
-        <GlassPanel className="p-6">
-          <div className="flex items-center gap-2">
-            <Zap size={16} className="text-amber-400" />
-            <h4 className="font-serif text-lg font-bold text-stone-100">Build Your Own Track</h4>
-          </div>
-          <p className="mt-1 text-sm text-stone-400">Compose a custom report from modular components.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {BUILD_YOUR_OWN.map((mod) => {
-              const on = customPicks.includes(mod);
+          {/* Flagship tracks */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {FLAGSHIP_TRACKS.map((track) => {
+              const Icon = track.icon;
+              const selected = selectedTracks.includes(track.id);
               return (
                 <button
-                  key={mod}
-                  onClick={() => toggleCustom(mod)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
-                    on
-                      ? 'border-amber-400/60 bg-amber-500/20 text-stone-200'
-                      : 'border-amber-500/20 bg-black/30 text-stone-400 hover:border-amber-400/40'
+                  key={track.id}
+                  onClick={() => toggleTrack(track.id)}
+                  className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition duration-200 cursor-pointer ${
+                    selected
+                      ? 'border-[#D4AF37] bg-[#FFFFFF] shadow-md ring-1 ring-[#D4AF37]'
+                      : 'border-[#E6C878] bg-[#FFFCF7] hover:border-[#D4AF37]'
                   }`}
                 >
-                  {on && <CheckCircle2 size={12} className="text-amber-400" />}
-                  {mod}
+                  <div className="relative flex items-start justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E6C878] bg-[#FFF1F2] text-[#7A0018]">
+                      <Icon className="h-5 w-5 text-[#7A0018]" />
+                    </div>
+                    {selected && <CheckCircle2 className="h-5 w-5 text-[#10B981]" />}
+                  </div>
+                  <h4 className="relative mt-4 font-sans text-lg font-bold text-[#111827]">{track.name}</h4>
+                  <p className="relative mt-1 text-xs text-[#4B5563]">{track.desc}</p>
+                  <span className="relative mt-3 inline-block font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">
+                    Flagship · Royal Red &amp; Gold
+                  </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Smart Suggestion engine — recommends add-ons from current selection */}
-          <SmartSuggestions
-            picks={customPicks}
-            tracks={selectedTracks}
-            onAdd={toggleCustom}
-          />
-        </GlassPanel>
-      </motion.div>
+          {/* Build your own picker */}
+          <GlassPanel className="p-6 border-[#E6C878]">
+            <div className="flex items-center gap-2">
+              <Zap size={16} className="text-[#7A0018]" />
+              <h4 className="font-sans text-lg font-bold text-[#111827]">Build Your Own Track</h4>
+            </div>
+            <p className="mt-1 text-sm text-[#4B5563]">Compose a custom report from modular components.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {BUILD_YOUR_OWN.map((mod) => {
+                const on = customPicks.includes(mod);
+                return (
+                  <button
+                    key={mod}
+                    onClick={() => toggleCustom(mod)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-sans text-xs font-medium transition cursor-pointer ${
+                      on
+                        ? 'border-[#D4AF37] bg-[#7A0018] text-[#FFFFFF]'
+                        : 'border-[#E6C878] bg-[#FFFCF7] text-[#4B5563] hover:border-[#D4AF37]'
+                    }`}
+                  >
+                    {on && <CheckCircle2 size={12} className="text-[#FFFFFF]" />}
+                    {mod}
+                  </button>
+                );
+              })}
+            </div>
+          </GlassPanel>
+        </motion.div>
       </div>
 
-      {/* Generate Report button — spans bottom of data entry */}
+      {/* Generate Report button */}
       <div className="sticky bottom-4 z-10">
         <button
           onClick={onGenerate}
-          className="btn-royal flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-bold shadow-[0_8px_32px_rgba(245,158,11,0.35)]"
+          className="btn-royal-red flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-bold shadow-lg cursor-pointer"
         >
           <Sparkles size={18} /> Generate Report
-          <span className="ml-2 rounded-full bg-black/20 px-2 py-0.5 text-xs">
+          <span className="ml-2 rounded-full bg-[#FFFFFF]/20 px-2 py-0.5 font-mono text-xs text-[#FFFFFF]">
             {selectedTracks.length + customPicks.length} modules
           </span>
         </button>
@@ -697,19 +768,19 @@ function GenericVerticalPanel({ vertical }) {
         icon={Icon}
         kicker="Engagement Modules"
         title={`${vertical?.name} Modules`}
-        subtitle="Royal-grade engagement workflows tailored to this vertical."
+        subtitle="Sovereign engagement workflows tailored to this vertical."
       />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {cards.map((c) => {
           const CIcon = c.icon;
           return (
-            <GlassPanel key={c.title} className="group p-5 transition hover:border-amber-400/40">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-400/30 bg-amber-500/10">
-                <CIcon className="h-5 w-5 text-amber-400" />
+            <GlassPanel key={c.title} className="group p-5 transition hover:border-[#D4AF37]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#E6C878] bg-[#FFF1F2] text-[#7A0018]">
+                <CIcon className="h-5 w-5 text-[#7A0018]" />
               </div>
-              <h4 className="mt-4 font-serif text-lg font-bold text-stone-100">{c.title}</h4>
-              <p className="mt-1 text-sm text-stone-400">{c.desc}</p>
-              <button className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-amber-300 transition hover:gap-2">
+              <h4 className="mt-4 font-sans text-lg font-bold text-[#111827]">{c.title}</h4>
+              <p className="mt-1 text-sm text-[#4B5563]">{c.desc}</p>
+              <button className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#7A0018] transition hover:gap-2 cursor-pointer">
                 Explore <ChevronRight size={13} />
               </button>
             </GlassPanel>
@@ -739,24 +810,24 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
         </RoyalButton>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {columns.map((col) => {
           const items = reports.filter((r) => r.status === col.status);
           return (
-            <div key={col.status} className="flex flex-col rounded-2xl border border-amber-500/15 bg-black/30 backdrop-blur-md">
+            <div key={col.status} className="flex flex-col rounded-2xl border border-[#E6C878] bg-[#FFFFFF] shadow-xs">
               {/* Column header */}
-              <div className="flex items-center justify-between border-b border-amber-500/10 px-4 py-3">
+              <div className="flex items-center justify-between border-b border-[#E6C878] px-4 py-3 bg-[#FFFCF7]">
                 <div className="flex items-center gap-2">
                   <StatusDot status={col.status} />
-                  <span className="text-sm font-bold uppercase tracking-wider text-stone-100">{col.status}</span>
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#111827]">{col.status}</span>
                 </div>
-                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-300">{items.length}</span>
+                <span className="rounded-md border border-[#E6C878] bg-[#FFFFFF] px-2 py-0.5 font-mono text-xs font-bold text-[#7A0018]">{items.length}</span>
               </div>
-              <div className="border-b border-amber-500/10 bg-amber-500/[0.03] px-4 py-2">
-                <span className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-amber-300/70">
+              <div className="border-b border-[#E6C878] bg-[#FBF3D5]/60 px-4 py-2">
+                <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">
                   Action · {col.action}
                 </span>
-                <p className="mt-0.5 text-[0.68rem] text-stone-200/45">{col.note}</p>
+                <p className="mt-0.5 text-[0.68rem] text-[#6B7280]">{col.note}</p>
               </div>
 
               {/* Cards */}
@@ -770,31 +841,31 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.25 }}
-                      className="group rounded-xl border border-amber-500/20 bg-gradient-to-br from-white/[0.04] to-transparent p-3.5 transition hover:border-amber-400/45 hover:shadow-[0_0_20px_rgba(245,158,11,0.12)]"
+                      className="group rounded-xl border border-[#E6C878] bg-[#FFFFFF] p-3.5 transition hover:border-[#D4AF37] hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <h5 className="text-sm font-semibold leading-snug text-stone-100">{r.name}</h5>
+                        <h5 className="font-sans text-base font-bold leading-snug text-[#111827]">{r.name}</h5>
                         <StatusBadge status={r.status} />
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {r.tags.map((t) => (
-                          <span key={t} className="rounded-md bg-white/5 px-1.5 py-0.5 text-[0.62rem] text-stone-400">{t}</span>
+                          <span key={t} className="rounded-md bg-[#FBF3D5] px-1.5 py-0.5 font-mono text-[0.62rem] text-[#78350F] border border-[#E6C878]">{t}</span>
                         ))}
                       </div>
 
-                      {/* Score (only when published) */}
+                      {/* Score */}
                       {r.status === 'PUBLISHED' && r.score > 0 && (
                         <div className="mt-3 flex items-center gap-2">
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/40">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E5E7EB]">
                             <div
-                              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600"
+                              className="h-full rounded-full bg-[#7A0018]"
                               style={{ width: `${r.score}%` }}
                             />
                           </div>
-                          <span className="text-xs font-bold text-amber-300">{r.score}</span>
+                          <span className="font-mono text-xs font-bold text-[#7A0018]">{r.score}</span>
                           <button
                             onClick={() => setExpandedReport(expandedReport === r.id ? null : r.id)}
-                            className="text-amber-300/60 transition hover:text-stone-300"
+                            className="text-[#6B7280] transition hover:text-[#111827] cursor-pointer"
                             aria-label="Expand"
                           >
                             <ChevronDown size={14} className={`transition ${expandedReport === r.id ? 'rotate-180' : ''}`} />
@@ -810,21 +881,21 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="mt-3 space-y-2 rounded-lg border border-amber-500/15 bg-black/30 p-3">
+                            <div className="mt-3 space-y-2 rounded-lg border border-[#E6C878] bg-[#FFFCF7] p-3">
                               {[
                                 { k: 'Market Demand', v: 88 },
                                 { k: 'Tech Feasibility', v: 72 },
                                 { k: 'Unit Economics', v: 90 },
                               ].map((m) => (
                                 <div key={m.k} className="flex items-center gap-2 text-[0.68rem]">
-                                  <span className="w-28 text-stone-400">{m.k}</span>
-                                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-black/40">
-                                    <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600" style={{ width: `${m.v}%` }} />
+                                  <span className="w-28 text-[#6B7280]">{m.k}</span>
+                                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#E5E7EB]">
+                                    <div className="h-full bg-[#7A0018]" style={{ width: `${m.v}%` }} />
                                   </div>
-                                  <span className="w-7 text-right font-bold text-amber-300">{m.v}</span>
+                                  <span className="w-7 text-right font-mono font-bold text-[#7A0018]">{m.v}</span>
                                 </div>
                               ))}
-                              <button className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-500/10 py-2 text-xs font-semibold text-stone-300 transition hover:bg-amber-500/20">
+                              <button className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#E6C878] bg-[#FFFFFF] py-2 font-mono text-xs font-semibold text-[#111827] transition hover:bg-[#FBF3D5] cursor-pointer">
                                 <Download size={13} /> Download Artifact
                               </button>
                             </div>
@@ -837,15 +908,15 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                         <button
                           onClick={() => moveReport(r.id, -1)}
                           disabled={r.status === 'RECEIVED'}
-                          className="text-[0.62rem] text-stone-500 transition hover:text-stone-300 disabled:opacity-30"
+                          className="font-mono text-[0.62rem] text-[#6B7280] transition hover:text-[#111827] disabled:opacity-30 cursor-pointer"
                         >
                           ← Back
                         </button>
-                        <span className="text-[0.6rem] uppercase tracking-wider text-amber-300/40">{r.vertical}</span>
+                        <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[#7A0018]">{r.vertical}</span>
                         <button
                           onClick={() => moveReport(r.id, 1)}
                           disabled={r.status === 'PUBLISHED'}
-                          className="text-[0.62rem] text-stone-500 transition hover:text-stone-300 disabled:opacity-30"
+                          className="font-mono text-[0.62rem] text-[#6B7280] transition hover:text-[#111827] disabled:opacity-30 cursor-pointer"
                         >
                           Advance →
                         </button>
@@ -854,7 +925,7 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                   ))}
                 </AnimatePresence>
                 {items.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-amber-500/15 px-3 py-8 text-center text-xs text-stone-200/35">
+                  <div className="rounded-xl border border-dashed border-[#E6C878] px-3 py-8 text-center text-xs text-[#6B7280]">
                     No reports in this stage
                   </div>
                 )}
@@ -876,7 +947,7 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/50 p-4 backdrop-blur-xs"
       onClick={onClose}
     >
       <motion.div
@@ -884,25 +955,24 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.92, y: 16, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-[#1a0807] to-[#0a0606] shadow-[0_24px_80px_rgba(0,0,0,0.6)]"
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-[#D4AF37] bg-[#FFFFFF] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative flex items-center justify-between border-b border-amber-500/15 px-6 py-4">
-          <div className="pointer-events-none absolute -left-4 -top-4 h-20 w-20 rounded-full bg-amber-500/20 blur-2xl" />
+        <div className="relative flex items-center justify-between border-b border-[#E6C878] bg-[#FFFCF7] px-6 py-4">
           <div className="relative flex items-center gap-2">
-            <Crown className="h-5 w-5 text-amber-400" />
-            <h3 className="font-serif text-lg font-bold text-shimmer-gold">Generate Royal Report</h3>
+            <Crown className="h-5 w-5 text-[#7A0018]" />
+            <h3 className="font-sans text-lg font-bold text-[#111827]">Generate AI Strategy Report</h3>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-stone-500 transition hover:bg-white/5 hover:text-stone-100">
+          <button onClick={onClose} className="rounded-lg p-1 text-[#6B7280] transition hover:bg-[#FBF3D5] hover:text-[#111827] cursor-pointer">
             <X size={18} />
           </button>
         </div>
 
         {/* Body */}
         <div className="px-6 py-6">
-          <p className="text-sm text-stone-300">
-            Compose a new report for the <strong className="text-stone-300">{vertical?.name}</strong> vertical.
+          <p className="text-sm text-[#4B5563] leading-relaxed">
+            Compose a new report for the <strong className="text-[#111827]">{vertical?.name}</strong> vertical.
             Selected modules will be synthesized into a flagship deliverable.
           </p>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -911,26 +981,26 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
               { icon: Sparkles, label: 'Synthesize' },
               { icon: Download, label: 'Deliver' },
             ].map((step, i) => (
-              <div key={step.label} className="rounded-xl border border-amber-500/15 bg-black/30 p-3">
-                <step.icon size={16} className="mx-auto text-amber-400" />
-                <p className="mt-1.5 text-[0.68rem] text-stone-400">{i + 1}. {step.label}</p>
+              <div key={step.label} className="rounded-xl border border-[#E6C878] bg-[#FFFCF7] p-3">
+                <step.icon size={16} className="mx-auto text-[#7A0018]" />
+                <p className="mt-1.5 font-mono text-[0.68rem] text-[#6B7280]">{i + 1}. {step.label}</p>
               </div>
             ))}
           </div>
           {loading && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-stone-300">
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[#4B5563]">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                className="h-4 w-4 rounded-full border-2 border-amber-400/30 border-t-amber-400"
+                className="h-4 w-4 rounded-full border-2 border-[#7A0018]/30 border-t-[#7A0018]"
               />
-              Synthesizing royal insights…
+              Synthesizing neural insights...
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 border-t border-amber-500/15 px-6 py-4">
+        <div className="flex justify-end gap-3 border-t border-[#E6C878] bg-[#FFFCF7] px-6 py-4">
           <GhostButton onClick={onClose}>Cancel</GhostButton>
           <RoyalButton onClick={onConfirm} disabled={loading}>
             <Sparkles size={15} /> {loading ? 'Generating…' : 'Confirm & Generate'}
@@ -948,11 +1018,11 @@ function SectionTitle({ icon: Icon, kicker, title, subtitle, noMargin }) {
   return (
     <div className={noMargin ? '' : 'mb-1'}>
       <div className="flex items-center gap-2">
-        {Icon && <Icon size={16} className="text-amber-400" />}
-        <span className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-amber-300/70">{kicker}</span>
+        {Icon && <Icon size={16} className="text-[#7A0018]" />}
+        <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">{kicker}</span>
       </div>
-      <h2 className="mt-1 font-serif text-2xl font-bold leading-tight text-stone-100 md:text-3xl">{title}</h2>
-      {subtitle && <p className="mt-1 max-w-2xl text-sm text-stone-400">{subtitle}</p>}
+      <h2 className="mt-1 font-sans text-2xl font-bold leading-tight text-[#111827] md:text-3xl">{title}</h2>
+      {subtitle && <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">{subtitle}</p>}
     </div>
   );
 }
@@ -960,97 +1030,14 @@ function SectionTitle({ icon: Icon, kicker, title, subtitle, noMargin }) {
 function LayerBadge({ n, title, hint }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-400/40 bg-gradient-to-br from-amber-500/25 to-transparent font-serif text-sm font-bold text-amber-300">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E6C878] bg-[#FFFCF7] font-mono text-sm font-bold text-[#7A0018]">
         {n}
       </div>
       <div>
-        <span className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-amber-300/60">Layer {n}</span>
-        <h3 className="font-serif text-lg font-bold text-stone-100">{title}</h3>
+        <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">Layer {n}</span>
+        <h3 className="font-sans text-lg font-bold text-[#111827]">{title}</h3>
       </div>
-      <span className="ml-1 hidden text-xs text-stone-200/40 sm:inline">— {hint}</span>
-    </div>
-  );
-}
-
-/* ============================================================
-   SMART SUGGESTION ENGINE (Zai upsell module)
-   Analyzes current selection + filled clusters, recommends
-   high-value add-ons achievable with minimal extra inputs.
-   ============================================================ */
-function SmartSuggestions({ picks, tracks, onAdd }) {
-  // Recommendation rules: each keyed on what the user already has,
-  // suggesting a module + the small incremental cost to unlock it.
-  const RULES = [
-    {
-      when: ['Market Sizing'],
-      suggest: 'Competitor Teardown',
-      reason: 'You have market sizing — a competitor teardown needs only 3 more fields and completes Cluster 1.',
-      addFields: 3,
-    },
-    {
-      when: ['Market Sizing', 'Competitor Teardown'],
-      suggest: 'Pricing Strategy',
-      reason: 'With market + competitor data mapped, pricing strategy unlocks with just 2 extra inputs.',
-      addFields: 2,
-    },
-    {
-      when: ['Pricing Strategy'],
-      suggest: 'Financial Model',
-      reason: 'Pricing is set — a full financial model needs only unit costs & growth rate.',
-      addFields: 4,
-    },
-    {
-      when: ['GTM Plan'],
-      suggest: 'OKR Framework',
-      reason: 'Your GTM is defined — align OKRs to it with just 1 objective input.',
-      addFields: 1,
-    },
-    {
-      when: ['Financial Model'],
-      suggest: 'Risk Register',
-      reason: 'A financial model pairs naturally with a risk register (3 fields).',
-      addFields: 3,
-    },
-  ];
-
-  const suggestions = RULES.filter(
-    (r) => r.when.every((w) => picks.includes(w)) && !picks.includes(r.suggest)
-  ).slice(0, 3);
-
-  if (suggestions.length === 0) return null;
-
-  return (
-    <div className="mt-5 rounded-xl border border-amber-400/25 bg-gradient-to-br from-amber-500/10 to-transparent p-4">
-      <div className="flex items-center gap-2">
-        <Sparkles size={14} className="text-amber-400" />
-        <span className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-amber-300/80">
-          Zai Smart Suggestion
-        </span>
-      </div>
-      <p className="mt-1 text-[0.68rem] text-stone-400">
-        Based on your {picks.length} selected module{picks.length !== 1 ? 's' : ''} and {tracks.length} flagship track{tracks.length !== 1 ? 's' : ''}:
-      </p>
-      <div className="mt-3 space-y-2">
-        {suggestions.map((s) => (
-          <div key={s.suggest} className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/15 bg-black/30 px-3 py-2.5">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-stone-100">{s.suggest}</span>
-                <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-wider text-amber-300">
-                  +{s.addFields} field{s.addFields !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <p className="mt-0.5 text-[0.66rem] text-stone-500">{s.reason}</p>
-            </div>
-            <button
-              onClick={() => onAdd(s.suggest)}
-              className="btn-royal shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold"
-            >
-              Add
-            </button>
-          </div>
-        ))}
-      </div>
+      <span className="ml-1 hidden text-xs text-[#6B7280] sm:inline">— {hint}</span>
     </div>
   );
 }
