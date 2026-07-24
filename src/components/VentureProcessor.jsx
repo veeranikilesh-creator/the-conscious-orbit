@@ -84,11 +84,11 @@ const PIPELINE = [
 
 const COLOR_MAP = {
   royal: {
-    badge: 'bg-[#7A0018] text-[#FFFFFF] border-[#D4AF37]',
+    badge: 'bg-[#D4AF37] text-[#050505] border-[#F4D67A] font-bold',
     border: 'border-[#D4AF37]/50',
-    bg: 'bg-[#7A0018]',
-    text: 'text-[#E6C878]',
-    fill: 'bg-[#7A0018]',
+    bg: 'bg-[#111111]',
+    text: 'text-[#F4D67A]',
+    fill: 'bg-[#D4AF37]',
   },
   gold: {
     badge: 'bg-[#78350F]/80 text-[#E6C878] border-[#E6C878]',
@@ -139,15 +139,15 @@ export default function VentureProcessor() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Cpu size={16} className="text-[#7A0018]" />
-            <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">
+            <Cpu size={16} className="text-[#D4AF37]" />
+            <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#F4D67A]">
               Processing Architecture
             </span>
           </div>
-          <h2 className="mt-1 font-sans text-2xl font-bold leading-tight text-[#111827] md:text-3xl">
+          <h2 className="mt-1 font-sans text-2xl font-bold leading-tight text-[#F2F2F2] md:text-3xl">
             Venture Intelligence Pipeline
           </h2>
-          <p className="mt-1 max-w-xl text-sm text-[#4B5563]">
+          <p className="mt-1 max-w-xl text-sm text-[#CFCFCF]">
             Interactive four-stage pipeline: from raw discovery input to the final Conscious Orbital Score.
           </p>
         </div>
@@ -169,42 +169,50 @@ export default function VentureProcessor() {
         </button>
       </div>
 
-      {/* PIPELINE NODES STRIP */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* PIPELINE CONNECTED HORIZONTAL JOURNEY NODES */}
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PIPELINE.map((p, i) => {
           const colors = COLOR_MAP[p.color];
           const active = activeStage === i;
           return (
-            <button
-              key={p.stage}
-              onClick={() => setActiveStage(i)}
-              className={`group relative flex flex-col rounded-2xl border p-4 text-left transition-all duration-200 cursor-pointer ${
-                active
-                  ? 'border-[#D4AF37] bg-[#4C0519] shadow-md ring-1 ring-[#D4AF37]'
-                  : 'border-[#D4AF37]/40 bg-[#350310] hover:border-[#D4AF37]'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#FECDD3]">
-                  Stage 0{i + 1}
-                </span>
-                <span className={`rounded-md border px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider ${colors.badge}`}>
-                  {p.stage}
-                </span>
-              </div>
-              <h4 className="mt-3 font-sans text-base font-bold text-[#FFFFFF] group-hover:text-[#E6C878]">
-                {p.title}
-              </h4>
-              <p className="mt-1 font-mono text-[0.68rem] text-[#FECDD3]/70 truncate">
-                {p.input} → {p.output}
-              </p>
-              {active && (
-                <motion.div
-                  layoutId="active-stage-indicator"
-                  className="mt-3 h-1 w-full rounded-full bg-[#E6C878]"
-                />
+            <div key={p.stage} className="relative">
+              <button
+                onClick={() => setActiveStage(i)}
+                className={`group relative flex flex-col w-full rounded-[22px] border p-5 text-left transition-all duration-200 cursor-pointer ${
+                  active
+                    ? 'border-[#D4AF37] bg-[#121212] shadow-md ring-1 ring-[#D4AF37]'
+                    : 'border-[rgba(212,175,55,0.12)] bg-[#121212] hover:border-[#D4AF37] hover:-translate-y-1'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#9A9A9A]">
+                    0{i + 1}
+                  </span>
+                  <span className={`rounded-md border px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider ${colors.badge}`}>
+                    {p.stage}
+                  </span>
+                </div>
+                <h4 className="mt-3 font-sans text-base font-bold text-[#F8F8F8] group-hover:text-[#D4AF37] transition">
+                  {p.title}
+                </h4>
+                <p className="mt-1 font-mono text-[0.65rem] text-[#CFCFCF] truncate">
+                  {p.input} → {p.output}
+                </p>
+                {active && (
+                  <motion.div
+                    layoutId="active-stage-indicator"
+                    className="mt-3 h-1 w-full rounded-full bg-[#D4AF37]"
+                  />
+                )}
+              </button>
+
+              {/* Connecting Gold Progress Line */}
+              {i < PIPELINE.length - 1 && (
+                <div className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 hidden lg:block pointer-events-none">
+                  <div className="h-0.5 w-4 bg-gradient-to-r from-[#D4AF37] to-[#D4AF37]/20" />
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
@@ -231,14 +239,14 @@ export default function VentureProcessor() {
 function StageDetailCard({ stage, colors, index }) {
   const c = colors;
   return (
-    <GlassPanel className="overflow-hidden p-0 border-[#D4AF37]/50 bg-[#350310]">
-      <div className="flex items-center justify-between border-b border-[#D4AF37]/40 bg-[#4C0519]/90 px-6 py-4">
+    <GlassPanel className="overflow-hidden p-0 border-[rgba(212,175,55,0.25)] bg-[#111111]">
+      <div className="flex items-center justify-between border-b border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-6 py-4">
         <div className="flex items-center gap-3">
           <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${c.bg} font-mono text-sm font-bold ${c.text}`}>
             0{index + 1}
           </div>
           <div>
-            <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#FECDD3]">Active Inspection</span>
+            <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#F4D67A]">Active Inspection</span>
             <h4 className="font-sans text-lg font-bold text-[#FFFFFF]">{stage.title}</h4>
           </div>
         </div>
@@ -249,18 +257,18 @@ function StageDetailCard({ stage, colors, index }) {
 
       <div className="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_1.2fr]">
         {/* Left */}
-        <div className="border-b border-[#D4AF37]/40 p-6 lg:border-b-0 lg:border-r">
-          <p className="text-sm text-[#FECDD3]/90 leading-relaxed">{stage.desc}</p>
-          <h5 className="mt-5 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">Core Processing Modules</h5>
+        <div className="border-b border-[rgba(212,175,55,0.18)] p-6 lg:border-b-0 lg:border-r">
+          <p className="text-sm text-[#CFCFCF] leading-relaxed">{stage.desc}</p>
+          <h5 className="mt-5 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">Core Processing Modules</h5>
           <div className="mt-3 space-y-2">
             {stage.modules.map((m) => (
-              <div key={m.name} className={`flex items-center gap-3 rounded-xl border border-[#D4AF37]/40 bg-[#3B0413] p-3`}>
+              <div key={m.name} className={`flex items-center gap-3 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3`}>
                 <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${c.bg}`}>
                   <m.icon size={16} className={c.text} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#FFFFFF]">{m.name}</p>
-                  <p className="font-mono text-[0.66rem] text-[#FECDD3]/70">Module · {stage.stage}</p>
+                  <p className="font-mono text-[0.66rem] text-[#9A9A9A]">Module · {stage.stage}</p>
                 </div>
               </div>
             ))}
@@ -269,19 +277,19 @@ function StageDetailCard({ stage, colors, index }) {
 
         {/* Right */}
         <div className="p-6">
-          <h5 className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">Key Input / Output</h5>
+          <h5 className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">Key Input / Output</h5>
           <div className="mt-3 space-y-2">
             {stage.detail.map((d) => (
-              <div key={d.label} className="flex items-center justify-between gap-3 rounded-xl border border-[#D4AF37]/40 bg-[#380312] px-4 py-2.5">
-                <span className="font-mono text-[0.7rem] uppercase tracking-wider text-[#FECDD3]">{d.label}</span>
+              <div key={d.label} className="flex items-center justify-between gap-3 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#050505] px-4 py-2.5">
+                <span className="font-mono text-[0.7rem] uppercase tracking-wider text-[#CFCFCF]">{d.label}</span>
                 <span className="text-right text-sm font-semibold text-[#FFFFFF]">{d.value}</span>
               </div>
             ))}
           </div>
-          <div className={`mt-4 flex items-center gap-2 rounded-xl border border-[#D4AF37]/40 bg-[#4C0519]/80 p-3`}>
-            <Zap size={14} className="text-[#E6C878]" />
-            <span className="text-xs text-[#FECDD3]">
-              Output <strong className="text-[#E6C878]">{stage.output}</strong> is forwarded to the next stage.
+          <div className={`mt-4 flex items-center gap-2 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3`}>
+            <Zap size={14} className="text-[#D4AF37]" />
+            <span className="text-xs text-[#CFCFCF]">
+              Output <strong className="text-[#F4D67A]">{stage.output}</strong> is forwarded to the next stage.
             </span>
           </div>
         </div>
@@ -299,50 +307,52 @@ function ScoreAggregatorCard() {
   ];
 
   return (
-    <GlassPanel className="p-6 md:p-8 border-[#D4AF37]/60 bg-gradient-to-br from-[#4C0519]/90 via-[#3B0413]/90 to-[#2A020D]/95 text-white">
+    <GlassPanel className="p-6 border-[rgba(212,175,55,0.15)] bg-[#151515] text-white rounded-[22px]">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div>
+        <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Award size={16} className="text-[#E6C878]" />
-            <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#E6C878]">
+            <Award size={16} className="text-[#D4AF37]" />
+            <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
               Score Aggregator
             </span>
           </div>
-          <h3 className="mt-1 font-sans text-2xl font-bold text-[#FFFFFF]">Conscious Orbital Score Synthesis</h3>
-          <p className="mt-1 max-w-lg text-sm text-[#FECDD3]/80">
+          <h3 className="font-sans text-2xl font-bold text-[#F8F8F8]">Conscious Orbital Score Synthesis</h3>
+          <p className="max-w-lg text-xs text-[#CFCFCF]">
             Weighted formula synthesizing feasibility, TAM metrics, unit economics, and GTM readiness.
           </p>
         </div>
 
-        <div className="flex items-center gap-4 rounded-2xl border border-[#D4AF37] bg-[#7A0018]/80 p-4 shadow-md">
+        {/* RIGHT: Large Final Score Card */}
+        <div className="flex items-center gap-4 rounded-xl border border-[rgba(212,175,55,0.15)] bg-[#1B1B1B] p-4 shadow-sm">
           <div className="text-center font-mono">
-            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#FECDD3]">Final Score</p>
-            <p className="font-sans text-4xl font-extrabold text-[#E6C878]">86<span className="text-xs text-[#FECDD3]">/100</span></p>
+            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Final Score</p>
+            <p className="font-sans text-3xl font-extrabold text-[#F8F8F8]">86<span className="text-xs text-[#9A9A9A]">/100</span></p>
           </div>
-          <div className="h-10 w-px bg-[#D4AF37]/60" />
-          <div className="text-center font-mono">
-            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#FECDD3]">Decision</p>
-            <span className="rounded-md border border-[#34D399] bg-[#065F46]/90 px-2 py-0.5 text-xs font-bold text-[#A7F3D0]">
+          <div className="h-10 w-px bg-[rgba(212,175,55,0.2)]" />
+          <div className="text-center font-mono space-y-1">
+            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Decision</p>
+            <span className="rounded-md border border-[#10B981] bg-[#065F46]/80 px-2 py-0.5 text-xs font-bold text-[#10B981]">
               1 · PROCEED
             </span>
           </div>
         </div>
       </div>
 
+      {/* LEFT: 4 Compact Score Cards */}
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((m) => (
-          <div key={m.label} className="rounded-xl border border-[#D4AF37]/40 bg-[#350310] p-3.5 shadow-2xs">
+          <div key={m.label} className="rounded-xl border border-[rgba(212,175,55,0.15)] bg-[#1B1B1B] p-3.5 transition hover:border-[#D4AF37]">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1.5">
-                <m.icon size={14} className="text-[#E6C878]" />
-                <span className="font-mono text-[0.65rem] uppercase text-[#FECDD3]">{m.label}</span>
+                <m.icon size={14} className="text-[#D4AF37]" />
+                <span className="font-mono text-[0.65rem] uppercase text-[#CFCFCF]">{m.label}</span>
               </div>
-              <span className="font-mono text-[0.6rem] text-[#E6C878]">{m.weight}</span>
+              <span className="font-mono text-[0.6rem] text-[#D4AF37]">{m.weight}</span>
             </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="font-sans text-xl font-bold text-[#FFFFFF]">{m.value}</span>
-              <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#2A020D]">
-                <div className="h-full rounded-full bg-[#E6C878]" style={{ width: `${m.value}%` }} />
+            <div className="mt-2.5 flex items-center justify-between">
+              <span className="font-sans text-lg font-bold text-[#F8F8F8]">{m.value}</span>
+              <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#050505]">
+                <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${m.value}%` }} />
               </div>
             </div>
           </div>

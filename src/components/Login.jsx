@@ -8,7 +8,7 @@ import { OrbitBrand, RoyalBackground } from './ui.jsx';
 import { fieldBase } from './ui.jsx';
 
 /* ============================================================
-   ULTRA-LUXURY RED & GOLD SPLIT AUTHENTICATION SCREEN
+   BLACK & GOLD EXECUTIVE AUTHENTICATION SCREEN
    ============================================================ */
 
 export default function Login({ onLogin, onBack }) {
@@ -30,7 +30,7 @@ export default function Login({ onLogin, onBack }) {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-royal-mesh text-[#111827]">
+    <div className="relative min-h-screen overflow-hidden bg-[#050505] text-[#FFFFFF]">
       {/* WebGL Background */}
       <RoyalBackground />
 
@@ -39,20 +39,20 @@ export default function Login({ onLogin, onBack }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="grid w-full overflow-hidden rounded-3xl border border-[#D4AF37] bg-[#FFFFFF] shadow-2xl lg:grid-cols-2"
+          className="grid w-full overflow-hidden rounded-3xl border border-[rgba(212,175,55,0.25)] bg-[#0E0E0E] shadow-2xl lg:grid-cols-2"
         >
-          {/* ===== LEFT — DEEP BURGUNDY & ROYAL RED BRAND HERO PANEL ===== */}
-          <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-b from-[#4C0519] via-[#7A0018] to-[#2A020D] p-10 text-[#FFFFFF] lg:flex">
+          {/* ===== LEFT — BLACK & GOLD BRAND HERO PANEL ===== */}
+          <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-b from-[#111111] via-[#0E0E0E] to-[#050505] p-10 text-[#FFFFFF] lg:flex border-r border-[rgba(212,175,55,0.18)]">
             <div className="pointer-events-none absolute inset-0">
-              <div className="absolute right-0 top-1/4 h-64 w-64 rounded-full bg-[#D4AF37]/25 blur-3xl" />
-              <div className="absolute bottom-10 left-10 h-48 w-48 rounded-full bg-[#E6C878]/20 blur-3xl" />
+              <div className="absolute right-0 top-1/4 h-64 w-64 rounded-full bg-[#D4AF37]/15 blur-3xl" />
+              <div className="absolute bottom-10 left-10 h-48 w-48 rounded-full bg-[#F4D67A]/10 blur-3xl" />
             </div>
 
             {/* Top: back + brand */}
             <div className="relative flex items-center justify-between">
               <button
                 onClick={onBack}
-                className="inline-flex items-center gap-1.5 font-mono text-xs text-[#FECDD3] transition hover:text-[#FFFFFF] cursor-pointer"
+                className="inline-flex items-center gap-1.5 font-mono text-xs text-[#CFCFCF] transition hover:text-[#D4AF37] cursor-pointer"
               >
                 <ArrowLeft size={15} /> Home
               </button>
@@ -66,9 +66,9 @@ export default function Login({ onLogin, onBack }) {
             <div className="relative my-8 flex flex-col items-center text-center">
               <OrbitBrand size={84} />
               <h2 className="mt-8 font-sans text-3xl font-extrabold leading-tight text-[#FFFFFF]">
-                Strategy with <span className="text-[#E6C878]">Sovereignty</span>
+                Strategy with <span className="text-[#F4D67A]">Sovereignty</span>
               </h2>
-              <p className="mt-3 max-w-xs text-sm text-[#FECDD3] leading-relaxed">
+              <p className="mt-3 max-w-xs text-sm text-[#CFCFCF] leading-relaxed">
                 Sign in to run ventures through the four-stage intelligence pipeline and your decision engine.
               </p>
 
@@ -80,7 +80,7 @@ export default function Login({ onLogin, onBack }) {
                   'Conscious Orbital Score & 1/0 decision',
                 ].map((f) => (
                   <div key={f} className="flex items-center gap-2.5">
-                    <CheckCircle2 size={15} className="shrink-0 text-[#E6C878]" />
+                    <CheckCircle2 size={15} className="shrink-0 text-[#D4AF37]" />
                     <span className="text-sm text-[#FFFFFF]">{f}</span>
                   </div>
                 ))}
@@ -88,29 +88,29 @@ export default function Login({ onLogin, onBack }) {
             </div>
 
             {/* Bottom: trust badge */}
-            <div className="relative flex items-center gap-2 rounded-xl border border-[#D4AF37]/40 bg-[#8E1538]/50 px-4 py-3">
-              <ShieldCheck size={15} className="shrink-0 text-[#E6C878]" />
-              <span className="font-mono text-[0.7rem] text-[#FECDD3]">
+            <div className="relative flex items-center gap-2 rounded-xl border border-[rgba(212,175,55,0.2)] bg-[#050505] px-4 py-3">
+              <ShieldCheck size={15} className="shrink-0 text-[#D4AF37]" />
+              <span className="font-mono text-[0.7rem] text-[#CFCFCF]">
                 Enterprise-grade encryption · Sovereign security
               </span>
             </div>
           </div>
 
-          {/* ===== RIGHT — RICH WINE RED AUTH FORM CARD ===== */}
-          <div className="relative bg-gradient-to-b from-[#3B0313] to-[#2A020D] p-8 md:p-10 text-white">
+          {/* ===== RIGHT — DARK FORM CARD ===== */}
+          <div className="relative bg-[#0E0E0E] p-8 md:p-10 text-white">
             {/* Mobile brand header */}
             <div className="mb-8 flex items-center justify-between lg:hidden">
               <div className="flex items-center gap-2">
                 <OrbitBrand size={32} />
                 <span className="font-sans text-sm font-bold text-[#FFFFFF]">Conscious Orbit</span>
               </div>
-              <button onClick={onBack} className="text-[#FECDD3] transition hover:text-[#FFFFFF]">
+              <button onClick={onBack} className="text-[#CFCFCF] transition hover:text-[#D4AF37]">
                 <ArrowLeft size={18} />
               </button>
             </div>
 
             {/* Mode toggle */}
-            <div className="inline-flex rounded-xl border border-[#D4AF37]/50 bg-[#4C0519]/80 p-1">
+            <div className="inline-flex rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#050505] p-1">
               {[
                 { id: 'signin', label: 'Sign In' },
                 { id: 'signup', label: 'Create Account' },
@@ -121,13 +121,13 @@ export default function Login({ onLogin, onBack }) {
                     key={opt.id}
                     onClick={() => setMode(opt.id)}
                     className={`relative rounded-lg px-5 py-2 text-sm font-medium transition cursor-pointer ${
-                      active ? 'text-[#FFFFFF]' : 'text-[#FECDD3] hover:text-[#FFFFFF]'
+                      active ? 'text-[#050505] font-bold' : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
                     }`}
                   >
                     {active && (
                       <motion.span
                         layoutId="auth-tab"
-                        className="absolute inset-0 rounded-lg bg-[#7A0018] border border-[#D4AF37] shadow-xs"
+                        className="absolute inset-0 rounded-lg bg-[#D4AF37] border border-[#F4D67A] shadow-xs"
                       />
                     )}
                     <span className="relative z-10">{opt.label}</span>
@@ -139,15 +139,15 @@ export default function Login({ onLogin, onBack }) {
             {/* Heading */}
             <div className="mt-6">
               <div className="flex items-center gap-2">
-                <Crown size={16} className="text-[#E6C878]" />
-                <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#E6C878]">
+                <Crown size={16} className="text-[#D4AF37]" />
+                <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#F4D67A]">
                   {mode === 'signin' ? 'Welcome Back' : 'Join the Orbit'}
                 </span>
               </div>
               <h1 className="mt-2 font-sans text-3xl font-bold text-[#FFFFFF]">
                 {mode === 'signin' ? 'Sign in to your suite' : 'Create your account'}
               </h1>
-              <p className="mt-2 text-sm text-[#FECDD3]/80">
+              <p className="mt-2 text-sm text-[#CFCFCF]">
                 {mode === 'signin'
                   ? 'Enter your credentials to access the executive dashboard.'
                   : 'Begin your venture intelligence journey in seconds.'}
@@ -197,7 +197,7 @@ export default function Login({ onLogin, onBack }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#FECDD3]/70 transition hover:text-[#FFFFFF] cursor-pointer"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9A9A9A] transition hover:text-[#D4AF37] cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -206,16 +206,16 @@ export default function Login({ onLogin, onBack }) {
 
               {mode === 'signin' && (
                 <div className="flex items-center justify-between text-xs">
-                  <label className="flex items-center gap-2 text-[#FECDD3]/80 cursor-pointer">
+                  <label className="flex items-center gap-2 text-[#CFCFCF] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={remember}
                       onChange={(e) => setRemember(e.target.checked)}
-                      className="rounded border-[#D4AF37] bg-[#3B0413] text-[#7A0018] focus:ring-[#7A0018]"
+                      className="rounded border-[#D4AF37] bg-[#050505] text-[#D4AF37] focus:ring-[#D4AF37]"
                     />
                     Remember me
                   </label>
-                  <a href="#forgot" className="font-semibold text-[#E6C878] hover:underline">
+                  <a href="#forgot" className="font-semibold text-[#F4D67A] hover:underline">
                     Forgot password?
                   </a>
                 </div>
@@ -232,7 +232,7 @@ export default function Login({ onLogin, onBack }) {
                   </>
                 ) : (
                   <>
-                    {mode === 'signin' ? 'Sign In to Executive Suite' : 'Create Sovereign Account'}
+                    {mode === 'signin' ? 'Sign In to Executive Suite' : 'Create Account'}
                     <ArrowRight size={17} />
                   </>
                 )}
@@ -248,11 +248,11 @@ export default function Login({ onLogin, onBack }) {
 function FormField({ label, icon: Icon, children }) {
   return (
     <div>
-      <label className="mb-1.5 block font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#E6C878]">
+      <label className="mb-1.5 block font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#F4D67A]">
         {label}
       </label>
       <div className="relative">
-        <Icon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#E6C878]" />
+        <Icon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
         {children}
       </div>
     </div>

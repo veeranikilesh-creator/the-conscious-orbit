@@ -1,134 +1,131 @@
 @import "tailwindcss";
 
 @layer base {
-  /* Ultra-Luxury Rich Wine Red & Gold Design System Tokens */
+  /* Black & Gold Executive Design System Tokens */
   :root {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   :root {
-    /* Primary Deep Royal Red & Rich Wine Tones */
-    --color-royal-red: #7A0018;
-    --color-wine-red: #8E1538;
-    --color-royal-red-dark: #580011;
+    /* Theme Colors */
+    --color-bg-primary: #050505;
+    --color-bg-secondary: #0E0E0E;
+    --color-bg-card: #111111;
     
-    /* Ivory Background Tones */
-    --color-wine-bg: #FCFAF7;
-    --color-wine-dark: #FBF3D5;
-    --color-burgundy-deep: #7A0018;
-    --color-burgundy-dark: #4C0519;
+    /* Gold Tones */
+    --color-gold-primary: #D4AF37;
+    --color-gold-light: #F4D67A;
+    --color-gold-accent: #C89B3C;
     
-    /* Accent Metallic Gold & Soft Champagne Gold */
-    --color-gold-metallic: #D4AF37;
-    --color-gold-champagne: #E6C878;
-    --color-gold-light: #FBF3D5;
-    
-    /* Dark Wine Surfaces & Typography */
-    --color-bg-wine-card: #450517;
-    --color-bg-wine-surface: #380312;
-    --color-text-white: #FFFFFF;
-    --color-text-rose: #FECDD3;
-    --color-border-gold: rgba(212, 175, 55, 0.45);
+    /* Borders & Glow */
+    --color-border-subtle: rgba(212, 175, 55, 0.18);
+    --color-border-gold: rgba(212, 175, 55, 0.35);
+    --color-hover-glow: rgba(212, 175, 55, 0.35);
+
+    /* Typography */
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: #CFCFCF;
+    --color-text-muted: #9A9A9A;
   }
 
   body {
-    background-color: #FCFAF7;
-    color: #111827;
+    background-color: #050505;
+    color: #FFFFFF;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
 /* ============================================================
-   ULTRA-LUXURY RICH WINE RED & GOLD UTILITIES & LAYERED BACKGROUNDS
+   LAYERED LUXURY BACKGROUNDS & UTILITIES
    ============================================================ */
 
-/* Layered Ivory Background Mesh with Soft Crimson & Golden Radial Glow Orbs */
+/* Layered Black Background with Gold Radial Glow & Grid Overlay */
 .bg-royal-mesh {
-  background-color: #FCFAF7;
+  background-color: #050505;
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(122, 0, 24, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 90% 10%, rgba(212, 175, 55, 0.12) 0%, transparent 40%),
-    radial-gradient(circle at 50% 80%, rgba(142, 21, 56, 0.06) 0%, transparent 55%),
-    radial-gradient(circle at 80% 85%, rgba(251, 243, 213, 0.8) 0%, transparent 50%);
+    radial-gradient(circle at 15% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(244, 214, 122, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 85%, rgba(200, 155, 60, 0.05) 0%, transparent 55%);
   background-attachment: fixed;
 }
 
-/* Luxury Floating Card — Rich Wine Red gradient with thin gold border & soft glow */
+/* Executive Card — Dark Onyx background with subtle gold outline & soft shadow */
 .card-royal-luxury {
-  background: linear-gradient(135deg, rgba(68, 6, 25, 0.88) 0%, rgba(38, 2, 12, 0.94) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.45);
-  border-radius: 18px;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(122, 0, 24, 0.35);
-  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #111111;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.8), 0 0 15px rgba(212, 175, 55, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   color: #FFFFFF;
 }
 
 .card-royal-luxury:hover {
-  border-color: #D4AF37;
-  box-shadow: 0 16px 45px -5px rgba(122, 0, 24, 0.6), 0 0 30px rgba(212, 175, 55, 0.4);
+  border-color: rgba(212, 175, 55, 0.45);
+  box-shadow: 0 18px 45px -5px rgba(0, 0, 0, 0.9), 0 0 25px rgba(212, 175, 55, 0.25);
   transform: translateY(-3px);
 }
 
-/* Glassmorphism Luxury Wine Red Panel */
+/* Glassmorphism Luxury Black Panel */
 .glass-royal-luxury {
-  background: rgba(53, 3, 16, 0.88);
+  background: rgba(14, 14, 14, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.45);
+  border: 1px solid rgba(212, 175, 55, 0.18);
   color: #FFFFFF;
 }
 
-/* Metallic Champagne Gold & Crisp White Shimmer Text */
+/* Gold Gradient Shimmer Text */
 .text-shimmer-champagne {
-  background: linear-gradient(135deg, #FFFFFF 0%, #E6C878 40%, #D4AF37 75%, #FFD1DC 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #F4D67A 50%, #D4AF37 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Field focus glow in Soft Champagne Gold */
+/* Field focus glow in Gold */
 .field-luxury-gold:focus {
   outline: none;
   border-color: #D4AF37;
-  box-shadow: 0 0 0 3.5px rgba(212, 175, 55, 0.35);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
 }
 
-/* Royal Red Primary Button with Golden Hover Glow */
+/* Primary Gold Button: Gold Background, Black Text, Soft Lift */
 .btn-royal-red {
-  background: linear-gradient(135deg, #8E1538 0%, #7A0018 100%);
-  border: 1px solid rgba(212, 175, 55, 0.5);
-  color: #FFFFFF;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 20px rgba(122, 0, 24, 0.5), 0 0 15px rgba(212, 175, 55, 0.2);
+  background: linear-gradient(135deg, #F4D67A 0%, #D4AF37 100%);
+  border: 1px solid #D4AF37;
+  color: #050505;
+  font-weight: 700;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
 }
 
 .btn-royal-red:hover {
-  background: linear-gradient(135deg, #A31B42 0%, #8E1538 100%);
-  border-color: #D4AF37;
-  box-shadow: 0 0 25px rgba(212, 175, 55, 0.6), 0 8px 25px rgba(122, 0, 24, 0.6);
-  transform: translateY(-1.5px);
+  background: linear-gradient(135deg, #FFFFFF 0%, #F4D67A 100%);
+  border-color: #F4D67A;
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45);
+  transform: translateY(-3px);
 }
 
 .btn-royal-red:active {
-  background-color: #580011;
+  background-color: #C89B3C;
   transform: translateY(0);
 }
 
-/* Secondary Translucent Wine Button with Gold Border */
+/* Secondary Button: Transparent, Gold Border, White Text -> Hover Gold Background */
 .btn-royal-gold-outline {
-  background-color: rgba(76, 5, 25, 0.7);
-  border: 1px solid #D4AF37;
-  color: #E6C878;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  background-color: transparent;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: #FFFFFF;
+  font-weight: 600;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-royal-gold-outline:hover {
-  background-color: #7A0018;
-  border-color: #E6C878;
-  color: #FFFFFF;
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4), 0 4px 16px rgba(122, 0, 24, 0.4);
-  transform: translateY(-1px);
+  background-color: #D4AF37;
+  border-color: #D4AF37;
+  color: #050505;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
+  transform: translateY(-2px);
 }
 
 /* Scrollbar */
@@ -138,16 +135,373 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #2A020D;
+  background: #050505;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #8E1538;
-  border: 1px solid #D4AF37;
+  background: #111111;
+  border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #A31B42;
+  background: #D4AF37;
+}
+/* 3D Luxury Flip Cards for Target Domains */
+.flip-card {
+  background: transparent;
+  width: 100%;
+  max-width: 320px;
+  height: 380px;
+  perspective: 1200px;
 }
 
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 22px;
+  padding: 24px;
+
+  backface-visibility: hidden;
+
+  background: linear-gradient(
+      145deg,
+      #111111,
+      #080808
+  );
+
+  border: 1px solid rgba(212,175,55,.25);
+
+  box-shadow:
+      0 20px 40px rgba(0,0,0,.5),
+      inset 0 0 0 1px rgba(255,255,255,.03);
+
+  overflow: hidden;
+}
+
+.flip-card-front::before,
+.flip-card-back::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    background:
+    radial-gradient(circle at top right,
+    rgba(212,175,55,.18),
+    transparent 45%);
+
+    pointer-events: none;
+}
+
+.flip-card-front {
+    color: #fff;
+}
+
+.flip-card-back {
+    transform: rotateY(180deg);
+
+    background:
+    linear-gradient(
+    145deg,
+    #181818,
+    #090909);
+}
+
+.flip-card-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #F5D76E;
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.flip-card-subtitle {
+    color: #C7C7C7;
+    font-size: 14px;
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(244, 214, 122, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 85%, rgba(200, 155, 60, 0.05) 0%, transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Executive Card — Dark Onyx background with subtle gold outline & soft shadow */
+.card-royal-luxury {
+  background: #111111;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.8), 0 0 15px rgba(212, 175, 55, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #FFFFFF;
+}
+
+.card-royal-luxury:hover {
+  border-color: rgba(212, 175, 55, 0.45);
+  box-shadow: 0 18px 45px -5px rgba(0, 0, 0, 0.9), 0 0 25px rgba(212, 175, 55, 0.25);
+  transform: translateY(-3px);
+}
+
+/* Glassmorphism Luxury Black Panel */
+.glass-royal-luxury {
+  background: rgba(14, 14, 14, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  color: #FFFFFF;
+}
+
+/* Gold Gradient Shimmer Text */
+.text-shimmer-champagne {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F4D67A 50%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Field focus glow in Gold */
+.field-luxury-gold:focus {
+  outline: none;
+  border-color: #D4AF37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+}
+
+/* Primary Gold Button: Gold Background, Black Text, Soft Lift */
+.btn-royal-red {
+  background: linear-gradient(135deg, #F4D67A 0%, #D4AF37 100%);
+  border: 1px solid #D4AF37;
+  color: #050505;
+  font-weight: 700;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
+}
+
+.btn-royal-red:hover {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F4D67A 100%);
+  border-color: #F4D67A;
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45);
+  transform: translateY(-3px);
+}
+
+.btn-royal-red:active {
+  background-color: #C89B3C;
+  transform: translateY(0);
+}
+
+/* Secondary Button: Transparent, Gold Border, White Text -> Hover Gold Background */
+.btn-royal-gold-outline {
+  background-color: transparent;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: #FFFFFF;
+  font-weight: 600;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-royal-gold-outline:hover {
+  background-color: #D4AF37;
+  border-color: #D4AF37;
+  color: #050505;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #111111;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+/* 3D Luxury Flip Cards for Target Domains */
+.flip-card {
+  background: transparent;
+  width: 100%;
+  max-width: 320px;
+  height: 380px;
+  perspective: 1200px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 22px;
+  padding: 24px;
+
+  backface-visibility: hidden;
+
+  background: linear-gradient(
+      145deg,
+      #111111,
+      #080808
+  );
+
+  border: 1px solid rgba(212,175,55,.25);
+
+  box-shadow:
+      0 20px 40px rgba(0,0,0,.5),
+      inset 0 0 0 1px rgba(255,255,255,.03);
+
+  overflow: hidden;
+}
+
+.flip-card-front::before,
+.flip-card-back::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    background:
+    radial-gradient(circle at top right,
+    rgba(212,175,55,.18),
+    transparent 45%);
+
+    pointer-events: none;
+}
+
+.flip-card-front {
+    color: #fff;
+}
+
+.flip-card-back {
+    transform: rotateY(180deg);
+
+    background:
+    linear-gradient(
+    145deg,
+    #181818,
+    #090909);
+}
+
+.flip-card-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #F5D76E;
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.flip-card-subtitle {
+    color: #C7C7C7;
+    font-size: 14px;
+    line-height: 1.7;
+    width: 90%;
+    text-align: center;
+}
+
+.flip-card:hover .flip-card-front,
+.flip-card:hover .flip-card-back {
+    box-shadow:
+    0 0 30px rgba(212,175,55,.18),
+    0 25px 60px rgba(0,0,0,.55);
+}
+
+/* ============================================================
+   MAGIC UI — DEDICATED SCROLL VELOCITY NAVBAR CSS
+   ============================================================ */
+.scroll-velocity-header {
+  background: #0B0B0B;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.scroll-velocity-container {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+}
+
+.scroll-velocity-track {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  width: max-content;
+  will-change: transform;
+}
+
+.scroll-velocity-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 28px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.25px;
+  color: #D5D5D5;
+  border-radius: 9999px;
+  white-space: nowrap;
+  transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.scroll-velocity-item:hover {
+  color: #D4AF37;
+  transform: translateY(-2px);
+}
+
+.scroll-velocity-item.active {
+  background: #D4AF37;
+  color: #050505;
+  border-color: #F4D67A;
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.18);
+}
+
+.scroll-velocity-item.active:hover {
+  color: #050505;
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.35);
+}

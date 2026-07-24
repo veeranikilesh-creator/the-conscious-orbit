@@ -65,14 +65,14 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord){
     fragColor=cppn_fn(uv,0.1*sin(0.3*uTime),0.1*sin(0.69*uTime),0.1*sin(0.44*uTime));
 }
 
-// Ultra-Luxury Red & Gold ambient ramp — maps a 0..1 value onto champagne gold, royal red, and burgundy palette
+// Black & Gold ambient ramp — maps a 0..1 value onto deep black, metallic gold, and champagne highlights
 vec3 royalLuxuryRamp(float t){
-    vec3 c0=vec3(1.000,0.988,0.969);  // warm ivory (#FFFCF7)
-    vec3 c1=vec3(0.902,0.784,0.471);  // champagne gold (#E6C878)
-    vec3 c2=vec3(0.831,0.686,0.216);  // metallic gold (#D4AF37)
-    vec3 c3=vec3(0.557,0.082,0.220);  // wine red (#8E1538)
-    vec3 c4=vec3(0.478,0.000,0.094);  // deep royal red (#7A0018)
-    vec3 c5=vec3(0.298,0.020,0.098);  // deep burgundy (#4C0519)
+    vec3 c0=vec3(0.020,0.020,0.020);  // deep onyx black (#050505)
+    vec3 c1=vec3(0.055,0.055,0.055);  // dark secondary black (#0E0E0E)
+    vec3 c2=vec3(0.450,0.340,0.120);  // deep antique gold
+    vec3 c3=vec3(0.831,0.686,0.216);  // primary metallic gold (#D4AF37)
+    vec3 c4=vec3(0.956,0.839,0.478);  // light gold (#F4D67A)
+    vec3 c5=vec3(1.000,0.950,0.750);  // champagne gold highlight
     vec3 a=mix(c0,c1,smoothstep(0.0,0.25,t));
     vec3 b=mix(a,c2,smoothstep(0.25,0.5,t));
     vec3 c=mix(b,c3,smoothstep(0.5,0.75,t));

@@ -2,410 +2,330 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import {
   GraduationCap, Building2, Factory, Rocket, Crown,
-  ChevronRight, ArrowRight, Sparkles, ShieldCheck,
-  TrendingUp, DollarSign, Target, Award, Play, CheckCircle2,
-  BarChart2, Layers, Activity,
+  ArrowRight, Sparkles, ShieldCheck,
+  Play, BarChart2,
 } from 'lucide-react';
 import {
-  GlassPanel, RoyalHeading, RoyalButton, GhostButton, OrbitBrand, RoyalBackground,
+  RoyalButton, GhostButton, OrbitBrand, RoyalBackground,
 } from './ui.jsx';
 
 /* ============================================================
-   ULTRA-LUXURY RED & GOLD LANDING EXPERIENCE
+   BLACK & GOLD EXECUTIVE MINIMALIST HOME EXPERIENCE
    ============================================================ */
 
 const VERTICALS = [
-  { icon: GraduationCap, name: 'Students & Scholars',      desc: 'Academic counseling, research mentorship & project management.' },
-  { icon: Building2,     name: 'Educational Institutions', desc: 'Curriculum development, faculty training & org diagnosis.' },
-  { icon: Factory,       name: 'MSMEs',                    desc: 'Small-team operations focused on operational bottlenecks.' },
-  { icon: Building2,     name: 'Industries',               desc: 'Large-scale systemic optimization & multi-stakeholder strategy.' },
-  { icon: Rocket,        name: 'Startups',                 desc: 'Idea-to-execution journeys & market validation.' },
+  { icon: GraduationCap, name: 'Students & Scholars', desc: 'Academic counseling & research mentorship' },
+  { icon: Building2,     name: 'Institutions',        desc: 'Curriculum & organizational diagnosis' },
+  { icon: Factory,       name: 'MSMEs',               desc: 'Operational bottleneck diagnostics' },
+  { icon: Building2,     name: 'Industries',          desc: 'Scale systemic optimization' },
+  { icon: Rocket,        name: 'Startups',            desc: 'Market validation & GTM readiness' },
 ];
 
-const PIPELINE = [
-  { n: '01', stage: 'RECEIVED',  title: 'Customer Discovery',   color: 'text-[#7A0018] bg-[#FFF1F2] border-[#FECDD3]', note: 'Idea Statement → Interaction Volume' },
-  { n: '02', stage: 'PENDING',   title: 'Requirement & Profiling', color: 'text-[#78350F] bg-[#FBF3D5] border-[#E6C878]', note: 'B2B/B2C → Sector Profile' },
-  { n: '03', stage: 'PROCESSED', title: 'Market Sizing',        color: 'text-[#7C3AED] bg-[#F5F3FF] border-[#DDD6FE]', note: 'TAM/SAM/SOM → Viability' },
-  { n: '04', stage: 'PUBLISHED', title: 'Strategy Engine',      color: 'text-[#059669] bg-[#ECFDF5] border-[#A7F3D0]', note: 'GTM & OKRs → Decision' },
-];
-
-const TRACKS = [
-  { icon: Target,     name: 'Startup Validation', desc: 'Validate problem-solution fit before committing capital.' },
-  { icon: TrendingUp, name: 'Market Opportunity', desc: 'Map TAM/SAM/SOM and competitive whitespace.' },
-  { icon: DollarSign, name: 'Investor-Ready',     desc: 'Sharpen narrative, unit economics & the ask.' },
+const PIPELINE_STEPS = [
+  { n: '01', title: 'Customer Discovery', desc: 'Raw idea statements & volume signals' },
+  { n: '02', title: 'Profiling & TAM/SAM', desc: 'Sector profiling & market volume sizing' },
+  { n: '03', title: 'Unit Viability',     desc: 'Gross margin & payback calculations' },
+  { n: '04', title: 'Orbital Decision',   desc: '0-100 Score & binary 1/0 GO verdict' },
 ];
 
 const STATS = [
-  { value: '5',     label: 'Target Verticals', growth: '+100% Coverage', icon: Layers },
-  { value: '4',     label: 'Processing Stages', growth: 'Sub-second AI',  icon: Activity },
-  { value: '0–100', label: 'Orbital Score',     growth: '99.4% Precision', icon: BarChart2 },
-  { value: '1 / 0', label: 'Decision Engine',   growth: 'Instant Verdict',  icon: CheckCircle2 },
+  { value: '5', label: 'Vertical Engines' },
+  { value: '4', label: 'Pipeline Stages' },
+  { value: '0–100', label: 'Orbital Index' },
+  { value: '1 / 0', label: 'Binary Verdict' },
 ];
 
 export default function Homepage({ onEnter, onLogin }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#FCFAF7] text-[#111827]">
-      {/* WebGL & Layered Mesh Background */}
+    <div className="relative min-h-screen overflow-hidden bg-[#050505] text-[#FFFFFF] font-sans selection:bg-[#D4AF37] selection:text-[#050505]">
+      {/* Background canvas */}
       <RoyalBackground />
 
-      {/* ===== FLOATING GLASS NAVBAR WITH THIN GOLD BORDER ===== */}
-      <nav className="relative z-20 mx-auto max-w-7xl px-5 py-6 md:px-8">
-        <div className="flex items-center justify-between rounded-full border border-[#D4AF37]/50 bg-[#FFFFFF]/90 px-6 py-3.5 shadow-md backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <OrbitBrand size={38} />
-            <div>
-              <span className="font-sans text-lg font-bold text-[#111827]">The Conscious Orbit</span>
-              <p className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-[#7A0018]">Ultra-Luxury Royal Suite</p>
+      {/* ===== TOP NAVBAR (BRANDING LEFT, USER PROFILE RIGHT) ===== */}
+      <div className="relative z-20 mx-auto max-w-7xl px-6 lg:px-12 pt-8 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <OrbitBrand size={32} />
+          <span className="text-[#D4AF37]/60 font-thin text-base">–</span>
+          <span className="font-sans text-sm font-bold uppercase tracking-[0.2em] text-[#FFFFFF]">
+            the conscious orbit
+          </span>
+        </div>
+
+        {/* User Profile Avatar Trigger */}
+        <button
+          onClick={onLogin}
+          className="group flex items-center gap-2.5 rounded-full border border-[rgba(212,175,55,0.3)] bg-[#0E0E0E]/80 px-3.5 py-1.5 backdrop-blur-md hover:border-[#D4AF37] transition cursor-pointer"
+        >
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-[#D4AF37] to-[#F4D67A] text-[#050505] font-mono text-xs font-bold shadow-xs">
+            EX
+          </div>
+          <span className="hidden sm:inline font-mono text-xs font-semibold text-[#CFCFCF] group-hover:text-[#FFFFFF]">
+            Executive Profile
+          </span>
+        </button>
+      </div>
+
+      {/* ===== HERO SECTION — SPLIT SCREEN LAYOUT ===== */}
+      <header className="relative z-10 mx-auto min-h-[80vh] lg:min-h-[85vh] max-w-7xl px-6 lg:px-12 flex items-center pt-2 pb-10">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 items-center gap-12 lg:gap-8">
+          
+          {/* LEFT SIDE (45% / 5 Cols on Desktop) */}
+          <div className="lg:col-span-6 xl:col-span-5 text-left flex flex-col items-start space-y-5 z-20 -mt-6 lg:-mt-10">
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.12] text-left"
+            >
+              <span className="font-serif italic font-normal tracking-tight text-[#FFFFFF] block">Systemic Sovereignty.</span>
+              <span className="font-serif italic font-normal bg-gradient-to-r from-[#FFFFFF] via-[#F4D67A] to-[#D4AF37] bg-clip-text text-transparent block mt-2">
+                Strategy Platform.
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="max-w-xl font-sans text-base sm:text-lg text-[#CFCFCF] leading-relaxed text-left"
+            >
+              Synthesize raw business ideas into authoritative, sovereign decisions — mapping TAM/SAM opportunity, unit economics, and risk into a single <span className="font-mono font-bold text-[#D4AF37]">Conscious Orbital Score</span>.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="pt-2 flex flex-wrap items-center gap-4"
+            >
+              <RoyalButton onClick={onEnter} className="px-9 py-4 text-sm font-bold shadow-xl">
+                <Play size={16} /> Launch Strategy Engine
+              </RoyalButton>
+              <GhostButton onClick={onLogin} className="px-8 py-4 text-sm font-semibold">
+                Sign In <ArrowRight size={15} />
+              </GhostButton>
+            </motion.div>
+          </div>
+
+          {/* RIGHT SIDE — EXACT HIGH-CONTRAST GOLD CHEVRON ARTWORK (REDUCED THICKNESS, NO FADING) */}
+          <div className="lg:col-span-6 xl:col-span-7 relative flex items-center justify-end z-10 overflow-visible pointer-events-none opacity-30 lg:opacity-100 h-full">
+            <div className="relative w-full lg:w-[130%] xl:w-[145%] lg:-mr-32 xl:-mr-48 flex items-center justify-end h-full">
+              <svg
+                viewBox="0 0 1000 800"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-full h-auto min-h-[90vh] object-cover"
+                preserveAspectRatio="xMaxYMid slice"
+              >
+                <defs>
+                  {/* Solid Vibrant Gold Metallic Gradient — 100% Opacity (No Fading) */}
+                  <linearGradient id="goldMetallicSolid" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#F5D77F" />
+                    <stop offset="35%" stopColor="#D4AF37" />
+                    <stop offset="75%" stopColor="#C89B3C" />
+                    <stop offset="100%" stopColor="#8A6A18" />
+                  </linearGradient>
+
+                  <linearGradient id="goldLineSolid" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#F5D77F" />
+                    <stop offset="100%" stopColor="#D4AF37" />
+                  </linearGradient>
+                </defs>
+
+                {/* 1. Thin Left Tip Gold Line Chevron */}
+                <path
+                  d="M 80 400 L 530 20 M 80 400 L 530 780"
+                  stroke="url(#goldLineSolid)"
+                  strokeWidth="2.5"
+                  strokeLinecap="square"
+                />
+
+                {/* 2. Thinner Width Solid Gold Metallic Chevron Band (100% Opaque) */}
+                <path
+                  d="M 230 400 L 650 0 L 840 0 L 420 400 L 840 800 L 650 800 Z"
+                  fill="url(#goldMetallicSolid)"
+                />
+
+                {/* 3. Outer Right Accent Gold Line Chevron */}
+                <path
+                  d="M 480 400 L 900 0 M 480 400 L 900 800"
+                  stroke="url(#goldLineSolid)"
+                  strokeWidth="2"
+                />
+              </svg>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <GhostButton onClick={onLogin} className="hidden sm:inline-flex">
-              Sign In
-            </GhostButton>
-            <RoyalButton onClick={onEnter}>
-              Enter Suite <ChevronRight size={15} />
-            </RoyalButton>
-          </div>
-        </div>
-      </nav>
 
-      {/* ===== HERO SECTION ===== */}
-      <header className="relative z-10 mx-auto max-w-4xl px-5 pt-8 pb-10 text-center md:px-8 md:pt-12 md:pb-14">
-        <div className="flex w-full flex-col items-center justify-center text-center">
-          {/* Tagline Badge — Follows H6 Font Size with Extra-Bold Gold Border & Champagne Text on Royal Red */}
-          <motion.h6
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mx-auto inline-flex items-center justify-center gap-2.5 rounded-full border-2 border-[#D4AF37] bg-[#7A0018] px-5 py-2 font-mono text-xs sm:text-sm font-extrabold tracking-widest text-[#E6C878] shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-          >
-            <Sparkles size={14} className="text-[#D4AF37] stroke-[2.5]" />
-            ROYAL STRATEGY SYSTEM • CONSCIOUS ORBIT
-          </motion.h6>
-
-          {/* Main Display Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mx-auto mt-6 max-w-3xl font-sans text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.18] text-[#111827] text-center"
-          >
-            <span className="text-[#7A0018] font-black tracking-tight">Systemic Sovereignty.</span>
-            <br />
-            <span className="text-[#111827] font-bold">Luxury Strategy Engine.</span>
-          </motion.h1>
-
-          {/* Subtitle Description */}
-          <motion.p
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="mx-auto mt-5 max-w-2xl font-sans text-base sm:text-lg font-normal text-[#4B5563] leading-relaxed text-center"
-          >
-            An ultra-luxury executive strategy platform designed to process raw business ideas into structured decisions — evaluating market opportunity, unit economics, and execution risk into a single <span className="font-mono font-bold text-[#7A0018]">Conscious Orbital Score</span>.
-          </motion.p>
-
-          {/* Action Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mx-auto mt-8 flex flex-wrap items-center justify-center gap-4"
-          >
-            <RoyalButton onClick={onEnter} className="px-8 py-3.5 text-sm font-semibold shadow-md">
-              <Play size={16} /> Launch Executive Suite
-            </RoyalButton>
-            <GhostButton onClick={onLogin} className="px-7 py-3.5 text-sm font-medium">
-              Sign In <ArrowRight size={15} />
-            </GhostButton>
-          </motion.div>
         </div>
       </header>
 
-      {/* ===== EXECUTIVE STATS MATRIX ===== */}
-      <section className="relative z-10 mx-auto max-w-7xl px-5 py-6 md:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="mx-auto grid max-w-5xl grid-cols-2 gap-4 md:grid-cols-4"
-        >
-          {STATS.map((s) => {
-            const Icon = s.icon;
+      {/* ===== SLEEK MINIMALIST DIVIDER WITH TELEMETRY METRICS ===== */}
+      <div className="relative z-10 mx-auto max-w-5xl px-6">
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(212,175,55,0.4)] to-transparent" />
+        <div className="py-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {STATS.map((s) => (
+            <div key={s.label} className="space-y-1">
+              <span className="font-sans text-3xl font-extrabold text-[#FFFFFF] tracking-tight block">{s.value}</span>
+              <span className="font-mono text-[0.68rem] uppercase tracking-widest text-[#F4D67A] block">{s.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(212,175,55,0.4)] to-transparent" />
+      </div>
+
+      {/* ===== TARGET VERTICALS — 3D LUXURY FLIP CARDS ===== */}
+      <section className="relative z-10 mx-auto max-w-6xl px-6 py-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Crown size={15} className="text-[#D4AF37]" />
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#F4D67A] font-bold">Target Verticals</span>
+            </div>
+            <h2 className="font-sans text-3xl md:text-4xl font-extrabold text-[#FFFFFF]">Five Core Domains of Strategy</h2>
+          </div>
+          <button
+            onClick={onEnter}
+            className="mt-4 md:mt-0 font-mono text-xs font-bold text-[#F4D67A] hover:text-[#FFFFFF] transition flex items-center gap-1.5 cursor-pointer"
+          >
+            Explore Suite <ArrowRight size={14} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+          {VERTICALS.map((v, i) => {
+            const Icon = v.icon;
             return (
-              <div key={s.label} className="card-royal-luxury p-5 text-left bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white border border-[#D4AF37]/50 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7A0018] text-[#E6C878] border border-[#D4AF37]/50">
-                    <Icon size={18} />
+              <motion.div
+                key={v.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                onClick={onEnter}
+                className="flip-card cursor-pointer"
+              >
+                <div className="flip-card-inner">
+                  {/* FRONT */}
+                  <div className="flip-card-front">
+                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(212,175,55,0.35)] bg-[#0E0E0E] text-[#D4AF37]">
+                      <Icon size={26} />
+                    </div>
+                    <h3 className="flip-card-title">{v.name}</h3>
+                    <p className="flip-card-subtitle font-mono text-xs text-[#9A9A9A] uppercase tracking-wider">
+                      Domain 0{i + 1} · Hover to Inspect
+                    </p>
                   </div>
-                  <span className="font-mono text-[0.62rem] font-bold text-[#34D399] bg-[#065F46]/80 px-2 py-0.5 rounded-full border border-[#34D399]/40">
-                    {s.growth}
-                  </span>
+
+                  {/* BACK */}
+                  <div className="flip-card-back">
+                    <h3 className="flip-card-title text-xl">{v.name}</h3>
+                    <p className="flip-card-subtitle">{v.desc}</p>
+                    <div className="mt-6 flex items-center gap-2 font-mono text-xs font-bold text-[#D4AF37] border border-[rgba(212,175,55,0.3)] bg-[#050505] px-4 py-2 rounded-xl">
+                      <span>Launch Module</span>
+                      <ArrowRight size={14} />
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-4 font-sans text-2xl font-extrabold text-[#FFFFFF] md:text-3xl">{s.value}</div>
-                <div className="mt-1 font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#E6C878]">{s.label}</div>
-              </div>
+              </motion.div>
             );
           })}
-        </motion.div>
+        </div>
       </section>
 
-      {/* ===== SECTIONS STARTING FROM "BUILT FOR EVERY ORBIT OF AMBITION" — IVORY BACKGROUND ===== */}
-      <div className="relative z-10 mt-12 bg-[#FCFAF7] text-[#111827]">
-        {/* ===== VERTICALS ===== */}
-        <Section id="verticals" kicker="Five Target Verticals" title="Built for every orbit of ambition">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {VERTICALS.map((v, i) => {
-              const Icon = v.icon;
-              return (
-                <motion.div
-                  key={v.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-50px' }}
-                  transition={{ duration: 0.45, delay: i * 0.07 }}
-                >
-                  <GlassPanel className="group h-full p-6 transition duration-200 hover:border-[#D4AF37] hover:shadow-xl bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white border border-[#D4AF37]/50">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#D4AF37]/60 bg-[#7A0018] text-[#E6C878]">
-                      <Icon className="h-6 w-6 text-[#E6C878]" />
-                    </div>
-                    <h3 className="mt-4 font-sans text-xl font-bold text-[#FFFFFF]">{v.name}</h3>
-                    <p className="mt-2 text-sm text-[#FECDD3]/90 leading-relaxed">{v.desc}</p>
-                  </GlassPanel>
-                </motion.div>
-              );
-            })}
-            {/* CTA tile */}
+      {/* ===== FOUR-STAGE PIPELINE — HORIZONTAL TIMELINE ===== */}
+      <section className="relative z-10 mx-auto max-w-5xl px-6 py-16">
+        <div className="text-center mb-16">
+          <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#F4D67A] font-bold block mb-2">Processing Flow</span>
+          <h2 className="font-sans text-3xl md:text-4xl font-extrabold text-[#FFFFFF]">Stage-Gated Strategy Architecture</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+          {PIPELINE_STEPS.map((step, idx) => (
             <motion.div
+              key={step.n}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.45, delay: VERTICALS.length * 0.07 }}
-              className="flex items-center"
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: idx * 0.1 }}
+              className="relative space-y-3 text-left border-l-2 md:border-l-0 md:border-t-2 border-[#D4AF37]/40 pl-5 md:pl-0 md:pt-5"
             >
-              <button
-                onClick={onEnter}
-                className="group flex h-full w-full flex-col items-start justify-center rounded-2xl border border-[#D4AF37] bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white p-6 text-left transition duration-200 hover:bg-[#7A0018] hover:border-[#D4AF37] cursor-pointer shadow-lg"
-              >
-                <Sparkles className="h-6 w-6 text-[#E6C878]" />
-                <h3 className="mt-3 font-sans text-lg font-bold text-[#FFFFFF]">Explore the suite</h3>
-                <span className="mt-1 inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#E6C878] transition group-hover:gap-2">
-                  Enter suite <ArrowRight size={14} />
-                </span>
-              </button>
+              <span className="font-mono text-2xl font-extrabold text-[#D4AF37] block">{step.n}</span>
+              <h4 className="font-sans text-base font-bold text-[#FFFFFF]">{step.title}</h4>
+              <p className="text-xs text-[#9A9A9A] leading-relaxed">{step.desc}</p>
             </motion.div>
-          </div>
-        </Section>
-
-        {/* ===== PIPELINE ===== */}
-        <Section id="pipeline" kicker="The Processing Architecture" title="Four stages from idea to decision">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {PIPELINE.map((p, i) => (
-              <motion.div
-                key={p.stage}
-                initial={{ opacity: 0, x: 16 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                transition={{ duration: 0.45, delay: i * 0.1 }}
-                className="relative"
-              >
-                <GlassPanel className="h-full p-5 bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white border border-[#D4AF37]/50 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="font-sans text-3xl font-bold text-[#D4AF37]/50">{p.n}</span>
-                    <span className={`rounded-md border px-2 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider ${p.color}`}>{p.stage}</span>
-                  </div>
-                  <h4 className="mt-3 font-sans text-lg font-bold text-[#FFFFFF]">{p.title}</h4>
-                  <p className="mt-2 text-xs text-[#FECDD3]/80 leading-relaxed">{p.note}</p>
-                </GlassPanel>
-                {/* Connector arrow */}
-                {i < PIPELINE.length - 1 && (
-                  <div className="absolute -right-3 top-1/2 z-10 hidden -translate-y-1/2 lg:block">
-                    <ChevronRight size={20} className="text-[#D4AF37]" />
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        </Section>
-
-        {/* ===== SCORE SHOWCASE ===== */}
-        <Section id="score" kicker="Final Evaluation Metric" title="The Conscious Orbital Score">
-          <GlassPanel className="relative overflow-hidden p-8 md:p-12 border-[#D4AF37]/60 bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white shadow-xl">
-            <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[#D4AF37]/20 blur-3xl" />
-            <div className="relative grid grid-cols-1 items-center gap-10 lg:grid-cols-[auto_1fr]">
-              {/* Gauge */}
-              <div className="mx-auto">
-                <ScoreRing value={86} />
-              </div>
-              {/* Description */}
-              <div>
-                <div className="flex items-center gap-2">
-                  <Award size={18} className="text-[#E6C878]" />
-                  <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#E6C878]">Score Aggregator</span>
-                </div>
-                <RoyalHeading level={3} className="mt-2 text-[#FFFFFF]">A sovereign decision in one number</RoyalHeading>
-                <p className="mt-3 max-w-xl text-sm text-[#FECDD3]/90 leading-relaxed">
-                  Every venture is synthesized into a single 0–100 score across Feasibility, Market Potential,
-                  Pricing Power, and GTM Viability — then resolved into a binary decision:{' '}
-                  <span className="font-mono font-semibold text-[#34D399]">1 · Proceed</span> or{' '}
-                  <span className="font-mono font-semibold text-[#E6C878]">0 · Pivot</span>.
-                </p>
-                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {[
-                    { label: 'Feasibility', value: 82, icon: ShieldCheck },
-                    { label: 'Market Potential', value: 88, icon: TrendingUp },
-                    { label: 'Pricing Power', value: 74, icon: DollarSign },
-                    { label: 'GTM Viability', value: 90, icon: Target },
-                  ].map((s) => (
-                    <div key={s.label} className="rounded-xl border border-[#D4AF37]/40 bg-[#350310] p-3 shadow-2xs text-white">
-                      <div className="flex items-center gap-1.5">
-                        <s.icon size={13} className="text-[#E6C878]" />
-                        <span className="font-mono text-[0.6rem] font-semibold uppercase tracking-wider text-[#E6C878]">{s.label}</span>
-                      </div>
-                      <div className="mt-1.5 font-sans text-xl font-bold text-[#FFFFFF]">{s.value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </GlassPanel>
-        </Section>
-
-        {/* ===== FLAGSHIP TRACKS ===== */}
-        <Section id="tracks" kicker="Report & Track Catalogue" title="Flagship tracks for the startup journey">
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            {TRACKS.map((t, i) => {
-              const Icon = t.icon;
-              return (
-                <motion.div
-                  key={t.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-50px' }}
-                  transition={{ duration: 0.45, delay: i * 0.1 }}
-                >
-                  <GlassPanel className="group h-full p-6 transition duration-200 hover:border-[#D4AF37] hover:shadow-md bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white border border-[#D4AF37]/50">
-                    <div className="flex items-start justify-between">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D4AF37]/60 bg-[#7A0018] text-[#E6C878]">
-                        <Icon className="h-5 w-5 text-[#E6C878]" />
-                      </div>
-                      <CheckCircle2 className="h-5 w-5 text-[#34D399]" />
-                    </div>
-                    <h4 className="mt-4 font-sans text-xl font-bold text-[#FFFFFF]">{t.name} Track</h4>
-                    <p className="mt-2 text-sm text-[#FECDD3]/80 leading-relaxed">{t.desc}</p>
-                    <span className="mt-4 inline-block font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">Flagship · Royal Red &amp; Gold</span>
-                  </GlassPanel>
-                </motion.div>
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* ===== FINAL CTA ===== */}
-        <section className="relative z-10 mx-auto max-w-7xl px-5 py-16 md:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-50px' }}
-            transition={{ duration: 0.5 }}
-          >
-            <GlassPanel className="relative overflow-hidden p-10 text-center md:p-16 border-[#D4AF37] bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white shadow-xl">
-              <div className="pointer-events-none absolute inset-0 bg-radial from-[#7A0018]/40 to-transparent" />
-              <div className="relative">
-                <OrbitBrand size={64} className="mx-auto" />
-                <RoyalHeading level={2} shimmer className="mt-6 text-[#FFFFFF]">
-                  Place your venture into orbit
-                </RoyalHeading>
-                <p className="mx-auto mt-4 max-w-xl text-sm text-[#FECDD3]/90 md:text-base">
-                  Enter the strategy suite and run your idea through the complete intelligence pipeline.
-                </p>
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                  <RoyalButton onClick={onEnter} className="px-7 py-3 text-base shadow-md">
-                    <Sparkles size={17} /> Enter Suite
-                  </RoyalButton>
-                  <GhostButton onClick={onLogin} className="px-7 py-3 text-base">
-                    Sign In <ArrowRight size={16} />
-                  </GhostButton>
-                </div>
-              </div>
-            </GlassPanel>
-          </motion.div>
-        </section>
-
-        {/* ===== FOOTER ===== */}
-        <footer className="relative z-10 border-t border-[#D4AF37]/40 bg-[#FCFAF7] px-5 py-8 md:px-8 text-[#111827]">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-            <div className="flex items-center gap-2">
-              <OrbitBrand size={26} />
-              <span className="font-sans text-sm font-bold text-[#111827]">The Conscious Orbit</span>
-            </div>
-            <p className="font-mono text-[0.7rem] text-[#78350F]">
-              The Conscious Orbit · Royal Red &amp; Metallic Gold Suite · © 2026
-            </p>
-          </div>
-        </footer>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- Local Shared Helpers ---------- */
-
-function Section({ id, kicker, title, children }) {
-  return (
-    <section id={id} className="relative z-10 mx-auto max-w-7xl px-5 py-14 md:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-50px' }}
-        transition={{ duration: 0.45 }}
-      >
-        <div className="flex items-center gap-2">
-          <Crown size={16} className="text-[#7A0018]" />
-          <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">{kicker}</span>
+          ))}
         </div>
-        <h2 className="mt-2 font-sans text-3xl font-bold text-[#111827] md:text-4xl">{title}</h2>
-      </motion.div>
-      <div className="mt-8">{children}</div>
-    </section>
-  );
-}
+      </section>
 
-// Score Ring in Gold & Emerald
-function ScoreRing({ value = 86 }) {
-  const R = 70;
-  const C = 2 * Math.PI * R;
-  const ringColor = value >= 75 ? '#10B981' : value >= 50 ? '#D4AF37' : '#E6C878';
-  return (
-    <div className="relative h-44 w-44">
-      <svg width="176" height="176" className="-rotate-90">
-        <circle cx="88" cy="88" r={R} fill="none" stroke="#7A0018" strokeWidth="10" />
-        <motion.circle
-          cx="88" cy="88" r={R} fill="none"
-          stroke={ringColor}
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={C}
-          initial={{ strokeDashoffset: C }}
-          whileInView={{ strokeDashoffset: C * (1 - value / 100) }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, ease: 'easeOut' }}
-          style={{ filter: `drop-shadow(0 0 6px ${ringColor}44)` }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-sans text-5xl font-extrabold text-[#E6C878]">{value}</span>
-        <span className="font-mono text-[0.62rem] uppercase tracking-[0.15em] text-[#FECDD3]">/ 100</span>
-        <span className="mt-1 rounded-md border border-[#34D399] bg-[#065F46]/90 px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider text-[#A7F3D0]">
-          1 · Viable
-        </span>
-      </div>
+      {/* ===== ORBITAL GAUGE SHOWCASE SECTION ===== */}
+      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-12 rounded-3xl border border-[rgba(212,175,55,0.2)] bg-[#0E0E0E] p-8 md:p-12 shadow-2xl">
+          <div className="space-y-4 max-w-xl text-left">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,175,55,0.3)] bg-[#050505] px-4 py-1.5">
+              <ShieldCheck size={14} className="text-[#D4AF37]" />
+              <span className="font-mono text-xs text-[#F4D67A] font-bold uppercase tracking-wider">Orbital Metric Engine</span>
+            </div>
+            <h3 className="font-sans text-3xl font-extrabold text-[#FFFFFF]">The Sovereign 1 / 0 Decision Verdict</h3>
+            <p className="text-sm text-[#CFCFCF] leading-relaxed">
+              Every venture strategy is distilled down to unit feasibility, pricing power, and execution risk — resolving into a clear binary GO / PIVOT verdict.
+            </p>
+            <div className="pt-2">
+              <RoyalButton onClick={onEnter}>Test Your Idea</RoyalButton>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center shrink-0">
+            <ScoreRing value={88} />
+          </div>
+        </div>
+      </section>
+
+      {/* ===== MINIMAL FOOTER ===== */}
+      <footer className="relative z-10 border-t border-[rgba(212,175,55,0.18)] bg-[#050505] px-6 py-10">
+        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div className="flex items-center gap-3">
+            <OrbitBrand size={30} />
+            <span className="font-sans text-sm font-bold text-[#FFFFFF]">The Conscious Orbit</span>
+          </div>
+          <p className="font-mono text-xs text-[#9A9A9A]">
+            © 2026 The Conscious Orbit · Executive Platform
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
 
+function ScoreRing({ value = 88 }) {
+  const R = 68;
+  const C = 2 * Math.PI * R;
+  const strokeDashoffset = C - (value / 100) * C;
 
-
-
-
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative flex items-center justify-center">
+        <svg width="170" height="170" className="-rotate-90">
+          <circle cx="85" cy="85" r={R} fill="none" stroke="#111111" strokeWidth="8" />
+          <motion.circle
+            cx="85" cy="85" r={R} fill="none"
+            stroke="#D4AF37"
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray={C}
+            initial={{ strokeDashoffset: C }}
+            whileInView={{ strokeDashoffset }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.4, ease: 'easeOut' }}
+          />
+        </svg>
+        <div className="absolute text-center">
+          <span className="font-sans text-4xl font-extrabold text-[#FFFFFF] block">{value}</span>
+          <span className="font-mono text-[0.62rem] uppercase tracking-widest text-[#9A9A9A] block mt-0.5">Orbital Index</span>
+        </div>
+      </div>
+      <div className="mt-4 rounded-full border border-[#D4AF37] bg-[#D4AF37] px-4 py-1.5 text-[#050505] font-extrabold font-mono text-xs shadow-md">
+        VERDICT: GO (1)
+      </div>
+    </div>
+  );
+}

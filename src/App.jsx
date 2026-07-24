@@ -150,107 +150,122 @@ function App() {
     <div className="min-h-screen bg-royal-mesh text-[#111827] flex flex-col w-full">
       {/* ============ MAIN WORKSPACE ============ */}
       <main className="flex-1 overflow-x-hidden flex flex-col w-full">
-        {/* TOPBAR — Full Width Glass Header with Highlighted Target Verticals Navbar */}
+        {/* TOPBAR — Sticky Executive Navbar */}
         <Topbar
           verticals={VERTICALS}
           activeVertical={activeVerticalObj}
           setActiveVertical={setActiveVertical}
           goHome={() => setPage('home')}
+          onProfileClick={() => setPage('login')}
         />
 
-        <div className="flex-1 mx-auto w-full max-w-7xl space-y-8 px-5 py-8 md:px-8">
-          {/* VERTICAL HERO */}
+        <div className="flex-1 mx-auto w-full max-w-7xl space-y-12 px-6 py-8 md:px-10">
+          {/* SCREEN 1: HERO CARD */}
           <VerticalHero vertical={activeVerticalObj} onOpenGenerate={() => setIsGenModalOpen(true)} />
 
-          {/* MAIN VIEW NAVIGATION TABS */}
+          {/* SCREEN 2: NAVIGATION TABS */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <MainViewTabs mainView={mainView} setMainView={setMainView} />
             <AiPulseBadge label="AI Co-Pilot Telemetry Active" />
           </div>
 
-          {/* DASHBOARD GRID PLACEMENT: Main View (8 cols) + AI Side Panel (4 cols) */}
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
-            {/* MAIN CONTENT AREA */}
-            <div className="space-y-8 lg:col-span-8">
-              {/* ---------- PIPELINE VIEW ---------- */}
-              {mainView === 'pipeline' && <VentureProcessor />}
+          {/* SCREEN 3: PRIMARY WORKSPACE (PIPELINE / INTAKE / BOARD) */}
+          <div className="space-y-10">
+            {/* ---------- PIPELINE VIEW ---------- */}
+            {mainView === 'pipeline' && <VentureProcessor />}
 
-              {/* ---------- INTAKE VIEW ---------- */}
-              {mainView === 'intake' && (
-                <>
-                  {activeVertical === 'startups' && (
-                    <>
-                      <ThreeLayerEngine
-                        activeCluster={activeCluster}
-                        setActiveCluster={setActiveCluster}
-                        selectedTracks={selectedTracks}
-                        toggleTrack={toggleTrack}
-                        customPicks={customPicks}
-                        toggleCustom={toggleCustom}
-                        onGenerate={() => setIsGenModalOpen(true)}
-                      />
-                      <div className="mt-10 flex items-center gap-4">
-                        <div className="h-px flex-1 bg-[#D4AF37]/50" />
-                        <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">Function Engine</span>
-                        <div className="h-px flex-1 bg-[#D4AF37]/50" />
-                      </div>
-                      <StartupMarketEngine />
-                    </>
-                  )}
-                  {activeVertical === 'msmes' && <MsmeOptimizationEngine />}
-                  {activeVertical === 'industries' && <IndustryAnalysisEngine />}
-                  {(activeVertical === 'students' || activeVertical === 'institutions') && (
-                    <GenericVerticalPanel vertical={activeVerticalObj} />
-                  )}
-                </>
-              )}
+            {/* ---------- INTAKE VIEW ---------- */}
+            {mainView === 'intake' && (
+              <>
+                {activeVertical === 'startups' && (
+                  <>
+                    <ThreeLayerEngine
+                      activeCluster={activeCluster}
+                      setActiveCluster={setActiveCluster}
+                      selectedTracks={selectedTracks}
+                      toggleTrack={toggleTrack}
+                      customPicks={customPicks}
+                      toggleCustom={toggleCustom}
+                      onGenerate={() => setIsGenModalOpen(true)}
+                    />
+                    <div className="mt-10 flex items-center gap-4">
+                      <div className="h-px flex-1 bg-[rgba(212,175,55,0.12)]" />
+                      <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">Function Engine</span>
+                      <div className="h-px flex-1 bg-[rgba(212,175,55,0.12)]" />
+                    </div>
+                    <StartupMarketEngine />
+                  </>
+                )}
+                {activeVertical === 'msmes' && <MsmeOptimizationEngine />}
+                {activeVertical === 'industries' && <IndustryAnalysisEngine />}
+                {(activeVertical === 'students' || activeVertical === 'institutions') && (
+                  <GenericVerticalPanel vertical={activeVerticalObj} />
+                )}
+              </>
+            )}
 
-              {/* ---------- BOARD VIEW ---------- */}
-              {mainView === 'board' && (
-                <KanbanBoard
-                  reports={reports}
-                  columns={KANBAN_COLUMNS}
-                  moveReport={moveReport}
-                  expandedReport={expandedReport}
-                  setExpandedReport={setExpandedReport}
-                  onGenerate={() => setIsGenModalOpen(true)}
-                />
-              )}
-            </div>
-
-            {/* AI INTELLIGENCE SIDE PANEL */}
-            <div className="space-y-6 lg:col-span-4">
-              <AiInsightWidget verticalName={activeVerticalObj?.name} />
-
-              {/* AI Quick Actions Card */}
-              <GlassPanel className="p-5 space-y-3 border-[#D4AF37]/50 bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white shadow-lg">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-[#E6C878]" />
-                  <h4 className="font-sans text-base font-bold text-[#FFFFFF]">AI Strategy Actions</h4>
-                </div>
-                <p className="text-xs text-[#FECDD3]/80">Quick AI shortcuts for the selected vertical.</p>
-                <div className="space-y-2 pt-1">
-                  {[
-                    { label: 'Synthesize Market Fit', desc: 'Auto-map TAM/SAM/SOM' },
-                    { label: 'Audit Bottlenecks', desc: 'Isolate single points of failure' },
-                    { label: 'Generate Pitch Narrative', desc: 'Format investor-ready deck' },
-                  ].map((act) => (
-                    <button
-                      key={act.label}
-                      onClick={() => setIsGenModalOpen(true)}
-                      className="group flex w-full items-center justify-between rounded-xl border border-[#D4AF37]/40 bg-[#350310] p-3 text-left transition hover:border-[#D4AF37] hover:bg-[#7A0018] cursor-pointer"
-                    >
-                      <div>
-                        <p className="text-xs font-bold text-[#FFFFFF] group-hover:text-[#E6C878]">{act.label}</p>
-                        <p className="font-mono text-[0.62rem] text-[#FECDD3]/70">{act.desc}</p>
-                      </div>
-                      <ChevronRight size={14} className="text-[#E6C878] transition group-hover:translate-x-1" />
-                    </button>
-                  ))}
-                </div>
-              </GlassPanel>
-            </div>
+            {/* ---------- BOARD VIEW ---------- */}
+            {mainView === 'board' && (
+              <KanbanBoard
+                reports={reports}
+                columns={KANBAN_COLUMNS}
+                moveReport={moveReport}
+                expandedReport={expandedReport}
+                setExpandedReport={setExpandedReport}
+                onGenerate={() => setIsGenModalOpen(true)}
+              />
+            )}
           </div>
+
+          {/* SCREEN 4: AI INTELLIGENCE CENTER (LOWER SCROLL SECTION) */}
+          <section className="pt-8 space-y-8 border-t border-[rgba(212,175,55,0.12)]">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-[#D4AF37]" />
+              <div>
+                <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+                  Neural Telemetry &amp; Insights
+                </span>
+                <h3 className="font-sans text-2xl font-bold text-[#F8F8F8]">AI Intelligence Center</h3>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
+              {/* Startups Neural Read */}
+              <div className="lg:col-span-7">
+                <AiInsightWidget verticalName={activeVerticalObj?.name} />
+              </div>
+
+              {/* Executive Recommendations & Risk Signals */}
+              <div className="lg:col-span-5">
+                <GlassPanel className="p-5 space-y-4 border-[rgba(212,175,55,0.12)] bg-[#151515] text-white rounded-[22px]">
+                  <div className="flex items-center gap-2">
+                    <Zap size={16} className="text-[#D4AF37]" />
+                    <h4 className="font-sans text-base font-bold text-[#F8F8F8]">Executive Recommendations</h4>
+                  </div>
+                  <p className="text-xs text-[#9A9A9A]">Opportunity signals &amp; risk detection for {activeVerticalObj?.name}.</p>
+                  <div className="space-y-2 pt-1">
+                    {[
+                      { label: 'Synthesize Market Fit', desc: 'Auto-map TAM/SAM/SOM whitespace' },
+                      { label: 'Audit Bottlenecks', desc: 'Isolate single points of operational failure' },
+                      { label: 'Generate Pitch Narrative', desc: 'Format investor-ready deck & financial ask' },
+                    ].map((act) => (
+                      <button
+                        key={act.label}
+                        onClick={() => setIsGenModalOpen(true)}
+                        className="group flex w-full items-center justify-between rounded-xl border border-[rgba(212,175,55,0.12)] bg-[#1B1B1B] p-3 text-left transition hover:border-[#D4AF37] hover:scale-[1.01] cursor-pointer"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-[#F8F8F8] group-hover:text-[#D4AF37] transition">{act.label}</p>
+                          <p className="font-mono text-[0.62rem] text-[#9A9A9A]">{act.desc}</p>
+                        </div>
+                        <ChevronRight size={14} className="text-[#D4AF37] transition group-hover:translate-x-1" />
+                      </button>
+                    ))}
+                  </div>
+                </GlassPanel>
+              </div>
+            </div>
+          </section>
         </div>
       </main>
 
@@ -270,113 +285,135 @@ function App() {
 }
 
 /* ============================================================
-   TOPBAR — Prominently Highlighted Vertical Navigation Header
+   MAGIC UI — Scroll Velocity Infinite Domain Navigator Component
    ============================================================ */
-function Topbar({ verticals, activeVertical, setActiveVertical, goHome }) {
+function ScrollVelocityContainer({ children, className = '' }) {
   return (
-    <header className="sticky top-0 z-30 border-b-2 border-[#D4AF37]/50 bg-[#FFFFFF]/95 px-5 py-4 backdrop-blur-xl md:px-8 text-[#111827] shadow-md">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
-        {/* Brand identity & Back Home Button */}
+    <div className={`scroll-velocity-container ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function ScrollVelocityRow({ verticals, activeVertical, setActiveVertical }) {
+  const [isHovered, setIsHovered] = useState(false);
+  // Duplicate list multiple times for seamless infinite looping
+  const infiniteVerticals = [...verticals, ...verticals, ...verticals, ...verticals];
+
+  return (
+    <motion.div
+      className="scroll-velocity-track"
+      animate={{ x: ['0%', '-50%'] }}
+      transition={{
+        ease: 'linear',
+        duration: isHovered ? 120 : 35, // Slow down significantly on hover
+        repeat: Infinity,
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {infiniteVerticals.map((v, idx) => {
+        const active = activeVertical?.id === v.id;
+        return (
+          <button
+            key={`${v.id}-${idx}`}
+            onClick={() => setActiveVertical(v.id)}
+            className={`scroll-velocity-item ${active ? 'active' : ''}`}
+          >
+            {v.name}
+          </button>
+        );
+      })}
+    </motion.div>
+  );
+}
+
+/* ============================================================
+   TOPBAR — Luxury Black & Gold Executive Navbar with ScrollVelocity
+   ============================================================ */
+function Topbar({ verticals, activeVertical, setActiveVertical, goHome, onProfileClick }) {
+  return (
+    <header className="sticky top-0 z-40 scroll-velocity-header px-6 py-3.5 text-[#FFFFFF]">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 md:gap-6">
+        
+        {/* LEFT: Minimal Home Button */}
         <button
           onClick={goHome}
-          className="flex items-center gap-3 text-left transition hover:opacity-85 cursor-pointer group"
+          className="group flex items-center gap-2 text-sm font-semibold text-[#F4F4F4] transition hover:text-[#D4AF37] cursor-pointer shrink-0 px-2 py-1.5"
         >
-          <OrbitBrand size={38} />
-          <div>
-            <span className="font-sans text-base font-bold text-[#111827] group-hover:text-[#7A0018] transition">The Conscious Orbit</span>
-            <p className="font-mono text-[0.58rem] uppercase tracking-[0.2em] text-[#7A0018]">Executive Suite</p>
-          </div>
+          <Home size={18} className="text-[#F4F4F4] group-hover:text-[#D4AF37] transition" />
+          <span className="font-sans font-medium tracking-wide">Home</span>
         </button>
 
-        {/* ULTRA-LUXURY HIGHLIGHTED TARGET VERTICALS NAVBAR WITH THICK 3PX GOLD BORDER & GLOW */}
-        <div className="relative flex items-center gap-1.5 rounded-2xl border-[3px] border-[#D4AF37] bg-gradient-to-r from-[#FCFAF7] via-[#FFFFFF] to-[#FBF3D5] p-2 shadow-[0_0_25px_rgba(212,175,55,0.45)] overflow-x-auto">
-          {/* Executive Label Badge */}
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 border-r border-[#D4AF37]/50 mr-1">
-            <Crown size={15} className="text-[#7A0018]" />
-            <span className="font-mono text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-[#7A0018]">
-              Verticals
-            </span>
-          </div>
-
-          {verticals.map((v) => {
-            const Icon = v.icon;
-            const active = activeVertical?.id === v.id;
-            return (
-              <button
-                key={v.id}
-                onClick={() => setActiveVertical(v.id)}
-                className={`group relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
-                  active
-                    ? 'text-[#FFFFFF]'
-                    : 'text-[#111827] hover:text-[#7A0018] hover:bg-[#FFF1F2]/80'
-                }`}
-              >
-                {active && (
-                  <motion.div
-                    layoutId="active-vertical-pill"
-                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#8E1538] to-[#7A0018] border-2 border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.5)]"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
-                
-                <Icon
-                  size={16}
-                  className={`relative z-10 transition-transform group-hover:scale-110 ${
-                    active ? 'text-[#E6C878] drop-shadow-[0_0_6px_rgba(212,175,55,0.7)]' : 'text-[#7A0018]'
-                  }`}
-                />
-                
-                <span className="relative z-10 font-sans tracking-wide">{v.name}</span>
-                
-                {active && (
-                  <span className="relative z-10 h-2 w-2 rounded-full bg-[#E6C878] animate-pulse shadow-[0_0_6px_#E6C878]" />
-                )}
-              </button>
-            );
-          })}
+        {/* CENTER: Magic UI ScrollVelocity Infinite Domain Navigation (Full Navbar Width) */}
+        <div className="flex-1 mx-2 overflow-hidden">
+          <ScrollVelocityContainer>
+            <ScrollVelocityRow
+              verticals={verticals}
+              activeVertical={activeVertical}
+              setActiveVertical={setActiveVertical}
+            />
+          </ScrollVelocityContainer>
         </div>
 
-        {/* Quick Search & AI Pill */}
-        <div className="flex items-center gap-3">
+        {/* RIGHT: Search, Notifications, Profile */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="hidden md:flex items-center gap-2 rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] px-3.5 py-1.5 text-xs text-[#CFCFCF] focus-within:border-[#D4AF37] transition">
+            <Search size={14} className="text-[#9A9A9A]" />
+            <input
+              type="text"
+              placeholder="Search..."
+              className="bg-transparent text-xs text-[#FFFFFF] placeholder-[#9A9A9A] focus:outline-none w-20 lg:w-28"
+            />
+          </div>
+
           <button
-            onClick={goHome}
-            className="flex items-center gap-1.5 rounded-xl border-2 border-[#D4AF37] bg-[#FCFAF7] px-3.5 py-1.5 text-xs font-bold text-[#7A0018] hover:bg-[#FFF1F2] transition cursor-pointer shadow-xs"
+            title="Notifications"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] text-[#CFCFCF] hover:border-[#D4AF37] hover:text-[#D4AF37] transition cursor-pointer"
           >
-            <Home size={14} /> Home
+            <Zap size={14} />
           </button>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#D4AF37] bg-[#7A0018] font-mono text-sm font-bold text-[#FFFFFF] shadow-md">
-            AI
-          </div>
+
+          <button
+            onClick={onProfileClick}
+            className="flex items-center gap-1.5 rounded-full border border-[rgba(212,175,55,0.25)] bg-[#050505] px-3 py-1 text-xs font-bold text-[#FFFFFF] hover:border-[#D4AF37] transition cursor-pointer"
+          >
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#D4AF37] text-[#050505] font-mono text-[0.6rem] font-bold">
+              EX
+            </div>
+            <span className="hidden xl:inline font-mono text-xs text-[#CFCFCF]">Profile</span>
+          </button>
         </div>
+
       </div>
     </header>
   );
 }
 
 /* ============================================================
-   SIDEBAR — Premium Dark Red Gradient with Metallic Gold
+   SIDEBAR — Black & Gold Executive Sidebar
    ============================================================ */
 function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, goHome }) {
   return (
     <aside
-      className={`sticky top-0 z-20 flex h-screen flex-col border-r border-[#D4AF37]/40 bg-[#FCFAF7] text-[#111827] transition-all duration-300 ${
+      className={`sticky top-0 z-20 flex h-screen flex-col border-r border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] text-[#FFFFFF] transition-all duration-300 ${
         open ? 'w-72' : 'w-20'
       }`}
     >
       {/* Brand */}
       <button
         onClick={goHome}
-        className="group flex w-full items-center gap-3 px-5 py-6 text-left transition hover:bg-[#FFF1F2] cursor-pointer"
+        className="group flex w-full items-center gap-3 px-5 py-6 text-left transition hover:bg-[#111111] cursor-pointer"
         title="Back to home"
       >
         <OrbitBrand size={38} />
         {open && (
           <div className="overflow-hidden">
-            <h1 className="font-sans text-lg font-bold leading-tight text-[#111827]">
+            <h1 className="font-sans text-lg font-bold leading-tight text-[#FFFFFF]">
               The Conscious Orbit
             </h1>
-            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#7A0018]">
-              Royal Red &amp; Gold Suite
+            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#D4AF37]">
+              Executive Suite
             </p>
           </div>
         )}
@@ -384,7 +421,7 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
 
       <button
         onClick={() => setOpen((o) => !o)}
-        className="absolute -right-3 top-7 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-[#D4AF37] bg-[#7A0018] text-[#FFFFFF] shadow-md transition hover:bg-[#8E1538] cursor-pointer"
+        className="absolute -right-3 top-7 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-[#D4AF37] bg-[#111111] text-[#D4AF37] shadow-md transition hover:bg-[#050505] cursor-pointer"
         aria-label="Toggle sidebar"
       >
         <ChevronRight size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -393,7 +430,7 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {open && (
-          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">
+          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">
             Target Verticals
           </p>
         )}
@@ -406,8 +443,8 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
               onClick={() => setActiveVertical(v.id)}
               className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 border cursor-pointer ${
                 active
-                  ? 'bg-[#7A0018] text-[#FFFFFF] border-[#D4AF37] shadow-sm'
-                  : 'text-[#4B5563] hover:text-[#7A0018] hover:bg-[#FFF1F2] border-transparent'
+                  ? 'bg-[#111111] text-[#FFFFFF] border-[#D4AF37] shadow-sm'
+                  : 'text-[#CFCFCF] hover:text-[#FFFFFF] hover:bg-[#050505] border-transparent'
               }`}
             >
               {active && (
@@ -415,7 +452,7 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
               )}
               <Icon
                 size={18}
-                className={`shrink-0 ${active ? 'text-[#E6C878]' : 'text-[#7A0018] group-hover:text-[#8E1538]'}`}
+                className={`shrink-0 ${active ? 'text-[#F4D67A]' : 'text-[#D4AF37]'}`}
               />
               {open && (
                 <span className="truncate text-sm font-medium">{v.name}</span>
@@ -428,14 +465,14 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
       {/* Footer */}
       {open && (
         <div className="space-y-1 px-3 pb-5">
-          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">
+          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">
             System
           </p>
           <button
             onClick={goHome}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#4B5563] transition hover:bg-[#FFF1F2] hover:text-[#7A0018] cursor-pointer"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#CFCFCF] transition hover:bg-[#050505] hover:text-[#D4AF37] cursor-pointer"
           >
-            <Home size={18} className="text-[#7A0018]" />
+            <Home size={18} className="text-[#D4AF37]" />
             Back to Home
           </button>
           {[
@@ -444,18 +481,18 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
           ].map((item) => (
             <button
               key={item.label}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#4B5563] transition hover:bg-[#FFF1F2] hover:text-[#7A0018] cursor-pointer"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#CFCFCF] transition hover:bg-[#050505] hover:text-[#D4AF37] cursor-pointer"
             >
-              <item.icon size={18} className="text-[#7A0018]" />
+              <item.icon size={18} className="text-[#D4AF37]" />
               {item.label}
             </button>
           ))}
-          <div className="mt-4 rounded-xl border border-[#D4AF37]/50 bg-[#FFFFFF] p-3 shadow-xs">
+          <div className="mt-4 rounded-xl border border-[rgba(212,175,55,0.2)] bg-[#050505] p-3 shadow-xs">
             <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-[#7A0018]" />
-              <span className="font-mono text-xs font-semibold text-[#111827]">Executive AI Tier</span>
+              <Sparkles size={14} className="text-[#D4AF37]" />
+              <span className="font-mono text-xs font-semibold text-[#FFFFFF]">Executive AI Tier</span>
             </div>
-            <p className="mt-1 text-[0.68rem] text-[#6B7280]">
+            <p className="mt-1 text-[0.68rem] text-[#9A9A9A]">
               All 5 verticals &amp; tracks unlocked
             </p>
           </div>
@@ -465,37 +502,31 @@ function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, 
   );
 }
 
-
-
 /* ============================================================
-   MAIN-VIEW TABS — Pipeline / Intake / Board
+   SECONDARY NAVIGATION — Compact Pill Navigation
    ============================================================ */
 function MainViewTabs({ mainView, setMainView }) {
   const tabs = [
-    { id: 'pipeline', label: 'Processing Pipeline', icon: Cpu },
-    { id: 'intake',   label: 'Intake Engine',       icon: Layers },
-    { id: 'board',    label: 'Tracking Board',      icon: ClipboardList },
+    { id: 'pipeline', label: 'Venture Intelligence Pipeline', icon: Cpu },
+    { id: 'intake',   label: 'Opportunity Intake',            icon: Layers },
+    { id: 'board',    label: 'Executive Tracking',            icon: ClipboardList },
   ];
   return (
-    <div className="flex flex-wrap gap-1 rounded-2xl border border-[#D4AF37]/40 bg-[#FFFFFF] p-1.5 backdrop-blur-md shadow-xs">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-1.5 backdrop-blur-md">
       {tabs.map((tab) => {
         const active = mainView === tab.id;
         return (
           <button
             key={tab.id}
             onClick={() => setMainView(tab.id)}
-            className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition cursor-pointer ${
-              active ? 'text-[#FFFFFF]' : 'text-[#4B5563] hover:text-[#7A0018] hover:bg-[#FFF1F2]'
+            className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+              active
+                ? 'bg-[#D4AF37] text-[#050505] font-bold shadow-xs'
+                : 'text-[#CFCFCF] hover:text-[#FFFFFF] hover:bg-[#111111]'
             }`}
           >
-            {active && (
-              <motion.span
-                layoutId="main-view-tab"
-                className="absolute inset-0 rounded-xl bg-[#7A0018] border border-[#D4AF37] shadow-xs"
-              />
-            )}
-            <tab.icon size={15} className={`relative z-10 ${active ? 'text-[#E6C878]' : 'text-[#7A0018]'}`} />
-            <span className="relative z-10">{tab.label}</span>
+            <tab.icon size={13} className={active ? 'text-[#050505]' : 'text-[#D4AF37]'} />
+            <span>{tab.label}</span>
           </button>
         );
       })}
@@ -507,45 +538,46 @@ function VerticalHero({ vertical, onOpenGenerate }) {
   const Icon = vertical?.icon;
   return (
     <motion.div
-      key={vertical?.id}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: 0.3 }}
     >
-      <GlassPanel className="relative overflow-hidden p-6 md:p-8 border-[#D4AF37]/60 bg-gradient-to-br from-[#4C0519] via-[#3B0413] to-[#2A020D] text-white shadow-xl">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#D4AF37]/20 blur-3xl" />
-        
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37] bg-[#7A0018] text-[#E6C878] shadow-md">
-              {Icon && <Icon className="h-8 w-8 text-[#E6C878]" />}
+      <GlassPanel className="p-4 md:p-5 border-[rgba(212,175,55,0.15)] bg-[#121212] text-white">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          {/* LEFT: Domain Icon + ACTIVE DOMAIN badge + Title + Short Description */}
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#050505] text-[#D4AF37]">
+              {Icon && <Icon className="h-6 w-6 text-[#D4AF37]" />}
             </div>
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <RoyalHeading level={2} shimmer className="text-[#FFFFFF]">
+            <div className="space-y-0.5 text-left">
+              <div className="flex items-center gap-2">
+                <h2 className="font-sans text-xl font-bold text-[#F8F8F8]">
                   {vertical?.name}
-                </RoyalHeading>
-                <span className="rounded-md border border-[#D4AF37] bg-[#7A0018] px-2.5 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#E6C878]">
-                  Active Vertical
+                </h2>
+                <span className="rounded-md border border-[#D4AF37]/40 bg-[#050505] px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider text-[#D4AF37]">
+                  ACTIVE DOMAIN
                 </span>
               </div>
-              <p className="max-w-xl text-sm text-[#FECDD3]/90 leading-relaxed">{vertical?.desc}</p>
+              <p className="text-xs text-[#CFCFCF] truncate max-w-lg">{vertical?.desc}</p>
             </div>
           </div>
 
-          {/* Quick Metrics & CTA Group */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-            <div className="hidden sm:flex items-center gap-3 rounded-xl border border-[#D4AF37]/40 bg-[#350310] px-3.5 py-2 text-white">
-              <div className="text-left font-mono">
-                <p className="text-[0.6rem] uppercase tracking-wider text-[#E6C878]">Target Score</p>
-                <p className="text-xs font-bold text-[#34D399]">86 / 100 Viable</p>
-              </div>
+          {/* RIGHT: Health Status + Secondary CTA + Primary CTA */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Health Status */}
+            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-[rgba(212,175,55,0.15)] bg-[#050505] px-3 py-1.5 font-mono text-xs text-[#10B981]">
+              <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
+              <span>Optimal</span>
             </div>
-            <GhostButton>
-              <FileText size={15} /> Strategy Brief
+
+            {/* Secondary CTA Button */}
+            <GhostButton className="text-xs py-2 px-4">
+              <FileText size={13} /> Strategy Brief
             </GhostButton>
-            <RoyalButton onClick={onOpenGenerate} className="shadow-md">
-              <Sparkles size={15} /> Run AI Analysis
+
+            {/* Primary CTA Button */}
+            <RoyalButton onClick={onOpenGenerate} className="text-xs font-bold py-2 px-5">
+              <Sparkles size={13} /> Run AI Analysis
             </RoyalButton>
           </div>
         </div>
@@ -617,7 +649,7 @@ function ThreeLayerEngine({
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }}>
           <GlassPanel className="overflow-hidden p-0 border-[#D4AF37]/50 bg-[#350310]">
             {/* Tabs */}
-            <div className="flex flex-wrap gap-1 border-b border-[#D4AF37]/40 bg-[#4C0519]/90 p-2">
+            <div className="flex flex-wrap gap-1 border-b border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-2">
               {CLUSTER_TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -629,11 +661,11 @@ function ThreeLayerEngine({
                   {activeCluster === tab.id && (
                     <motion.span
                       layoutId="cluster-tab"
-                      className="absolute inset-0 rounded-lg bg-[#7A0018] border border-[#D4AF37] shadow-xs"
+                      className="absolute inset-0 rounded-lg bg-[#D4AF37] border border-[#F4D67A] shadow-xs"
                     />
                   )}
                   <span className="relative z-10 flex items-center gap-2">
-                    <span className={`font-mono text-[0.62rem] font-bold uppercase tracking-wider ${activeCluster === tab.id ? 'text-[#FFFFFF]' : 'text-[#E6C878]'}`}>
+                    <span className={`font-mono text-[0.62rem] font-bold uppercase tracking-wider ${activeCluster === tab.id ? 'text-[#050505]' : 'text-[#F4D67A]'}`}>
                       {tab.cluster}
                     </span>
                     {tab.name}
@@ -707,20 +739,20 @@ function ThreeLayerEngine({
                   onClick={() => toggleTrack(track.id)}
                   className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition duration-200 cursor-pointer ${
                     selected
-                      ? 'border-[#D4AF37] bg-[#4C0519] shadow-md ring-1 ring-[#D4AF37]'
-                      : 'border-[#D4AF37]/40 bg-[#350310] hover:border-[#D4AF37]'
+                      ? 'border-[#D4AF37] bg-[#111111] shadow-md ring-1 ring-[#D4AF37]'
+                      : 'border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] hover:border-[#D4AF37]'
                   }`}
                 >
                   <div className="relative flex items-start justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/60 bg-[#7A0018] text-[#E6C878]">
-                      <Icon className="h-5 w-5 text-[#E6C878]" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#0E0E0E] text-[#D4AF37]">
+                      <Icon className="h-5 w-5 text-[#D4AF37]" />
                     </div>
                     {selected && <CheckCircle2 className="h-5 w-5 text-[#10B981]" />}
                   </div>
                   <h4 className="relative mt-4 font-sans text-lg font-bold text-[#FFFFFF]">{track.name}</h4>
-                  <p className="relative mt-1 text-xs text-[#FECDD3]/80">{track.desc}</p>
-                  <span className="relative mt-3 inline-block font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">
-                    Flagship · Royal Red &amp; Gold
+                  <p className="relative mt-1 text-xs text-[#CFCFCF]">{track.desc}</p>
+                  <span className="relative mt-3 inline-block font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">
+                    Flagship Executive Track
                   </span>
                 </button>
               );
@@ -728,12 +760,12 @@ function ThreeLayerEngine({
           </div>
 
           {/* Build your own picker */}
-          <GlassPanel className="p-6 border-[#D4AF37]/50 bg-[#3B0413]">
+          <GlassPanel className="p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
             <div className="flex items-center gap-2">
-              <Zap size={16} className="text-[#E6C878]" />
+              <Zap size={16} className="text-[#D4AF37]" />
               <h4 className="font-sans text-lg font-bold text-[#FFFFFF]">Build Your Own Track</h4>
             </div>
-            <p className="mt-1 text-sm text-[#FECDD3]/80">Compose a custom report from modular components.</p>
+            <p className="mt-1 text-sm text-[#CFCFCF]">Compose a custom report from modular components.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {BUILD_YOUR_OWN.map((mod) => {
                 const on = customPicks.includes(mod);
@@ -743,11 +775,11 @@ function ThreeLayerEngine({
                     onClick={() => toggleCustom(mod)}
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-sans text-xs font-medium transition cursor-pointer ${
                       on
-                        ? 'border-[#D4AF37] bg-[#7A0018] text-[#FFFFFF]'
-                        : 'border-[#D4AF37]/40 bg-[#350310] text-[#FECDD3] hover:border-[#D4AF37]'
+                        ? 'border-[#D4AF37] bg-[#D4AF37] text-[#050505] font-bold'
+                        : 'border-[rgba(212,175,55,0.2)] bg-[#0E0E0E] text-[#CFCFCF] hover:border-[#D4AF37]'
                     }`}
                   >
-                    {on && <CheckCircle2 size={12} className="text-[#FFFFFF]" />}
+                    {on && <CheckCircle2 size={12} className="text-[#050505]" />}
                     {mod}
                   </button>
                 );
@@ -764,7 +796,7 @@ function ThreeLayerEngine({
           className="btn-royal-red flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-bold shadow-lg cursor-pointer"
         >
           <Sparkles size={18} /> Generate Report
-          <span className="ml-2 rounded-full bg-[#FFFFFF]/20 px-2 py-0.5 font-mono text-xs text-[#FFFFFF]">
+          <span className="ml-2 rounded-full bg-[#050505]/40 px-2 py-0.5 font-mono text-xs text-[#050505]">
             {selectedTracks.length + customPicks.length} modules
           </span>
         </button>
@@ -802,13 +834,13 @@ function GenericVerticalPanel({ vertical }) {
         {cards.map((c) => {
           const CIcon = c.icon;
           return (
-            <GlassPanel key={c.title} className="group p-5 transition hover:border-[#D4AF37] bg-[#3B0413]/90 text-white">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#D4AF37]/60 bg-[#7A0018] text-[#E6C878]">
-                <CIcon className="h-5 w-5 text-[#E6C878]" />
+            <GlassPanel key={c.title} className="group p-5 transition hover:border-[#D4AF37] bg-[#111111] text-white border-[rgba(212,175,55,0.18)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#0E0E0E] text-[#D4AF37]">
+                <CIcon className="h-5 w-5 text-[#D4AF37]" />
               </div>
               <h4 className="mt-4 font-sans text-lg font-bold text-[#FFFFFF]">{c.title}</h4>
-              <p className="mt-1 text-sm text-[#FECDD3]/80">{c.desc}</p>
-              <button className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#E6C878] transition hover:gap-2 cursor-pointer">
+              <p className="mt-1 text-sm text-[#CFCFCF]">{c.desc}</p>
+              <button className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#F4D67A] transition hover:gap-2 cursor-pointer">
                 Explore <ChevronRight size={13} />
               </button>
             </GlassPanel>
@@ -842,20 +874,20 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
         {columns.map((col) => {
           const items = reports.filter((r) => r.status === col.status);
           return (
-            <div key={col.status} className="flex flex-col rounded-2xl border border-[#D4AF37]/40 bg-[#350310] shadow-xs">
+            <div key={col.status} className="flex flex-col rounded-2xl border border-[rgba(212,175,55,0.18)] bg-[#111111] shadow-xs">
               {/* Column header */}
-              <div className="flex items-center justify-between border-b border-[#D4AF37]/40 px-4 py-3 bg-[#4C0519]/90">
+              <div className="flex items-center justify-between border-b border-[rgba(212,175,55,0.18)] px-4 py-3 bg-[#0E0E0E]">
                 <div className="flex items-center gap-2">
                   <StatusDot status={col.status} />
                   <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#FFFFFF]">{col.status}</span>
                 </div>
-                <span className="rounded-md border border-[#D4AF37]/60 bg-[#7A0018] px-2 py-0.5 font-mono text-xs font-bold text-[#E6C878]">{items.length}</span>
+                <span className="rounded-md border border-[rgba(212,175,55,0.3)] bg-[#050505] px-2 py-0.5 font-mono text-xs font-bold text-[#F4D67A]">{items.length}</span>
               </div>
-              <div className="border-b border-[#D4AF37]/30 bg-[#2A020D]/60 px-4 py-2">
-                <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#E6C878]">
+              <div className="border-b border-[rgba(212,175,55,0.15)] bg-[#050505] px-4 py-2">
+                <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">
                   Action · {col.action}
                 </span>
-                <p className="mt-0.5 text-[0.68rem] text-[#FECDD3]/70">{col.note}</p>
+                <p className="mt-0.5 text-[0.68rem] text-[#9A9A9A]">{col.note}</p>
               </div>
 
               {/* Cards */}
@@ -869,7 +901,7 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.25 }}
-                      className="group rounded-xl border border-[#D4AF37]/40 bg-[#380312] p-3.5 transition hover:border-[#D4AF37] hover:shadow-sm"
+                      className="group rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3.5 transition hover:border-[#D4AF37] hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <h5 className="font-sans text-base font-bold leading-snug text-[#FFFFFF]">{r.name}</h5>
@@ -877,23 +909,23 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {r.tags.map((t) => (
-                          <span key={t} className="rounded-md bg-[#7A0018]/60 px-1.5 py-0.5 font-mono text-[0.62rem] text-[#E6C878] border border-[#D4AF37]/40">{t}</span>
+                          <span key={t} className="rounded-md bg-[#050505] px-1.5 py-0.5 font-mono text-[0.62rem] text-[#F4D67A] border border-[rgba(212,175,55,0.2)]">{t}</span>
                         ))}
                       </div>
 
                       {/* Score */}
                       {r.status === 'PUBLISHED' && r.score > 0 && (
                         <div className="mt-3 flex items-center gap-2">
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#2A020D]">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#050505]">
                             <div
-                              className="h-full rounded-full bg-[#E6C878]"
+                              className="h-full rounded-full bg-[#D4AF37]"
                               style={{ width: `${r.score}%` }}
                             />
                           </div>
-                          <span className="font-mono text-xs font-bold text-[#E6C878]">{r.score}</span>
+                          <span className="font-mono text-xs font-bold text-[#F4D67A]">{r.score}</span>
                           <button
                             onClick={() => setExpandedReport(expandedReport === r.id ? null : r.id)}
-                            className="text-[#FECDD3] transition hover:text-[#FFFFFF] cursor-pointer"
+                            className="text-[#CFCFCF] transition hover:text-[#FFFFFF] cursor-pointer"
                             aria-label="Expand"
                           >
                             <ChevronDown size={14} className={`transition ${expandedReport === r.id ? 'rotate-180' : ''}`} />
@@ -909,21 +941,21 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="mt-3 space-y-2 rounded-lg border border-[#D4AF37]/40 bg-[#4C0519]/80 p-3">
+                            <div className="mt-3 space-y-2 rounded-lg border border-[rgba(212,175,55,0.2)] bg-[#050505] p-3">
                               {[
                                 { k: 'Market Demand', v: 88 },
                                 { k: 'Tech Feasibility', v: 72 },
                                 { k: 'Unit Economics', v: 90 },
                               ].map((m) => (
                                 <div key={m.k} className="flex items-center gap-2 text-[0.68rem]">
-                                  <span className="w-28 text-[#FECDD3]">{m.k}</span>
-                                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#2A020D]">
-                                    <div className="h-full bg-[#E6C878]" style={{ width: `${m.v}%` }} />
+                                  <span className="w-28 text-[#CFCFCF]">{m.k}</span>
+                                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#0E0E0E]">
+                                    <div className="h-full bg-[#D4AF37]" style={{ width: `${m.v}%` }} />
                                   </div>
-                                  <span className="w-7 text-right font-mono font-bold text-[#E6C878]">{m.v}</span>
+                                  <span className="w-7 text-right font-mono font-bold text-[#F4D67A]">{m.v}</span>
                                 </div>
                               ))}
-                              <button className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#D4AF37]/50 bg-[#7A0018] py-2 font-mono text-xs font-semibold text-[#FFFFFF] transition hover:bg-[#8E1538] cursor-pointer">
+                              <button className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#D4AF37] bg-[#D4AF37] py-2 font-mono text-xs font-bold text-[#050505] transition hover:bg-[#F4D67A] cursor-pointer">
                                 <Download size={13} /> Download Artifact
                               </button>
                             </div>
@@ -983,24 +1015,24 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.92, y: 16, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-[#D4AF37] bg-gradient-to-b from-[#4C0519] via-[#3B0313] to-[#2A020D] text-white shadow-2xl"
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-[rgba(212,175,55,0.25)] bg-[#111111] text-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative flex items-center justify-between border-b border-[#D4AF37]/40 bg-[#2A020D]/90 px-6 py-4">
+        <div className="relative flex items-center justify-between border-b border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-6 py-4">
           <div className="relative flex items-center gap-2">
-            <Crown className="h-5 w-5 text-[#E6C878]" />
+            <Crown className="h-5 w-5 text-[#D4AF37]" />
             <h3 className="font-sans text-lg font-bold text-[#FFFFFF]">Generate AI Strategy Report</h3>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-[#FECDD3] transition hover:bg-[#7A0018] hover:text-[#FFFFFF] cursor-pointer">
+          <button onClick={onClose} className="rounded-lg p-1 text-[#CFCFCF] transition hover:bg-[#050505] hover:text-[#FFFFFF] cursor-pointer">
             <X size={18} />
           </button>
         </div>
 
         {/* Body */}
         <div className="px-6 py-6">
-          <p className="text-sm text-[#FECDD3]/90 leading-relaxed">
-            Compose a new report for the <strong className="text-[#E6C878]">{vertical?.name}</strong> vertical.
+          <p className="text-sm text-[#CFCFCF] leading-relaxed">
+            Compose a new report for the <strong className="text-[#F4D67A]">{vertical?.name}</strong> vertical.
             Selected modules will be synthesized into a flagship deliverable.
           </p>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -1009,18 +1041,18 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
               { icon: Sparkles, label: 'Synthesize' },
               { icon: Download, label: 'Deliver' },
             ].map((step, i) => (
-              <div key={step.label} className="rounded-xl border border-[#D4AF37]/40 bg-[#350310] p-3">
-                <step.icon size={16} className="mx-auto text-[#E6C878]" />
-                <p className="mt-1.5 font-mono text-[0.68rem] text-[#FECDD3]">{i + 1}. {step.label}</p>
+              <div key={step.label} className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#050505] p-3">
+                <step.icon size={16} className="mx-auto text-[#D4AF37]" />
+                <p className="mt-1.5 font-mono text-[0.68rem] text-[#CFCFCF]">{i + 1}. {step.label}</p>
               </div>
             ))}
           </div>
           {loading && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[#E6C878]">
+            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[#F4D67A]">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                className="h-4 w-4 rounded-full border-2 border-[#E6C878]/30 border-t-[#E6C878]"
+                className="h-4 w-4 rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37]"
               />
               Synthesizing neural insights...
             </div>
@@ -1028,7 +1060,7 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 border-t border-[#D4AF37]/40 bg-[#2A020D]/90 px-6 py-4">
+        <div className="flex justify-end gap-3 border-t border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-6 py-4">
           <GhostButton onClick={onClose}>Cancel</GhostButton>
           <RoyalButton onClick={onConfirm} disabled={loading}>
             <Sparkles size={15} /> {loading ? 'Generating…' : 'Confirm & Generate'}
@@ -1046,11 +1078,11 @@ function SectionTitle({ icon: Icon, kicker, title, subtitle, noMargin }) {
   return (
     <div className={noMargin ? '' : 'mb-1'}>
       <div className="flex items-center gap-2">
-        {Icon && <Icon size={16} className="text-[#7A0018]" />}
-        <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#7A0018]">{kicker}</span>
+        {Icon && <Icon size={16} className="text-[#D4AF37]" />}
+        <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#F4D67A]">{kicker}</span>
       </div>
-      <h2 className="mt-1 font-sans text-2xl font-bold leading-tight text-[#111827] md:text-3xl">{title}</h2>
-      {subtitle && <p className="mt-1 max-w-2xl text-sm text-[#4B5563]">{subtitle}</p>}
+      <h2 className="mt-1 font-sans text-2xl font-bold leading-tight text-[#FFFFFF] md:text-3xl">{title}</h2>
+      {subtitle && <p className="mt-1 max-w-2xl text-sm text-[#CFCFCF]">{subtitle}</p>}
     </div>
   );
 }
@@ -1058,14 +1090,14 @@ function SectionTitle({ icon: Icon, kicker, title, subtitle, noMargin }) {
 function LayerBadge({ n, title, hint }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#D4AF37] bg-[#7A0018] font-mono text-sm font-bold text-[#E6C878]">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#D4AF37] bg-[#0E0E0E] font-mono text-sm font-bold text-[#F4D67A]">
         {n}
       </div>
       <div>
-        <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#7A0018]">Layer {n}</span>
-        <h3 className="font-sans text-lg font-bold text-[#111827]">{title}</h3>
+        <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">Layer {n}</span>
+        <h3 className="font-sans text-lg font-bold text-[#FFFFFF]">{title}</h3>
       </div>
-      <span className="ml-1 hidden text-xs text-[#6B7280] sm:inline">— {hint}</span>
+      <span className="ml-1 hidden text-xs text-[#9A9A9A] sm:inline">— {hint}</span>
     </div>
   );
 }
