@@ -277,6 +277,63 @@
   -webkit-text-fill-color: transparent;
 }
 
+/* Ticker horizontal marquee animation */
+@keyframes tickerSlide {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: tickerSlide 35s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* Background gold gradient slow flow */
+@keyframes bgFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-bg-flow {
+  background-size: 200% 200%;
+  animation: bgFlow 12s ease infinite;
+}
+
+/* Satellite Orbital Gauge Rotations */
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinReverseSlow {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 24s linear infinite;
+}
+
+.animate-spin-reverse-slow {
+  animation: spinReverseSlow 36s linear infinite;
+}
+
+/* Shimmer sweep animation for telemetry section */
+@keyframes sweepShimmer {
+  0% { transform: translateX(-100%); }
+  30%, 100% { transform: translateX(200%); }
+}
+
+.animate-shimmer-sweep {
+  animation: sweepShimmer 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* Field focus glow in Gold */
 .field-luxury-gold:focus {
   outline: none;
@@ -346,9 +403,14 @@
 .flip-card {
   background: transparent;
   width: 100%;
-  max-width: 320px;
+  max-width: 360px;
   height: 380px;
   perspective: 1200px;
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.flip-card:hover {
+  transform: translateY(-8px) scale(1.02);
 }
 
 .flip-card-inner {
@@ -374,75 +436,74 @@
   align-items: center;
 
   border-radius: 22px;
-  padding: 24px;
+  padding: 32px 24px;
 
   backface-visibility: hidden;
 
   background: linear-gradient(
-      145deg,
-      #111111,
-      #080808
+    145deg,
+    #F2D56B 0%,
+    #D4AF37 55%,
+    #BE9828 100%
   );
 
-  border: 1px solid rgba(212,175,55,.25);
-
-  box-shadow:
-      0 20px 40px rgba(0,0,0,.5),
-      inset 0 0 0 1px rgba(255,255,255,.03);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  transition: border-color 250ms ease, box-shadow 250ms ease;
 
   overflow: hidden;
 }
 
-.flip-card-front::before,
-.flip-card-back::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-
-    background:
-    radial-gradient(circle at top right,
-    rgba(212,175,55,.18),
-    transparent 45%);
-
-    pointer-events: none;
+.flip-card:hover .flip-card-front,
+.flip-card:hover .flip-card-back {
+  border: 1px solid rgba(0, 0, 0, 0.8);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
 }
 
 .flip-card-front {
-    color: #fff;
+  color: #050505;
 }
 
 .flip-card-back {
-    transform: rotateY(180deg);
-
-    background:
-    linear-gradient(
+  transform: rotateY(180deg);
+  background: linear-gradient(
     145deg,
-    #181818,
-    #090909);
+    #F2D56B 0%,
+    #D4AF37 55%,
+    #BE9828 100%
+  );
+  color: #050505;
 }
 
 .flip-card-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #F5D76E;
-    margin-bottom: 14px;
-    letter-spacing: 0.5px;
-    text-align: center;
+  font-size: 34px;
+  font-weight: 700;
+  color: #050505;
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+  text-align: center;
+  line-height: 1.15;
 }
 
 .flip-card-subtitle {
-    color: #C7C7C7;
-    font-size: 14px;
-    line-height: 1.7;
-    width: 90%;
-    text-align: center;
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.5;
 }
 
-.flip-card:hover .flip-card-front,
-.flip-card:hover .flip-card-back {
-    box-shadow:
-    0 0 30px rgba(212,175,55,.18),
-    0 25px 60px rgba(0,0,0,.55);
+.flip-card-badge {
+  background-color: #050505;
+  color: #D4AF37;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 8px;
 }
 
 /* ============================================================
