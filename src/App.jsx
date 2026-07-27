@@ -103,12 +103,14 @@ const SEED_REPORTS = [
 
 function App() {
   const [page, setPage] = useState('home'); // 'home' | 'login' | 'dashboard'
+  const [verticals, setVerticals] = useState(VERTICALS);
   const [activeVertical, setActiveVertical] = useState('startups');
   const [activeCluster, setActiveCluster] = useState('market');
   const [selectedTracks, setSelectedTracks] = useState(['validation', 'investor']);
   const [customPicks, setCustomPicks] = useState(['Market Sizing']);
   const [reports, setReports] = useState(SEED_REPORTS);
   const [isGenModalOpen, setIsGenModalOpen] = useState(false);
+  const [isAddDomainModalOpen, setIsAddDomainModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [expandedReport, setExpandedReport] = useState(null);
   const [viewingReport, setViewingReport] = useState(null);
@@ -137,6 +139,24 @@ function App() {
     setClusters(SAMPLE_ECOFLY_CLUSTERS);
   };
 
+  const handleAddCustomVertical = (name, desc) => {
+    if (!name.trim()) return;
+    const cleanName = name.trim();
+    const newId = `domain_${Date.now()}`;
+    const newObj = {
+      id: newId,
+      name: cleanName,
+      short: cleanName,
+      icon: Building2,
+      desc: desc.trim() || `${cleanName} specialized domain strategy & venture intelligence`,
+      isCustom: true,
+    };
+    setVerticals((prev) => [...prev, newObj]);
+    setActiveVertical(newId);
+    setNotice(`Added new industry domain: ${cleanName}`);
+    setIsAddDomainModalOpen(false);
+  };
+
   const toggleTrack = (id) =>
     setSelectedTracks((p) => (p.includes(id) ? p.filter((t) => t !== id) : [...p, id]));
   const toggleCustom = (name) =>
@@ -155,7 +175,7 @@ function App() {
 
   const handleGenerate = () => {
     const newVentureName = profile.company.trim() || 'New Strategic Venture';
-    const userIndustry = profile.industry.trim() || 'General Business & Technology';
+    const userIndustry = profile.industry.trim() || activeVerticalObj?.name || 'General Business & Technology';
     const userModel = profile.model.trim() || 'B2B Enterprise';
 
     setIsGenerating(true);
@@ -243,7 +263,13 @@ function App() {
     }, 1900);
   };
 
-  const activeVerticalObj = VERTICALS.find((v) => v.id === activeVertical);
+  const activeVerticalObj = verticals.find((v) => v.id === activeVertical) || {
+    id: activeVertical,
+    name: activeVertical,
+    short: activeVertical,
+    icon: Building2,
+    desc: `${activeVertical} Specialized Domain Strategy`,
+  };
 
   const visibleReports = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -286,11 +312,12 @@ function App() {
       <main className="flex-1 overflow-x-hidden flex flex-col w-full">
         {/* TOPBAR — Sticky Executive Navbar */}
         <Topbar
-          verticals={VERTICALS}
+          verticals={verticals}
           activeVertical={activeVerticalObj}
           setActiveVertical={setActiveVertical}
+          onOpenAddDomain={() => setIsAddDomainModalOpen(true)}
           goHome={() => setPage('home')}
-          onProfileClick={() => setPage('login')}
+          onProfileClick={() => setNotice('Executive Profile Active')}
           search={search}
           setSearch={setSearch}
           notice={notice}
@@ -299,7 +326,11 @@ function App() {
 
         <div className="flex-1 mx-auto w-full max-w-7xl space-y-12 px-6 py-8 md:px-10">
           {/* SCREEN 1: HERO CARD */}
-          <VerticalHero vertical={activeVerticalObj} onOpenGenerate={() => setIsGenModalOpen(true)} />
+          <VerticalHero
+            vertical={activeVerticalObj}
+            onOpenGenerate={() => setIsGenModalOpen(true)}
+            onOpenAddDomain={() => setIsAddDomainModalOpen(true)}
+          />
 
           {/* SCREEN 2: NAVIGATION TABS */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -432,6 +463,12 @@ function App() {
             onClose={() => setViewingReport(null)}
           />
         )}
+        {isAddDomainModalOpen && (
+          <AddDomainModal
+            onClose={() => setIsAddDomainModalOpen(false)}
+            onAdd={handleAddCustomVertical}
+          />
+        )}
       </AnimatePresence>
     </motion.div>
       )}
@@ -495,7 +532,7 @@ function ScrollVelocityRow({ verticals, activeVertical, setActiveVertical }) {
    TOPBAR — Luxury Black & Gold Executive Navbar with ScrollVelocity
    ============================================================ */
 function Topbar({
-  verticals, activeVertical, setActiveVertical, goHome, onProfileClick,
+  verticals, activeVertical, setActiveVertical, onOpenAddDomain, goHome, onProfileClick,
   search, setSearch, notice, onDismissNotice,
 }) {
   return (
@@ -511,15 +548,22 @@ function Topbar({
           <span className="font-sans font-medium tracking-wide">Home</span>
         </button>
 
-        {/* CENTER: Magic UI ScrollVelocity Infinite Domain Navigation (Full Navbar Width) */}
-        <div className="flex-1 mx-2 overflow-hidden">
-          <ScrollVelocityContainer>
+        {/* CENTER: Magic UI ScrollVelocity Infinite Domain Navigation + Add Industry Button */}
+        <div className="flex-1 mx-2 flex items-center gap-2 overflow-hidden">
+          <ScrollVelocityContainer className="flex-1">
             <ScrollVelocityRow
               verticals={verticals}
               activeVertical={activeVertical}
               setActiveVertical={setActiveVertical}
             />
           </ScrollVelocityContainer>
+          <button
+            onClick={onOpenAddDomain}
+            className="flex items-center gap-1.5 rounded-full border border-[#D4AF37]/50 bg-[#D4AF37]/15 px-3 py-1.5 font-mono text-xs font-bold text-[#F4D67A] hover:bg-[#D4AF37] hover:text-[#050505] transition cursor-pointer shrink-0"
+            title="Add custom industry domain"
+          >
+            <Plus size={13} /> <span className="hidden sm:inline">+ Add Industry</span>
+          </button>
         </div>
 
         {/* RIGHT: Search, Notifications, Profile */}
@@ -626,7 +670,7 @@ function MainViewTabs({ mainView, setMainView }) {
   );
 }
 
-function VerticalHero({ vertical, onOpenGenerate }) {
+function VerticalHero({ vertical, onOpenGenerate, onOpenAddDomain }) {
   const Icon = vertical?.icon;
   const [briefOpen, setBriefOpen] = useState(false);
   return (
@@ -655,13 +699,18 @@ function VerticalHero({ vertical, onOpenGenerate }) {
             </div>
           </div>
 
-          {/* RIGHT: Health Status + Secondary CTA + Primary CTA */}
+          {/* RIGHT: Health Status + Secondary CTAs + Primary CTA */}
           <div className="flex items-center gap-3 shrink-0">
             {/* Health Status */}
             <div className="hidden sm:flex items-center gap-2 rounded-lg border border-[rgba(212,175,55,0.15)] bg-[#050505] px-3 py-1.5 font-mono text-xs text-[#10B981]">
               <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
               <span>Optimal</span>
             </div>
+
+            {/* Add Custom Industry Domain CTA */}
+            <GhostButton onClick={onOpenAddDomain} className="text-xs py-2 px-3">
+              <Plus size={13} /> Add Industry Domain
+            </GhostButton>
 
             {/* Secondary CTA Button */}
             <GhostButton onClick={() => setBriefOpen((o) => !o)} className="text-xs py-2 px-4">
@@ -1630,6 +1679,83 @@ function ViewReportModal({ report, onClose }) {
             <Download size={15} /> Download Strategy Report (.DOC)
           </RoyalButton>
         </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ============================================================
+   ADD CUSTOM DOMAIN / INDUSTRY MODAL
+   ============================================================ */
+function AddDomainModal({ onClose, onAdd }) {
+  const [name, setName] = useState('');
+  const [desc, setDesc] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    onAdd(name.trim(), desc.trim());
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/85 p-4 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.95, y: 20, opacity: 0 }}
+        className="w-full max-w-lg overflow-hidden rounded-3xl border border-[#D4AF37]/40 bg-[#0E0E0E] text-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-[rgba(212,175,55,0.2)] bg-[#111111] px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37]">
+              <Plus size={20} />
+            </div>
+            <div>
+              <span className="font-mono text-xs font-bold text-[#F4D67A] uppercase tracking-wider">Unlimited Domain Expansion</span>
+              <h2 className="font-sans text-xl font-bold text-[#FFFFFF]">Add Custom Industry Domain</h2>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-xl p-2 text-[#CFCFCF] hover:bg-[#050505] hover:text-white transition cursor-pointer">
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <Field label="Industry / Domain Name">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Healthcare & BioTech, Logistics, CleanEnergy, FoodTech..."
+              required
+              autoFocus
+            />
+          </Field>
+
+          <Field label="Domain Focus / Description (Optional)">
+            <Textarea
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              placeholder="Describe the operational focus, market scope, or target segment for this industry domain..."
+              rows={3}
+            />
+          </Field>
+
+          <div className="pt-2 flex items-center justify-end gap-3 border-t border-[rgba(212,175,55,0.15)]">
+            <GhostButton type="button" onClick={onClose}>
+              Cancel
+            </GhostButton>
+            <RoyalButton type="submit">
+              <Plus size={15} /> Add Industry Domain
+            </RoyalButton>
+          </div>
+        </form>
       </motion.div>
     </motion.div>
   );
