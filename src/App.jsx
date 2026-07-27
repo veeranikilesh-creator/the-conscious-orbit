@@ -49,10 +49,10 @@ const BUILD_YOUR_OWN = [
 
 const EMPTY_PROFILE = {
   company: '',
-  industry: 'Logistics',
+  industry: '',
   stage: 'Seed',
   geography: '',
-  model: 'B2B',
+  model: 'B2B Enterprise',
   contact: '',
 };
 
@@ -64,10 +64,10 @@ const EMPTY_CLUSTERS = {
 
 const SAMPLE_ECOFLY_PROFILE = {
   company: 'EcoFly Robotics',
-  industry: 'Logistics',
+  industry: 'Medical Logistics & Drones',
   stage: 'Seed',
   geography: 'Bengaluru, IN',
-  model: 'B2B',
+  model: 'B2B Enterprise',
   contact: 'founder@ecofly.io',
 };
 
@@ -155,15 +155,45 @@ function App() {
 
   const handleGenerate = () => {
     const newVentureName = profile.company.trim() || 'New Strategic Venture';
+    const userIndustry = profile.industry.trim() || 'General Business & Technology';
+    const userModel = profile.model.trim() || 'B2B Enterprise';
+
     setIsGenerating(true);
     genTimer.current = setTimeout(() => {
-      // Compose the report from what the user actually entered.
       const trackNames = FLAGSHIP_TRACKS
         .filter((t) => selectedTracks.includes(t.id))
         .map((t) => t.name.replace(/ Track$/, ''));
-      const tags = [profile.industry, profile.model, ...trackNames, ...customPicks]
+      const tags = [userIndustry, userModel, ...trackNames, ...customPicks]
         .filter(Boolean)
         .slice(0, 4);
+
+      // Dynamic Industry Analysis based on Customer Type (B2B, B2C, B2G, D2C, Marketplace etc.)
+      const isConsumer = /b2c|d2c|consumer|retail|p2p/i.test(userModel);
+      const isGovt = /b2g|govt|government|public/i.test(userModel);
+
+      const dynamicProblem = clusters.market.problem.trim() ||
+        `High operational costs and inefficiencies in the ${userIndustry} industry.`;
+
+      const dynamicPain = clusters.market.pain.trim() ||
+        `Current solutions in ${userIndustry} lack real-time scalability and automation.`;
+
+      const dynamicICP = clusters.market.icp.trim() || (isGovt
+        ? `Government agencies & municipal authorities operating in ${userIndustry}.`
+        : isConsumer
+        ? `Individual consumer segments seeking premium ${userIndustry} experiences.`
+        : `Mid-market & Enterprise decision makers in ${userIndustry}.`);
+
+      const dynamicWTP = clusters.market.wtp.trim() || (isConsumer
+        ? `$15 - $99 monthly consumer subscription / transaction`
+        : `$500 - $10,000 monthly enterprise contract / seat fee`);
+
+      const dynamicRevenue = clusters.viability.revenue.trim() || (isConsumer
+        ? `Direct-to-Consumer (D2C) Sales + Tiered Premium Subscriptions`
+        : `Annual Recurring Revenue (ARR) + Retainer & Implementation`);
+
+      const dynamicGTM = clusters.launch.gtm.trim() || (isConsumer
+        ? `Digital Performance Ads + Creator Partnerships + Viral Loops`
+        : `Direct Enterprise Outbound + Account-Based Marketing (ABM)`);
 
       const calculatedScore = Math.floor(Math.random() * 14) + 79; // 79-92 score
 
@@ -171,7 +201,7 @@ function App() {
         id: `r${Date.now()}`,
         name: newVentureName,
         vertical: activeVertical,
-        tags: tags.length ? tags : ['AI Analysis'],
+        tags: tags.length ? tags : [userIndustry, userModel],
         status: 'PUBLISHED',
         score: calculatedScore,
         metrics: [
@@ -181,21 +211,21 @@ function App() {
         ],
         brief: {
           company: newVentureName,
-          industry: profile.industry || 'Logistics',
+          industry: userIndustry,
           stage: profile.stage || 'Seed',
           geography: profile.geography || 'Global',
           contact: profile.contact || 'founder@venture.io',
-          model: profile.model || 'B2B',
-          problem: clusters.market.problem || 'Standard market friction & operational delays.',
-          pain: clusters.market.pain || 'Current solutions are fragmented and costly.',
-          wtp: clusters.market.wtp || '$25 per delivery / license',
-          icp: clusters.market.icp || 'Target Enterprise & B2B Customers',
-          revenue: clusters.viability.revenue || 'Subscription + Recurring retainer',
+          model: userModel,
+          problem: dynamicProblem,
+          pain: dynamicPain,
+          wtp: dynamicWTP,
+          icp: dynamicICP,
+          revenue: dynamicRevenue,
           margin: clusters.viability.margin || '65% gross margin',
-          costs: clusters.viability.costs || 'Infrastructure, operations, and compliance',
+          costs: clusters.viability.costs || 'Infrastructure, R&D, operations, and talent acquisition',
           breakeven: clusters.viability.breakeven || '18 months',
-          gtm: clusters.launch.gtm || 'Direct enterprise sales & strategic partnerships',
-          milestones: clusters.launch.milestones || 'Product Launch -> 10 Pilot Clients -> Scale Operations',
+          gtm: dynamicGTM,
+          milestones: clusters.launch.milestones || 'Product Launch -> First 10 Key Accounts -> Scaled Expansion',
           ask: clusters.launch.ask || '$1.2M Seed',
           modules: selectedTracks.length + customPicks.length,
           tracksSelected: trackNames,
@@ -208,7 +238,7 @@ function App() {
       setIsGenModalOpen(false);
       setMainView('board');
       setViewingReport(newReportObj);
-      setNotice(`Strategy report ready for ${newVentureName}`);
+      setNotice(`Industry analysis report ready for ${newVentureName}`);
       handleResetForm();
     }, 1900);
   };
@@ -732,25 +762,29 @@ function ThreeLayerEngine({
                   placeholder="Enter your venture name..."
                 />
               </Field>
-              <Field label="Industry">
-                <Select value={profile.industry} onChange={(e) => setProfileField('industry', e.target.value)}>
-                  <option>Logistics</option><option>Healthcare</option><option>Fintech</option>
-                  <option>SaaS</option><option>AgriTech</option>
-                </Select>
+              <Field label="Industry / Sector (Type Any)">
+                <Input
+                  value={profile.industry}
+                  onChange={(e) => setProfileField('industry', e.target.value)}
+                  placeholder="e.g. AI Robotics, CleanTech, SpaceTech, BioPharma, Logistics..."
+                />
               </Field>
               <Field label="Stage">
-                <Select value={profile.stage} onChange={(e) => setProfileField('stage', e.target.value)}>
-                  <option>Idea</option><option>Pre-Seed</option><option>Seed</option>
-                  <option>Series A</option><option>Growth</option>
-                </Select>
+                <Input
+                  value={profile.stage}
+                  onChange={(e) => setProfileField('stage', e.target.value)}
+                  placeholder="e.g. Seed, Pre-Seed, Series A, Idea, Growth..."
+                />
               </Field>
               <Field label="Geography">
-                <Input value={profile.geography} onChange={(e) => setProfileField('geography', e.target.value)} placeholder="e.g. Bengaluru, IN" />
+                <Input value={profile.geography} onChange={(e) => setProfileField('geography', e.target.value)} placeholder="e.g. Bengaluru, IN / Global" />
               </Field>
-              <Field label="Business Model">
-                <Select value={profile.model} onChange={(e) => setProfileField('model', e.target.value)}>
-                  <option>B2B</option><option>B2C</option><option>B2B2C</option><option>Marketplace</option>
-                </Select>
+              <Field label="Customer Type / Business Model (Type Any)">
+                <Input
+                  value={profile.model}
+                  onChange={(e) => setProfileField('model', e.target.value)}
+                  placeholder="e.g. B2B Enterprise, B2C D2C, B2G Government, Marketplace..."
+                />
               </Field>
               <Field label="Contact Info">
                 <Input value={profile.contact} onChange={(e) => setProfileField('contact', e.target.value)} placeholder="founder@venture.io" />
