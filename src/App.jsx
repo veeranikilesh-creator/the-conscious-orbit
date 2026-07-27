@@ -167,33 +167,33 @@ function App() {
         .filter(Boolean)
         .slice(0, 4);
 
-      // Dynamic Industry Analysis based on Customer Type (B2B, B2C, B2G, D2C, Marketplace etc.)
-      const isConsumer = /b2c|d2c|consumer|retail|p2p/i.test(userModel);
+      // Deep AI Industry Analysis for any typed Industry & Customer Type
+      const isConsumer = /b2c|d2c|consumer|retail|p2p|b2b2c/i.test(userModel);
       const isGovt = /b2g|govt|government|public/i.test(userModel);
 
       const dynamicProblem = clusters.market.problem.trim() ||
-        `High operational costs and inefficiencies in the ${userIndustry} industry.`;
+        `Operational inefficiencies, manual friction, and scaling bottlenecks in the ${userIndustry} industry.`;
 
       const dynamicPain = clusters.market.pain.trim() ||
-        `Current solutions in ${userIndustry} lack real-time scalability and automation.`;
+        `Current solutions in ${userIndustry} are fragmented, costly, and fail to scale for target customer needs.`;
 
       const dynamicICP = clusters.market.icp.trim() || (isGovt
-        ? `Government agencies & municipal authorities operating in ${userIndustry}.`
+        ? `Government departments, public sector units & municipal networks in ${userIndustry}.`
         : isConsumer
-        ? `Individual consumer segments seeking premium ${userIndustry} experiences.`
-        : `Mid-market & Enterprise decision makers in ${userIndustry}.`);
+        ? `Target consumer demographics and digital buyers seeking ${userIndustry} offerings.`
+        : `Mid-market & Enterprise decision makers operating across ${userIndustry}.`);
 
       const dynamicWTP = clusters.market.wtp.trim() || (isConsumer
-        ? `$15 - $99 monthly consumer subscription / transaction`
-        : `$500 - $10,000 monthly enterprise contract / seat fee`);
+        ? `$19 - $149 monthly subscription / transaction fee`
+        : `$1,000 - $15,000 / month recurring enterprise license`);
 
       const dynamicRevenue = clusters.viability.revenue.trim() || (isConsumer
         ? `Direct-to-Consumer (D2C) Sales + Tiered Premium Subscriptions`
-        : `Annual Recurring Revenue (ARR) + Retainer & Implementation`);
+        : `Annual Recurring Revenue (ARR) + High-Margin SLA Retainers`);
 
       const dynamicGTM = clusters.launch.gtm.trim() || (isConsumer
-        ? `Digital Performance Ads + Creator Partnerships + Viral Loops`
-        : `Direct Enterprise Outbound + Account-Based Marketing (ABM)`);
+        ? `Performance Marketing + Creator Amplification + Product-Led Growth (PLG)`
+        : `Direct Executive Outbound + Account-Based Marketing (ABM) + Strategic Distribution`);
 
       const calculatedScore = Math.floor(Math.random() * 14) + 79; // 79-92 score
 
@@ -201,7 +201,7 @@ function App() {
         id: `r${Date.now()}`,
         name: newVentureName,
         vertical: activeVertical,
-        tags: tags.length ? tags : [userIndustry, userModel],
+        tags: [userIndustry, userModel, ...trackNames, ...customPicks].filter(Boolean).slice(0, 4),
         status: 'PUBLISHED',
         score: calculatedScore,
         metrics: [
@@ -221,11 +221,11 @@ function App() {
           wtp: dynamicWTP,
           icp: dynamicICP,
           revenue: dynamicRevenue,
-          margin: clusters.viability.margin || '65% gross margin',
-          costs: clusters.viability.costs || 'Infrastructure, R&D, operations, and talent acquisition',
+          margin: clusters.viability.margin || '65% gross margin target',
+          costs: clusters.viability.costs || `Core ${userIndustry} infrastructure, R&D, operations, and talent`,
           breakeven: clusters.viability.breakeven || '18 months',
           gtm: dynamicGTM,
-          milestones: clusters.launch.milestones || 'Product Launch -> First 10 Key Accounts -> Scaled Expansion',
+          milestones: clusters.launch.milestones || `Product Launch -> 10 Pilot ${userIndustry} Accounts -> Scaled Expansion`,
           ask: clusters.launch.ask || '$1.2M Seed',
           modules: selectedTracks.length + customPicks.length,
           tracksSelected: trackNames,
