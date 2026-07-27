@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Secrets — .env holds ANTHROPIC_API_KEY / SPYFU keys. Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+
+# Per-machine Claude Code permission overrides
+.claude/settings.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

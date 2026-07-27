@@ -1,25 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  GraduationCap, Building2, Factory, Rocket, Crown,
-  ArrowRight, Sparkles, ShieldCheck,
-  Play, BarChart2,
+  Crown, ArrowRight, ShieldCheck, Play,
 } from 'lucide-react';
 import {
   RoyalButton, GhostButton, OrbitBrand, RoyalBackground,
 } from './ui.jsx';
+import { VERTICALS } from '../constants.js';
 
 /* ============================================================
    BLACK & GOLD EXECUTIVE MINIMALIST HOME EXPERIENCE
    ============================================================ */
-
-const VERTICALS = [
-  { icon: GraduationCap, name: 'Students & Scholars', desc: 'Academic counseling & research mentorship' },
-  { icon: Building2,     name: 'Institutions',        desc: 'Curriculum & organizational diagnosis' },
-  { icon: Factory,       name: 'MSMEs',               desc: 'Operational bottleneck diagnostics' },
-  { icon: Building2,     name: 'Industries',          desc: 'Scale systemic optimization' },
-  { icon: Rocket,        name: 'Startups',            desc: 'Market validation & GTM readiness' },
-];
 
 const PIPELINE_STEPS = [
   { n: '01', title: 'Customer Discovery', desc: 'Raw idea statements & volume signals' },
@@ -196,7 +187,7 @@ export default function Homepage({ onEnter, onLogin }) {
             const Icon = v.icon;
             return (
               <motion.div
-                key={v.name}
+                key={v.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -210,7 +201,7 @@ export default function Homepage({ onEnter, onLogin }) {
                     <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(212,175,55,0.35)] bg-[#0E0E0E] text-[#D4AF37]">
                       <Icon size={26} />
                     </div>
-                    <h3 className="flip-card-title">{v.name}</h3>
+                    <h3 className="flip-card-title">{v.short}</h3>
                     <p className="flip-card-subtitle font-mono text-xs text-[#9A9A9A] uppercase tracking-wider">
                       Domain 0{i + 1} · Hover to Inspect
                     </p>

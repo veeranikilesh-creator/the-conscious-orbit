@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence, useMotionValue, useTransform, useAnimationFrame } from 'framer-motion';
 import {
-  GraduationCap, Building2, Factory, Rocket, Crown,
-  ChevronRight, Sparkles, FileText, LayoutDashboard, Settings,
-  Layers, ClipboardList, Search, DollarSign, Cpu, Home,
-  TrendingUp, Download, CheckCircle2,
-  Plus, X, ChevronDown, Target, Zap,
+  GraduationCap, Building2, Crown,
+  ChevronRight, Sparkles, FileText,
+  Layers, ClipboardList, Search, Cpu, Home,
+  TrendingUp, DollarSign, Download, CheckCircle2, Bell,
+  Plus, X, ChevronDown, Target, Zap, Users,
 } from 'lucide-react';
 import './App.css';
 import {
-  GlassPanel, RoyalHeading, Field, Input, Textarea, Select,
-  RoyalButton, GhostButton, StatusBadge, StatusDot, OrbitBrand,
+  GlassPanel, Field, Input, Textarea, Select,
+  RoyalButton, GhostButton, StatusBadge, StatusDot,
   AiPulseBadge, AiInsightWidget
 } from './components/ui.jsx';
+import { VERTICALS, REPORT_STATUSES } from './constants.js';
 import VentureProcessor from './components/VentureProcessor.jsx';
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from './components/VerticalEngines.jsx';
 import Homepage from './components/Homepage.jsx';
@@ -21,14 +22,6 @@ import Login from './components/Login.jsx';
 /* ============================================================
    THE CONSCIOUS ORBIT — Ultra-Luxury Red & Gold Executive Workspace
    ============================================================ */
-
-const VERTICALS = [
-  { id: 'students',      name: 'Students & Scholars',        icon: GraduationCap, desc: 'Academic counseling, research mentorship & project management' },
-  { id: 'institutions',  name: 'Educational Institutions',   icon: Building2,     desc: 'Curriculum development, faculty training & org diagnosis' },
-  { id: 'msmes',         name: 'MSMEs',                       icon: Factory,      desc: 'Small-team operations focused on operational bottlenecks' },
-  { id: 'industries',    name: 'Industries',                  icon: Building2,    desc: 'Large-scale systemic optimization & multi-stakeholder strategy' },
-  { id: 'startups',      name: 'Startups',                    icon: Rocket,       desc: 'Idea-to-execution journeys & market validation' },
-];
 
 const CLUSTER_TABS = [
   { id: 'market',  name: 'Market & Customer Foundation', cluster: 'Cluster 1' },
@@ -54,6 +47,39 @@ const BUILD_YOUR_OWN = [
   'Financial Model', 'Risk Register', 'User Personas', 'OKR Framework',
 ];
 
+/* Seed values for the Layer 1 / Layer 2 intake forms. These are the initial
+   state of the controlled inputs — edits persist across cluster tab switches
+   and are read by handleGenerate when composing a report. */
+const INITIAL_PROFILE = {
+  company: 'EcoFly Robotics',
+  industry: 'Logistics',
+  stage: 'Seed',
+  geography: 'Bengaluru, IN',
+  model: 'B2B',
+  contact: 'founder@ecofly.io',
+};
+
+const INITIAL_CLUSTERS = {
+  market: {
+    problem: 'Rural clinics wait hours for emergency blood & vaccine deliveries.',
+    pain: 'Last-mile cold-chain breaks spoil 30% of medical cargo.',
+    wtp: '$15–25 per priority delivery',
+    icp: 'Regional health networks, 50+ clinics',
+  },
+  viability: {
+    revenue: 'Per-delivery + monthly retainer',
+    margin: '62% at scale',
+    costs: 'Fleet, batteries, BVLOS compliance',
+    breakeven: 'Month 18',
+  },
+  launch: {
+    geography: 'Karnataka pilot zone',
+    gtm: 'Govt partnerships + NGO tenders',
+    milestones: '3 hubs live · 10 clinics onboarded · BVLOS certified',
+    ask: '$1.2M seed',
+  },
+};
+
 const SEED_REPORTS = [
   { id: 'r1', name: 'EcoFly Medical Drones', vertical: 'startups', tags: ['Logistics', 'Healthcare'], status: 'PUBLISHED',  score: 86 },
   { id: 'r2', name: 'Apex AI Recruiter',      vertical: 'startups', tags: ['HR Tech', 'SaaS'],       status: 'PROCESSED', score: 72 },
@@ -73,8 +99,20 @@ function App() {
   const [isGenModalOpen, setIsGenModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [expandedReport, setExpandedReport] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mainView, setMainView] = useState('pipeline'); // 'pipeline' | 'intake' | 'board'
+  const [search, setSearch] = useState('');
+  const [notice, setNotice] = useState(null);
+
+  // Controlled intake state — read by handleGenerate.
+  const [profile, setProfile] = useState(INITIAL_PROFILE);
+  const [clusters, setClusters] = useState(INITIAL_CLUSTERS);
+
+  const genTimer = useRef(null);
+  useEffect(() => () => clearTimeout(genTimer.current), []);
+
+  const setProfileField = (key, value) => setProfile((p) => ({ ...p, [key]: value }));
+  const setClusterField = (cluster, key, value) =>
+    setClusters((c) => ({ ...c, [cluster]: { ...c[cluster], [key]: value } }));
 
   const toggleTrack = (id) =>
     setSelectedTracks((p) => (p.includes(id) ? p.filter((t) => t !== id) : [...p, id]));
@@ -82,72 +120,93 @@ function App() {
     setCustomPicks((p) => (p.includes(name) ? p.filter((t) => t !== name) : [...p, name]));
 
   const moveReport = (id, dir) => {
-    const order = ['RECEIVED', 'PENDING', 'PROCESSED', 'PUBLISHED'];
     setReports((prev) =>
       prev.map((r) => {
         if (r.id !== id) return r;
-        const idx = order.indexOf(r.status);
-        const next = Math.min(order.length - 1, Math.max(0, idx + dir));
-        return { ...r, status: order[next] };
+        const idx = REPORT_STATUSES.indexOf(r.status);
+        const next = Math.min(REPORT_STATUSES.length - 1, Math.max(0, idx + dir));
+        return { ...r, status: REPORT_STATUSES[next] };
       })
     );
   };
 
   const handleGenerate = () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    genTimer.current = setTimeout(() => {
+      // Compose the report from what the user actually entered.
+      const trackNames = FLAGSHIP_TRACKS
+        .filter((t) => selectedTracks.includes(t.id))
+        .map((t) => t.name.replace(/ Track$/, ''));
+      const tags = [profile.industry, profile.model, ...trackNames, ...customPicks]
+        .filter(Boolean)
+        .slice(0, 4);
+
       setReports((prev) => [
         {
           id: `r${Date.now()}`,
-          name: 'AI Strategy Report',
+          name: profile.company.trim() || 'Untitled Venture',
           vertical: activeVertical,
-          tags: ['AI Analysis'],
+          tags: tags.length ? tags : ['AI Analysis'],
           status: 'RECEIVED',
           score: 0,
+          brief: {
+            stage: profile.stage,
+            geography: profile.geography,
+            contact: profile.contact,
+            modules: selectedTracks.length + customPicks.length,
+            ...clusters.market,
+            ...clusters.viability,
+            ...clusters.launch,
+          },
         },
         ...prev,
       ]);
       setIsGenerating(false);
       setIsGenModalOpen(false);
+      setMainView('board');
+      setNotice(`Report queued for ${profile.company.trim() || 'Untitled Venture'}`);
     }, 1900);
   };
 
   const activeVerticalObj = VERTICALS.find((v) => v.id === activeVertical);
 
+  const visibleReports = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return reports;
+    return reports.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.vertical.toLowerCase().includes(q) ||
+        r.tags.some((t) => t.toLowerCase().includes(q))
+    );
+  }, [reports, search]);
+
   // ---- Page routing ----
-  if (page === 'home') {
-    return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="home"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <Homepage onEnter={() => setPage('dashboard')} onLogin={() => setPage('login')} />
-        </motion.div>
-      </AnimatePresence>
-    );
-  }
-  if (page === 'login') {
-    return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="login"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <Login onLogin={() => setPage('dashboard')} onBack={() => setPage('home')} />
-        </motion.div>
-      </AnimatePresence>
-    );
-  }
+  // A single AnimatePresence wraps every page so the outgoing page can finish
+  // its exit transition before the incoming one mounts.
+  const fade = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+    transition: { duration: 0.4 },
+  };
 
   return (
-    <div className="min-h-screen bg-royal-mesh text-[#111827] flex flex-col w-full">
+    <AnimatePresence mode="wait">
+      {page === 'home' && (
+        <motion.div key="home" {...fade}>
+          <Homepage onEnter={() => setPage('dashboard')} onLogin={() => setPage('login')} />
+        </motion.div>
+      )}
+
+      {page === 'login' && (
+        <motion.div key="login" {...fade}>
+          <Login onLogin={() => setPage('dashboard')} onBack={() => setPage('home')} />
+        </motion.div>
+      )}
+
+      {page === 'dashboard' && (
+    <motion.div key="dashboard" {...fade} className="min-h-screen bg-royal-mesh text-[#111827] flex flex-col w-full">
       {/* ============ MAIN WORKSPACE ============ */}
       <main className="flex-1 overflow-x-hidden flex flex-col w-full">
         {/* TOPBAR — Sticky Executive Navbar */}
@@ -157,6 +216,10 @@ function App() {
           setActiveVertical={setActiveVertical}
           goHome={() => setPage('home')}
           onProfileClick={() => setPage('login')}
+          search={search}
+          setSearch={setSearch}
+          notice={notice}
+          onDismissNotice={() => setNotice(null)}
         />
 
         <div className="flex-1 mx-auto w-full max-w-7xl space-y-12 px-6 py-8 md:px-10">
@@ -186,6 +249,10 @@ function App() {
                       toggleTrack={toggleTrack}
                       customPicks={customPicks}
                       toggleCustom={toggleCustom}
+                      profile={profile}
+                      setProfileField={setProfileField}
+                      clusters={clusters}
+                      setClusterField={setClusterField}
                       onGenerate={() => setIsGenModalOpen(true)}
                     />
                     <div className="mt-10 flex items-center gap-4">
@@ -207,7 +274,9 @@ function App() {
             {/* ---------- BOARD VIEW ---------- */}
             {mainView === 'board' && (
               <KanbanBoard
-                reports={reports}
+                reports={visibleReports}
+                totalCount={reports.length}
+                search={search}
                 columns={KANBAN_COLUMNS}
                 moveReport={moveReport}
                 expandedReport={expandedReport}
@@ -277,10 +346,14 @@ function App() {
             onConfirm={handleGenerate}
             loading={isGenerating}
             vertical={activeVerticalObj}
+            company={profile.company}
+            moduleCount={selectedTracks.length + customPicks.length}
           />
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -296,21 +369,29 @@ function ScrollVelocityContainer({ children, className = '' }) {
 }
 
 function ScrollVelocityRow({ verticals, activeVertical, setActiveVertical }) {
-  const [isHovered, setIsHovered] = useState(false);
   // Duplicate list multiple times for seamless infinite looping
   const infiniteVerticals = [...verticals, ...verticals, ...verticals, ...verticals];
+
+  // Drive the marquee from a motion value rather than an animate() tween: changing
+  // a tween's duration mid-flight restarts it (visible jump), whereas scaling the
+  // per-frame delta lets hover ease the speed down continuously.
+  const x = useMotionValue(0);
+  const xPercent = useTransform(x, (v) => `${v}%`);
+  const speed = useRef(1);
+  const BASE_PERCENT_PER_SEC = 50 / 35; // travel 50% of the track every 35s
+
+  useAnimationFrame((_, delta) => {
+    const next = x.get() - (delta / 1000) * BASE_PERCENT_PER_SEC * speed.current;
+    // The list is duplicated 4x, so -50% lands on an identical frame — wrap there.
+    x.set(next <= -50 ? next + 50 : next);
+  });
 
   return (
     <motion.div
       className="scroll-velocity-track"
-      animate={{ x: ['0%', '-50%'] }}
-      transition={{
-        ease: 'linear',
-        duration: isHovered ? 120 : 35, // Slow down significantly on hover
-        repeat: Infinity,
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      style={{ x: xPercent }}
+      onMouseEnter={() => { speed.current = 35 / 120; }}
+      onMouseLeave={() => { speed.current = 1; }}
     >
       {infiniteVerticals.map((v, idx) => {
         const active = activeVertical?.id === v.id;
@@ -331,7 +412,10 @@ function ScrollVelocityRow({ verticals, activeVertical, setActiveVertical }) {
 /* ============================================================
    TOPBAR — Luxury Black & Gold Executive Navbar with ScrollVelocity
    ============================================================ */
-function Topbar({ verticals, activeVertical, setActiveVertical, goHome, onProfileClick }) {
+function Topbar({
+  verticals, activeVertical, setActiveVertical, goHome, onProfileClick,
+  search, setSearch, notice, onDismissNotice,
+}) {
   return (
     <header className="sticky top-0 z-40 scroll-velocity-header px-6 py-3.5 text-[#FFFFFF]">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 md:gap-6">
@@ -362,17 +446,55 @@ function Topbar({ verticals, activeVertical, setActiveVertical, goHome, onProfil
             <Search size={14} className="text-[#9A9A9A]" />
             <input
               type="text"
-              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search reports..."
               className="bg-transparent text-xs text-[#FFFFFF] placeholder-[#9A9A9A] focus:outline-none w-20 lg:w-28"
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+                className="text-[#9A9A9A] transition hover:text-[#D4AF37] cursor-pointer"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
 
-          <button
-            title="Notifications"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] text-[#CFCFCF] hover:border-[#D4AF37] hover:text-[#D4AF37] transition cursor-pointer"
-          >
-            <Zap size={14} />
-          </button>
+          <div className="relative">
+            <button
+              title={notice || 'No new notifications'}
+              onClick={onDismissNotice}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] text-[#CFCFCF] hover:border-[#D4AF37] hover:text-[#D4AF37] transition cursor-pointer"
+            >
+              <Bell size={14} />
+              {notice && (
+                <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#D4AF37] ring-2 ring-[#0B0B0B]" />
+              )}
+            </button>
+            <AnimatePresence>
+              {notice && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="absolute right-0 top-10 z-50 w-60 rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#111111] p-3 shadow-xl"
+                >
+                  <p className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#F4D67A]">
+                    Latest Activity
+                  </p>
+                  <p className="mt-1 text-xs text-[#CFCFCF]">{notice}</p>
+                  <button
+                    onClick={onDismissNotice}
+                    className="mt-2 font-mono text-[0.62rem] font-bold text-[#D4AF37] hover:underline cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           <button
             onClick={onProfileClick}
@@ -387,118 +509,6 @@ function Topbar({ verticals, activeVertical, setActiveVertical, goHome, onProfil
 
       </div>
     </header>
-  );
-}
-
-/* ============================================================
-   SIDEBAR — Black & Gold Executive Sidebar
-   ============================================================ */
-function Sidebar({ verticals, activeVertical, setActiveVertical, open, setOpen, goHome }) {
-  return (
-    <aside
-      className={`sticky top-0 z-20 flex h-screen flex-col border-r border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] text-[#FFFFFF] transition-all duration-300 ${
-        open ? 'w-72' : 'w-20'
-      }`}
-    >
-      {/* Brand */}
-      <button
-        onClick={goHome}
-        className="group flex w-full items-center gap-3 px-5 py-6 text-left transition hover:bg-[#111111] cursor-pointer"
-        title="Back to home"
-      >
-        <OrbitBrand size={38} />
-        {open && (
-          <div className="overflow-hidden">
-            <h1 className="font-sans text-lg font-bold leading-tight text-[#FFFFFF]">
-              The Conscious Orbit
-            </h1>
-            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#D4AF37]">
-              Executive Suite
-            </p>
-          </div>
-        )}
-      </button>
-
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="absolute -right-3 top-7 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-[#D4AF37] bg-[#111111] text-[#D4AF37] shadow-md transition hover:bg-[#050505] cursor-pointer"
-        aria-label="Toggle sidebar"
-      >
-        <ChevronRight size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        {open && (
-          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">
-            Target Verticals
-          </p>
-        )}
-        {verticals.map((v) => {
-          const Icon = v.icon;
-          const active = activeVertical === v.id;
-          return (
-            <button
-              key={v.id}
-              onClick={() => setActiveVertical(v.id)}
-              className={`group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 border cursor-pointer ${
-                active
-                  ? 'bg-[#111111] text-[#FFFFFF] border-[#D4AF37] shadow-sm'
-                  : 'text-[#CFCFCF] hover:text-[#FFFFFF] hover:bg-[#050505] border-transparent'
-              }`}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-md bg-[#D4AF37]" />
-              )}
-              <Icon
-                size={18}
-                className={`shrink-0 ${active ? 'text-[#F4D67A]' : 'text-[#D4AF37]'}`}
-              />
-              {open && (
-                <span className="truncate text-sm font-medium">{v.name}</span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Footer */}
-      {open && (
-        <div className="space-y-1 px-3 pb-5">
-          <p className="px-3 pb-2 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">
-            System
-          </p>
-          <button
-            onClick={goHome}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#CFCFCF] transition hover:bg-[#050505] hover:text-[#D4AF37] cursor-pointer"
-          >
-            <Home size={18} className="text-[#D4AF37]" />
-            Back to Home
-          </button>
-          {[
-            { icon: LayoutDashboard, label: 'Overview' },
-            { icon: Settings, label: 'Settings' },
-          ].map((item) => (
-            <button
-              key={item.label}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-[#CFCFCF] transition hover:bg-[#050505] hover:text-[#D4AF37] cursor-pointer"
-            >
-              <item.icon size={18} className="text-[#D4AF37]" />
-              {item.label}
-            </button>
-          ))}
-          <div className="mt-4 rounded-xl border border-[rgba(212,175,55,0.2)] bg-[#050505] p-3 shadow-xs">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-[#D4AF37]" />
-              <span className="font-mono text-xs font-semibold text-[#FFFFFF]">Executive AI Tier</span>
-            </div>
-            <p className="mt-1 text-[0.68rem] text-[#9A9A9A]">
-              All 5 verticals &amp; tracks unlocked
-            </p>
-          </div>
-        </div>
-      )}
-    </aside>
   );
 }
 
@@ -536,6 +546,7 @@ function MainViewTabs({ mainView, setMainView }) {
 
 function VerticalHero({ vertical, onOpenGenerate }) {
   const Icon = vertical?.icon;
+  const [briefOpen, setBriefOpen] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -571,8 +582,9 @@ function VerticalHero({ vertical, onOpenGenerate }) {
             </div>
 
             {/* Secondary CTA Button */}
-            <GhostButton className="text-xs py-2 px-4">
+            <GhostButton onClick={() => setBriefOpen((o) => !o)} className="text-xs py-2 px-4">
               <FileText size={13} /> Strategy Brief
+              <ChevronDown size={12} className={`transition ${briefOpen ? 'rotate-180' : ''}`} />
             </GhostButton>
 
             {/* Primary CTA Button */}
@@ -581,6 +593,31 @@ function VerticalHero({ vertical, onOpenGenerate }) {
             </RoyalButton>
           </div>
         </div>
+
+        {/* Expandable strategy brief for the active domain */}
+        <AnimatePresence>
+          {briefOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-4 grid grid-cols-1 gap-3 border-t border-[rgba(212,175,55,0.15)] pt-4 sm:grid-cols-3">
+                {[
+                  { k: 'Engagement Focus', v: vertical?.desc },
+                  { k: 'Primary Deliverable', v: 'Conscious Orbital Score & 1/0 verdict' },
+                  { k: 'Typical Cycle', v: '4 stages · intake to published artifact' },
+                ].map((row) => (
+                  <div key={row.k} className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#050505] p-3">
+                    <p className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#F4D67A]">{row.k}</p>
+                    <p className="mt-1 text-xs text-[#CFCFCF]">{row.v}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </GlassPanel>
     </motion.div>
   );
@@ -595,6 +632,8 @@ function ThreeLayerEngine({
   activeCluster, setActiveCluster,
   selectedTracks, toggleTrack,
   customPicks, toggleCustom,
+  profile, setProfileField,
+  clusters, setClusterField,
   onGenerate,
 }) {
   return (
@@ -613,30 +652,30 @@ function ThreeLayerEngine({
           <GlassPanel className="p-6 border-[#D4AF37]/50 bg-[#3B0413]/85 text-white">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Field label="Company Name">
-                <Input defaultValue="EcoFly Robotics" />
+                <Input value={profile.company} onChange={(e) => setProfileField('company', e.target.value)} />
               </Field>
               <Field label="Industry">
-                <Select defaultValue="Logistics">
+                <Select value={profile.industry} onChange={(e) => setProfileField('industry', e.target.value)}>
                   <option>Logistics</option><option>Healthcare</option><option>Fintech</option>
                   <option>SaaS</option><option>AgriTech</option>
                 </Select>
               </Field>
               <Field label="Stage">
-                <Select defaultValue="Seed">
+                <Select value={profile.stage} onChange={(e) => setProfileField('stage', e.target.value)}>
                   <option>Idea</option><option>Pre-Seed</option><option>Seed</option>
                   <option>Series A</option><option>Growth</option>
                 </Select>
               </Field>
               <Field label="Geography">
-                <Input defaultValue="Bengaluru, IN" />
+                <Input value={profile.geography} onChange={(e) => setProfileField('geography', e.target.value)} />
               </Field>
               <Field label="Business Model">
-                <Select defaultValue="B2B">
+                <Select value={profile.model} onChange={(e) => setProfileField('model', e.target.value)}>
                   <option>B2B</option><option>B2C</option><option>B2B2C</option><option>Marketplace</option>
                 </Select>
               </Field>
               <Field label="Contact Info">
-                <Input defaultValue="founder@ecofly.io" />
+                <Input value={profile.contact} onChange={(e) => setProfileField('contact', e.target.value)} />
               </Field>
             </div>
           </GlassPanel>
@@ -688,33 +727,33 @@ function ThreeLayerEngine({
                   {activeCluster === 'market' && (
                     <>
                       <Field label="Problem statement">
-                        <Textarea defaultValue="Rural clinics wait hours for emergency blood & vaccine deliveries." className="min-h-[90px]" />
+                        <Textarea value={clusters.market.problem} onChange={(e) => setClusterField('market', 'problem', e.target.value)} className="min-h-[90px]" />
                       </Field>
                       <Field label="Specific pain point">
-                        <Textarea defaultValue="Last-mile cold-chain breaks spoil 30% of medical cargo." className="min-h-[90px]" />
+                        <Textarea value={clusters.market.pain} onChange={(e) => setClusterField('market', 'pain', e.target.value)} className="min-h-[90px]" />
                       </Field>
                       <Field label="Willingness-to-pay signals">
-                        <Input defaultValue="$15–25 per priority delivery" />
+                        <Input value={clusters.market.wtp} onChange={(e) => setClusterField('market', 'wtp', e.target.value)} />
                       </Field>
                       <Field label="Ideal customer profile">
-                        <Input defaultValue="Regional health networks, 50+ clinics" />
+                        <Input value={clusters.market.icp} onChange={(e) => setClusterField('market', 'icp', e.target.value)} />
                       </Field>
                     </>
                   )}
                   {activeCluster === 'viability' && (
                     <>
-                      <Field label="Revenue model"><Input defaultValue="Per-delivery + monthly retainer" /></Field>
-                      <Field label="Unit economics (gross margin)"><Input defaultValue="62% at scale" /></Field>
-                      <Field label="Key costs"><Input defaultValue="Fleet, batteries, BVLOS compliance" /></Field>
-                      <Field label="Break-even timeline"><Input defaultValue="Month 18" /></Field>
+                      <Field label="Revenue model"><Input value={clusters.viability.revenue} onChange={(e) => setClusterField('viability', 'revenue', e.target.value)} /></Field>
+                      <Field label="Unit economics (gross margin)"><Input value={clusters.viability.margin} onChange={(e) => setClusterField('viability', 'margin', e.target.value)} /></Field>
+                      <Field label="Key costs"><Input value={clusters.viability.costs} onChange={(e) => setClusterField('viability', 'costs', e.target.value)} /></Field>
+                      <Field label="Break-even timeline"><Input value={clusters.viability.breakeven} onChange={(e) => setClusterField('viability', 'breakeven', e.target.value)} /></Field>
                     </>
                   )}
                   {activeCluster === 'launch' && (
                     <>
-                      <Field label="Launch geography"><Input defaultValue="Karnataka pilot zone" /></Field>
-                      <Field label="Go-to-market motion"><Input defaultValue="Govt partnerships + NGO tenders" /></Field>
-                      <Field label="Key milestones (12mo)"><Textarea defaultValue="3 hubs live · 10 clinics onboarded · BVLOS certified" className="min-h-[70px]" /></Field>
-                      <Field label="Funding ask"><Input defaultValue="$1.2M seed" /></Field>
+                      <Field label="Launch geography"><Input value={clusters.launch.geography} onChange={(e) => setClusterField('launch', 'geography', e.target.value)} /></Field>
+                      <Field label="Go-to-market motion"><Input value={clusters.launch.gtm} onChange={(e) => setClusterField('launch', 'gtm', e.target.value)} /></Field>
+                      <Field label="Key milestones (12mo)"><Textarea value={clusters.launch.milestones} onChange={(e) => setClusterField('launch', 'milestones', e.target.value)} className="min-h-[70px]" /></Field>
+                      <Field label="Funding ask"><Input value={clusters.launch.ask} onChange={(e) => setClusterField('launch', 'ask', e.target.value)} /></Field>
                     </>
                   )}
                 </motion.div>
@@ -810,17 +849,24 @@ function ThreeLayerEngine({
    ============================================================ */
 function GenericVerticalPanel({ vertical }) {
   const Icon = vertical?.icon;
+  const [openCard, setOpenCard] = useState(null);
   const cards =
     vertical?.id === 'students'
       ? [
-          { icon: GraduationCap, title: 'Academic Counseling', desc: '1:1 mentorship plans, course trajectories & research direction.' },
-          { icon: ClipboardList, title: 'Research Mentorship', desc: 'Pair scholars with domain guides; track thesis milestones.' },
-          { icon: Target, title: 'Project Management', desc: 'Scoped deliverables, deadlines & advisor reviews.' },
+          { icon: GraduationCap, title: 'Academic Counseling', desc: '1:1 mentorship plans, course trajectories & research direction.',
+            steps: ['Baseline aptitude & interest mapping', 'Course trajectory plan per semester', 'Quarterly advisor review checkpoints'] },
+          { icon: ClipboardList, title: 'Research Mentorship', desc: 'Pair scholars with domain guides; track thesis milestones.',
+            steps: ['Domain guide matching', 'Thesis milestone calendar', 'Publication readiness review'] },
+          { icon: Target, title: 'Project Management', desc: 'Scoped deliverables, deadlines & advisor reviews.',
+            steps: ['Deliverable scoping & sign-off', 'Deadline tracking board', 'Advisor review gates'] },
         ]
       : [
-          { icon: FileText, title: 'Curriculum Development', desc: 'Design outcomes-aligned curricula across departments.' },
-          { icon: Users, title: 'Faculty Training', desc: 'Upskill faculty with tracked competency modules.' },
-          { icon: Building2, title: 'Organizational Diagnosis', desc: 'Audit institutional health across stakeholders.' },
+          { icon: FileText, title: 'Curriculum Development', desc: 'Design outcomes-aligned curricula across departments.',
+            steps: ['Learning-outcome mapping', 'Departmental gap analysis', 'Accreditation alignment pass'] },
+          { icon: Users, title: 'Faculty Training', desc: 'Upskill faculty with tracked competency modules.',
+            steps: ['Competency baseline survey', 'Module assignment & tracking', 'Post-training impact scoring'] },
+          { icon: Building2, title: 'Organizational Diagnosis', desc: 'Audit institutional health across stakeholders.',
+            steps: ['Multi-stakeholder interviews', 'Process bottleneck audit', 'Institutional health scorecard'] },
         ];
   return (
     <section className="space-y-6">
@@ -833,6 +879,7 @@ function GenericVerticalPanel({ vertical }) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {cards.map((c) => {
           const CIcon = c.icon;
+          const open = openCard === c.title;
           return (
             <GlassPanel key={c.title} className="group p-5 transition hover:border-[#D4AF37] bg-[#111111] text-white border-[rgba(212,175,55,0.18)]">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#0E0E0E] text-[#D4AF37]">
@@ -840,9 +887,32 @@ function GenericVerticalPanel({ vertical }) {
               </div>
               <h4 className="mt-4 font-sans text-lg font-bold text-[#FFFFFF]">{c.title}</h4>
               <p className="mt-1 text-sm text-[#CFCFCF]">{c.desc}</p>
-              <button className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#F4D67A] transition hover:gap-2 cursor-pointer">
-                Explore <ChevronRight size={13} />
+              <button
+                onClick={() => setOpenCard(open ? null : c.title)}
+                className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#F4D67A] transition hover:gap-2 cursor-pointer"
+              >
+                {open ? 'Collapse' : 'Explore'}
+                <ChevronRight size={13} className={`transition ${open ? 'rotate-90' : ''}`} />
               </button>
+              <AnimatePresence>
+                {open && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <ul className="mt-3 space-y-1.5 border-t border-[rgba(212,175,55,0.18)] pt-3">
+                      {c.steps.map((s) => (
+                        <li key={s} className="flex items-start gap-2 text-xs text-[#CFCFCF]">
+                          <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-[#D4AF37]" />
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </GlassPanel>
           );
         })}
@@ -854,7 +924,29 @@ function GenericVerticalPanel({ vertical }) {
 /* ============================================================
    KANBAN BOARD — report lifecycle tracking
    ============================================================ */
-function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpandedReport, onGenerate }) {
+function KanbanBoard({ reports, totalCount, search, columns, moveReport, expandedReport, setExpandedReport, onGenerate }) {
+  // Serialize a published report to a JSON file the browser downloads locally.
+  const downloadArtifact = (report) => {
+    const payload = {
+      report: report.name,
+      vertical: report.vertical,
+      status: report.status,
+      orbitalScore: report.score,
+      tags: report.tags,
+      ...(report.brief ? { brief: report.brief } : {}),
+      generatedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${report.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-orbital-report.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -869,6 +961,16 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
           <Plus size={15} /> New Report
         </RoyalButton>
       </div>
+
+      {search && (
+        <div className="flex items-center gap-2 rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#0E0E0E] px-4 py-2.5">
+          <Search size={13} className="text-[#D4AF37]" />
+          <span className="font-mono text-xs text-[#CFCFCF]">
+            Showing <strong className="text-[#F4D67A]">{reports.length}</strong> of {totalCount} reports matching
+            <strong className="text-[#FFFFFF]"> “{search}”</strong>
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {columns.map((col) => {
@@ -955,7 +1057,10 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
                                   <span className="w-7 text-right font-mono font-bold text-[#F4D67A]">{m.v}</span>
                                 </div>
                               ))}
-                              <button className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#D4AF37] bg-[#D4AF37] py-2 font-mono text-xs font-bold text-[#050505] transition hover:bg-[#F4D67A] cursor-pointer">
+                              <button
+                                onClick={() => downloadArtifact(r)}
+                                className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#D4AF37] bg-[#D4AF37] py-2 font-mono text-xs font-bold text-[#050505] transition hover:bg-[#F4D67A] cursor-pointer"
+                              >
                                 <Download size={13} /> Download Artifact
                               </button>
                             </div>
@@ -1001,7 +1106,7 @@ function KanbanBoard({ reports, columns, moveReport, expandedReport, setExpanded
 /* ============================================================
    GENERATE REPORT MODAL
    ============================================================ */
-function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
+function GenerateReportModal({ onClose, onConfirm, loading, vertical, company, moduleCount }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1032,8 +1137,9 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical }) {
         {/* Body */}
         <div className="px-6 py-6">
           <p className="text-sm text-[#CFCFCF] leading-relaxed">
-            Compose a new report for the <strong className="text-[#F4D67A]">{vertical?.name}</strong> vertical.
-            Selected modules will be synthesized into a flagship deliverable.
+            Compose a new report for <strong className="text-[#F4D67A]">{company?.trim() || 'Untitled Venture'}</strong> in
+            the <strong className="text-[#F4D67A]">{vertical?.name}</strong> vertical, synthesizing
+            {' '}<strong className="text-[#FFFFFF]">{moduleCount}</strong> selected module{moduleCount === 1 ? '' : 's'}.
           </p>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             {[

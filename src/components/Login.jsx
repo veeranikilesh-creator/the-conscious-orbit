@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Crown,
@@ -11,22 +11,39 @@ import { fieldBase } from './ui.jsx';
    BLACK & GOLD EXECUTIVE AUTHENTICATION SCREEN
    ============================================================ */
 
+const REMEMBER_KEY = 'orbit.rememberedEmail';
+
 export default function Login({ onLogin, onBack }) {
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem(REMEMBER_KEY) || '');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(() => Boolean(localStorage.getItem(REMEMBER_KEY)));
+  const [resetSent, setResetSent] = useState(false);
+
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
+
+    // "Remember me" now actually persists the address for the next visit.
+    if (remember) localStorage.setItem(REMEMBER_KEY, email);
+    else localStorage.removeItem(REMEMBER_KEY);
+
     // Simulate auth then enter dashboard
-    setTimeout(() => {
+    timer.current = setTimeout(() => {
       setLoading(false);
       onLogin();
     }, 1400);
+  };
+
+  const handleForgotPassword = () => {
+    if (!email.trim()) return;
+    setResetSent(true);
   };
 
   return (
@@ -166,6 +183,8 @@ export default function Login({ onLogin, onBack }) {
                     <input
                       type="text"
                       required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                       placeholder="Your name"
                       className={`${fieldBase} pl-11`}
                     />
@@ -215,10 +234,29 @@ export default function Login({ onLogin, onBack }) {
                     />
                     Remember me
                   </label>
-                  <a href="#forgot" className="font-semibold text-[#F4D67A] hover:underline">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={!email.trim()}
+                    className="font-semibold text-[#F4D67A] hover:underline disabled:opacity-40 disabled:hover:no-underline cursor-pointer disabled:cursor-not-allowed"
+                    title={email.trim() ? 'Send a reset link' : 'Enter your email address first'}
+                  >
                     Forgot password?
-                  </a>
+                  </button>
                 </div>
+              )}
+
+              {mode === 'signin' && resetSent && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 rounded-xl border border-[#10B981]/40 bg-[#065F46]/25 px-3.5 py-2.5"
+                >
+                  <CheckCircle2 size={14} className="shrink-0 text-[#10B981]" />
+                  <span className="text-xs text-[#A7F3D0]">
+                    Reset link sent to <strong className="text-[#FFFFFF]">{email}</strong>
+                  </span>
+                </motion.div>
               )}
 
               <button

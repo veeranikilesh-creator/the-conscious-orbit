@@ -105,9 +105,16 @@ export default function DarkVeil({
   const ref = useRef(null);
 
   useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const parent = canvas.parentElement;
+    const parent = ref.current;
+    if (!parent) return;
+
+    // Own the canvas here rather than rendering it via JSX. Cleanup releases the
+    // WebGL context, and a released context cannot be re-initialised on the same
+    // canvas element — under StrictMode's mount/unmount/remount that produced a
+    // dead context and crashed Program.use(). A fresh canvas per run avoids it.
+    const canvas = document.createElement('canvas');
+    canvas.className = 'darkveil-canvas';
+    parent.appendChild(canvas);
 
     const renderer = new Renderer({
       dpr: Math.min(window.devicePixelRatio, 2),
@@ -162,8 +169,17 @@ export default function DarkVeil({
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', resize);
+
+      // Release GPU resources and the WebGL context itself. Without this, every
+      // mount (Homepage <-> Login navigation, StrictMode double-mount in dev)
+      // leaks a context until the browser's ~16-context limit kills the canvas.
+      geometry.remove();
+      program.remove();
+      const loseContext = gl.getExtension('WEBGL_lose_context');
+      if (loseContext) loseContext.loseContext();
+      canvas.remove();
     };
   }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale]);
 
-  return <canvas ref={ref} className="darkveil-canvas" />;
+  return <div ref={ref} className="darkveil-root" />;
 }

@@ -17,12 +17,19 @@ export function StartupMarketEngine() {
   const [conversion, setConversion] = useState(8);
 
   const sam = useMemo(() => Math.round(tam * (samPct / 100)), [tam, samPct]);
-  const channelWeight = (channels.direct + channels.partner + channels.online) / 100;
+
+  // The three channels describe how much of SAM is actually reachable, so the
+  // mix is coverage capped at 100% — without the cap a 100/100/100 split gave a
+  // weight of 3.0 and produced a SOM larger than both SAM and TAM.
+  const channelTotal = channels.direct + channels.partner + channels.online;
+  const channelWeight = Math.min(1, channelTotal / 100);
+
   const som = useMemo(
     () => Math.round(sam * channelWeight * (conversion / 100)),
     [sam, channelWeight, conversion]
   );
   const feasibility = Math.min(100, Math.round(40 + (som / Math.max(tam, 1)) * 1000));
+  const proceed = feasibility >= 60;
 
   return (
     <div className="space-y-6">
@@ -44,7 +51,12 @@ export function StartupMarketEngine() {
           </Field>
 
           <div className="space-y-2 pt-2">
-            <span className="font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#F4D67A]">Channel Mix Split</span>
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#F4D67A]">Channel Mix Split</span>
+              <span className={`font-mono text-[0.62rem] font-bold ${channelTotal === 100 ? 'text-[#10B981]' : 'text-[#F59E0B]'}`}>
+                {channelTotal}% {channelTotal === 100 ? '· balanced' : '· should total 100%'}
+              </span>
+            </div>
             <div className="grid grid-cols-3 gap-2">
               <Field label="Direct">
                 <Input type="number" value={channels.direct} onChange={(e) => setChannels({ ...channels, direct: parseInt(e.target.value) || 0 })} />
@@ -80,7 +92,9 @@ export function StartupMarketEngine() {
             </div>
             <div className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3 text-center">
               <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Recommendation</span>
-              <p className="font-mono text-xs font-bold text-[#10B981] mt-1">{feasibility >= 60 ? '1 · Proceed' : '0 · Pivot'}</p>
+              <p className={`font-mono text-xs font-bold mt-1 ${proceed ? 'text-[#10B981]' : 'text-[#F87171]'}`}>
+                {proceed ? '1 · Proceed' : '0 · Pivot'}
+              </p>
             </div>
           </div>
         </GlassPanel>
@@ -150,7 +164,9 @@ export function IndustryAnalysisEngine() {
   const [outputVolume, setOutputVolume] = useState(150000);
 
   const defectUnits = Math.round(outputVolume * (defectRate / 100));
-  const sigmaLevel = Math.max(2.1, (6.0 - defectRate * 0.6).toFixed(1));
+  // Clamp first, format second — the previous order let Math.max coerce the
+  // formatted string back to a number and drop the trailing decimal.
+  const sigmaLevel = Math.max(2.1, 6.0 - defectRate * 0.6).toFixed(1);
 
   return (
     <div className="space-y-6">
@@ -212,7 +228,7 @@ function MetricBar({ label, val, pct, color = 'bg-[#F4D67A]' }) {
         <span className="font-bold text-[#FFFFFF]">{val}</span>
       </div>
       <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[#0E0E0E]">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(2, pct)}%` }} />
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(100, Math.max(2, pct))}%` }} />
       </div>
     </div>
   );

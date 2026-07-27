@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, TrendingUp, DollarSign, FileText, Target,
@@ -119,15 +119,22 @@ export default function VentureProcessor() {
 
   const current = PIPELINE[activeStage];
 
+  // Held in a ref so the interval can be cleared if the component unmounts
+  // mid-run (e.g. the user switches away from the Pipeline tab).
+  const intervalRef = useRef(null);
+  useEffect(() => () => clearInterval(intervalRef.current), []);
+
   const handleSimulate = () => {
+    clearInterval(intervalRef.current);
     setIsProcessing(true);
+    setActiveStage(0);
     let step = 0;
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       step += 1;
       if (step < PIPELINE.length) {
         setActiveStage(step);
       } else {
-        clearInterval(interval);
+        clearInterval(intervalRef.current);
         setIsProcessing(false);
       }
     }, 1100);
