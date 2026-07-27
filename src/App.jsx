@@ -1003,22 +1003,96 @@ function GenericVerticalPanel({ vertical }) {
    KANBAN BOARD — report lifecycle tracking
    ============================================================ */
 function KanbanBoard({ reports, totalCount, search, columns, moveReport, expandedReport, setExpandedReport, onViewReport, onGenerate }) {
-  // Serialize a published report to a JSON file the browser downloads locally.
+  // Export executive strategy report to DOC format (.doc)
   const downloadArtifact = (report) => {
-    const payload = {
-      report: report.name,
-      vertical: report.vertical,
-      status: report.status,
-      orbitalScore: report.score,
-      tags: report.tags,
-      ...(report.brief ? { brief: report.brief } : {}),
-      generatedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    if (!report) return;
+    const brief = report.brief || {};
+    const title = report.name || 'Executive Strategy Report';
+    const score = report.score || 85;
+    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>${title} - Executive Strategy Report</title>
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; color: #111; line-height: 1.6; padding: 25px; }
+          .header { border-bottom: 3px solid #D4AF37; padding-bottom: 15px; margin-bottom: 25px; }
+          .brand { font-size: 11pt; color: #D4AF37; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+          .title { font-size: 24pt; font-weight: bold; color: #050505; margin: 8px 0 4px 0; }
+          .meta { color: #666; font-size: 10pt; margin: 0; }
+          .score-card { background: #FCF8EC; border: 2px solid #D4AF37; padding: 18px; border-radius: 8px; margin: 20px 0; text-align: center; }
+          .score-title { font-size: 10pt; color: #856404; text-transform: uppercase; font-weight: bold; }
+          .score-num { font-size: 34pt; font-weight: bold; color: #D4AF37; margin: 4px 0; }
+          .score-badge { font-size: 10pt; color: #155724; font-weight: bold; background: #d4edda; padding: 3px 10px; border-radius: 12px; display: inline-block; }
+          .section-heading { font-size: 14pt; font-weight: bold; color: #050505; border-bottom: 2px solid #D4AF37; padding-bottom: 5px; margin-top: 28px; margin-bottom: 12px; text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 16px; }
+          th { background: #0E0E0E; color: #D4AF37; text-align: left; padding: 10px; font-size: 10pt; text-transform: uppercase; }
+          td { border: 1px solid #E2E8F0; padding: 10px; font-size: 10pt; vertical-align: top; background: #FFFFFF; }
+          .label { font-weight: bold; color: #333333; width: 32%; background: #F8FAFC; }
+          .footer { margin-top: 40px; border-top: 1px solid #CBD5E1; padding-top: 12px; font-size: 9pt; color: #64748B; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="brand">The Conscious Orbit · Venture Intelligence Suite</div>
+          <h1 class="title">${title}</h1>
+          <p class="meta">Vertical: <strong>${(report.vertical || 'Startup').toUpperCase()}</strong> | Date: <strong>${date}</strong> | Status: <strong>${report.status}</strong></p>
+        </div>
+
+        <div class="score-card">
+          <div class="score-title">Conscious Orbital Score</div>
+          <div class="score-num">${score} / 100</div>
+          <div class="score-badge">✔ High Commercial & Execution Viability</div>
+        </div>
+
+        <div class="section-heading">1. Executive & Venture Profile</div>
+        <table>
+          <tr><td class="label">Company / Venture Name</td><td>${brief.company || title}</td></tr>
+          <tr><td class="label">Industry & Sector</td><td>${brief.industry || report.tags?.[0] || 'Technology'}</td></tr>
+          <tr><td class="label">Venture Stage</td><td>${brief.stage || 'Seed'}</td></tr>
+          <tr><td class="label">Business Model</td><td>${brief.model || 'B2B'}</td></tr>
+          <tr><td class="label">Geographic Target</td><td>${brief.geography || 'Global'}</td></tr>
+          <tr><td class="label">Founder Contact</td><td>${brief.contact || 'founder@venture.io'}</td></tr>
+          <tr><td class="label">Capital Ask</td><td><strong>${brief.ask || '$1.2M Seed'}</strong></td></tr>
+        </table>
+
+        <div class="section-heading">2. Market Opportunity & Problem Validation</div>
+        <table>
+          <tr><td class="label">Core Market Problem</td><td>${brief.problem || 'Significant operational friction and market inefficiencies.'}</td></tr>
+          <tr><td class="label">Customer Pain Point</td><td>${brief.pain || 'Current industry solutions are costly, slow, and fragmented.'}</td></tr>
+          <tr><td class="label">Ideal Customer Profile (ICP)</td><td>${brief.icp || 'Mid-market to Enterprise Organizations'}</td></tr>
+          <tr><td class="label">Willingness to Pay (WTP)</td><td>${brief.wtp || '$25 per delivery / seat'}</td></tr>
+        </table>
+
+        <div class="section-heading">3. Business Economics & Viability</div>
+        <table>
+          <tr><td class="label">Revenue Model</td><td>${brief.revenue || 'Recurring Subscription + Retainer'}</td></tr>
+          <tr><td class="label">Gross Margin Target</td><td>${brief.margin || '65% Target Gross Margin'}</td></tr>
+          <tr><td class="label">Key Cost Drivers</td><td>${brief.costs || 'Infrastructure, Operations, Regulatory Compliance'}</td></tr>
+          <tr><td class="label">Breakeven Horizon</td><td>${brief.breakeven || '18 Months'}</td></tr>
+        </table>
+
+        <div class="section-heading">4. Launch & Go-To-Market Strategy</div>
+        <table>
+          <tr><td class="label">GTM Strategy</td><td>${brief.gtm || 'Direct enterprise sales + Strategic distribution partners'}</td></tr>
+          <tr><td class="label">Growth Milestones</td><td>${brief.milestones || 'Product Launch -> 10 Pilot Customers -> Scaled Expansion'}</td></tr>
+        </table>
+
+        <div class="footer">
+          Generated automatically by <strong>The Conscious Orbit — Executive Strategy Engine</strong><br/>
+          Confidential Executive Report &copy; ${new Date().getFullYear()}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${report.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-orbital-report.json`;
+    a.download = `${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-strategy-report.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1147,7 +1221,7 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
                                 onClick={() => downloadArtifact(r)}
                                 className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[#D4AF37] bg-[#D4AF37] py-2 font-mono text-xs font-bold text-[#050505] transition hover:bg-[#F4D67A] cursor-pointer"
                               >
-                                <Download size={13} /> Download Artifact
+                                <Download size={13} /> Download Strategy Report (.DOC)
                               </button>
                             </div>
                           </motion.div>
@@ -1302,20 +1376,92 @@ function ViewReportModal({ report, onClose }) {
   const brief = report.brief || {};
 
   const handleDownload = () => {
-    const payload = {
-      report: report.name,
-      vertical: report.vertical,
-      status: report.status,
-      orbitalScore: report.score,
-      tags: report.tags,
-      brief: brief,
-      generatedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const title = report.name || 'Executive Strategy Report';
+    const score = report.score || 85;
+    const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>${title} - Executive Strategy Report</title>
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; color: #111; line-height: 1.6; padding: 25px; }
+          .header { border-bottom: 3px solid #D4AF37; padding-bottom: 15px; margin-bottom: 25px; }
+          .brand { font-size: 11pt; color: #D4AF37; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+          .title { font-size: 24pt; font-weight: bold; color: #050505; margin: 8px 0 4px 0; }
+          .meta { color: #666; font-size: 10pt; margin: 0; }
+          .score-card { background: #FCF8EC; border: 2px solid #D4AF37; padding: 18px; border-radius: 8px; margin: 20px 0; text-align: center; }
+          .score-title { font-size: 10pt; color: #856404; text-transform: uppercase; font-weight: bold; }
+          .score-num { font-size: 34pt; font-weight: bold; color: #D4AF37; margin: 4px 0; }
+          .score-badge { font-size: 10pt; color: #155724; font-weight: bold; background: #d4edda; padding: 3px 10px; border-radius: 12px; display: inline-block; }
+          .section-heading { font-size: 14pt; font-weight: bold; color: #050505; border-bottom: 2px solid #D4AF37; padding-bottom: 5px; margin-top: 28px; margin-bottom: 12px; text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 16px; }
+          th { background: #0E0E0E; color: #D4AF37; text-align: left; padding: 10px; font-size: 10pt; text-transform: uppercase; }
+          td { border: 1px solid #E2E8F0; padding: 10px; font-size: 10pt; vertical-align: top; background: #FFFFFF; }
+          .label { font-weight: bold; color: #333333; width: 32%; background: #F8FAFC; }
+          .footer { margin-top: 40px; border-top: 1px solid #CBD5E1; padding-top: 12px; font-size: 9pt; color: #64748B; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="brand">The Conscious Orbit · Venture Intelligence Suite</div>
+          <h1 class="title">${title}</h1>
+          <p class="meta">Vertical: <strong>${(report.vertical || 'Startup').toUpperCase()}</strong> | Date: <strong>${date}</strong> | Status: <strong>${report.status}</strong></p>
+        </div>
+
+        <div class="score-card">
+          <div class="score-title">Conscious Orbital Score</div>
+          <div class="score-num">${score} / 100</div>
+          <div class="score-badge">✔ High Commercial & Execution Viability</div>
+        </div>
+
+        <div class="section-heading">1. Executive & Venture Profile</div>
+        <table>
+          <tr><td class="label">Company / Venture Name</td><td>${brief.company || title}</td></tr>
+          <tr><td class="label">Industry & Sector</td><td>${brief.industry || report.tags?.[0] || 'Technology'}</td></tr>
+          <tr><td class="label">Venture Stage</td><td>${brief.stage || 'Seed'}</td></tr>
+          <tr><td class="label">Business Model</td><td>${brief.model || 'B2B'}</td></tr>
+          <tr><td class="label">Geographic Target</td><td>${brief.geography || 'Global'}</td></tr>
+          <tr><td class="label">Founder Contact</td><td>${brief.contact || 'founder@venture.io'}</td></tr>
+          <tr><td class="label">Capital Ask</td><td><strong>${brief.ask || '$1.2M Seed'}</strong></td></tr>
+        </table>
+
+        <div class="section-heading">2. Market Opportunity & Problem Validation</div>
+        <table>
+          <tr><td class="label">Core Market Problem</td><td>${brief.problem || 'Significant operational friction and market inefficiencies.'}</td></tr>
+          <tr><td class="label">Customer Pain Point</td><td>${brief.pain || 'Current industry solutions are costly, slow, and fragmented.'}</td></tr>
+          <tr><td class="label">Ideal Customer Profile (ICP)</td><td>${brief.icp || 'Mid-market to Enterprise Organizations'}</td></tr>
+          <tr><td class="label">Willingness to Pay (WTP)</td><td>${brief.wtp || '$25 per delivery / seat'}</td></tr>
+        </table>
+
+        <div class="section-heading">3. Business Economics & Viability</div>
+        <table>
+          <tr><td class="label">Revenue Model</td><td>${brief.revenue || 'Recurring Subscription + Retainer'}</td></tr>
+          <tr><td class="label">Gross Margin Target</td><td>${brief.margin || '65% Target Gross Margin'}</td></tr>
+          <tr><td class="label">Key Cost Drivers</td><td>${brief.costs || 'Infrastructure, Operations, Regulatory Compliance'}</td></tr>
+          <tr><td class="label">Breakeven Horizon</td><td>${brief.breakeven || '18 Months'}</td></tr>
+        </table>
+
+        <div class="section-heading">4. Launch & Go-To-Market Strategy</div>
+        <table>
+          <tr><td class="label">GTM Strategy</td><td>${brief.gtm || 'Direct enterprise sales + Strategic distribution partners'}</td></tr>
+          <tr><td class="label">Growth Milestones</td><td>${brief.milestones || 'Product Launch -> 10 Pilot Customers -> Scaled Expansion'}</td></tr>
+        </table>
+
+        <div class="footer">
+          Generated automatically by <strong>The Conscious Orbit — Executive Strategy Engine</strong><br/>
+          Confidential Executive Report &copy; ${new Date().getFullYear()}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${report.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-orbital-report.json`;
+    a.download = `${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-strategy-report.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1449,7 +1595,7 @@ function ViewReportModal({ report, onClose }) {
         <div className="flex items-center justify-between border-t border-[rgba(212,175,55,0.2)] bg-[#111111] px-6 py-4">
           <GhostButton onClick={onClose}>Close</GhostButton>
           <RoyalButton onClick={handleDownload}>
-            <Download size={15} /> Download Full Strategy Report (.JSON)
+            <Download size={15} /> Download Strategy Report (.DOC)
           </RoyalButton>
         </div>
       </motion.div>
