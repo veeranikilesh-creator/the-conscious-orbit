@@ -47,10 +47,22 @@ const BUILD_YOUR_OWN = [
   'Financial Model', 'Risk Register', 'User Personas', 'OKR Framework',
 ];
 
-/* Seed values for the Layer 1 / Layer 2 intake forms. These are the initial
-   state of the controlled inputs — edits persist across cluster tab switches
-   and are read by handleGenerate when composing a report. */
-const INITIAL_PROFILE = {
+const EMPTY_PROFILE = {
+  company: '',
+  industry: 'Logistics',
+  stage: 'Seed',
+  geography: '',
+  model: 'B2B',
+  contact: '',
+};
+
+const EMPTY_CLUSTERS = {
+  market: { problem: '', pain: '', wtp: '', icp: '' },
+  viability: { revenue: '', margin: '', costs: '', breakeven: '' },
+  launch: { geography: '', gtm: '', milestones: '', ask: '' },
+};
+
+const SAMPLE_ECOFLY_PROFILE = {
   company: 'EcoFly Robotics',
   industry: 'Logistics',
   stage: 'Seed',
@@ -59,7 +71,7 @@ const INITIAL_PROFILE = {
   contact: 'founder@ecofly.io',
 };
 
-const INITIAL_CLUSTERS = {
+const SAMPLE_ECOFLY_CLUSTERS = {
   market: {
     problem: 'Rural clinics wait hours for emergency blood & vaccine deliveries.',
     pain: 'Last-mile cold-chain breaks spoil 30% of medical cargo.',
@@ -103,9 +115,9 @@ function App() {
   const [search, setSearch] = useState('');
   const [notice, setNotice] = useState(null);
 
-  // Controlled intake state — read by handleGenerate.
-  const [profile, setProfile] = useState(INITIAL_PROFILE);
-  const [clusters, setClusters] = useState(INITIAL_CLUSTERS);
+  // Controlled intake state — default to clean empty profile.
+  const [profile, setProfile] = useState(EMPTY_PROFILE);
+  const [clusters, setClusters] = useState(EMPTY_CLUSTERS);
 
   const genTimer = useRef(null);
   useEffect(() => () => clearTimeout(genTimer.current), []);
@@ -113,6 +125,16 @@ function App() {
   const setProfileField = (key, value) => setProfile((p) => ({ ...p, [key]: value }));
   const setClusterField = (cluster, key, value) =>
     setClusters((c) => ({ ...c, [cluster]: { ...c[cluster], [key]: value } }));
+
+  const handleResetForm = () => {
+    setProfile(EMPTY_PROFILE);
+    setClusters(EMPTY_CLUSTERS);
+  };
+
+  const handleLoadSample = () => {
+    setProfile(SAMPLE_ECOFLY_PROFILE);
+    setClusters(SAMPLE_ECOFLY_CLUSTERS);
+  };
 
   const toggleTrack = (id) =>
     setSelectedTracks((p) => (p.includes(id) ? p.filter((t) => t !== id) : [...p, id]));
@@ -131,6 +153,7 @@ function App() {
   };
 
   const handleGenerate = () => {
+    const newVentureName = profile.company.trim() || 'New Strategic Venture';
     setIsGenerating(true);
     genTimer.current = setTimeout(() => {
       // Compose the report from what the user actually entered.
@@ -144,7 +167,7 @@ function App() {
       setReports((prev) => [
         {
           id: `r${Date.now()}`,
-          name: profile.company.trim() || 'Untitled Venture',
+          name: newVentureName,
           vertical: activeVertical,
           tags: tags.length ? tags : ['AI Analysis'],
           status: 'RECEIVED',
@@ -164,7 +187,8 @@ function App() {
       setIsGenerating(false);
       setIsGenModalOpen(false);
       setMainView('board');
-      setNotice(`Report queued for ${profile.company.trim() || 'Untitled Venture'}`);
+      setNotice(`Report queued for ${newVentureName}`);
+      handleResetForm();
     }, 1900);
   };
 
@@ -254,6 +278,8 @@ function App() {
                       clusters={clusters}
                       setClusterField={setClusterField}
                       onGenerate={() => setIsGenModalOpen(true)}
+                      onResetForm={handleResetForm}
+                      onLoadSample={handleLoadSample}
                     />
                     <div className="mt-10 flex items-center gap-4">
                       <div className="h-px flex-1 bg-[rgba(212,175,55,0.12)]" />
@@ -635,6 +661,8 @@ function ThreeLayerEngine({
   profile, setProfileField,
   clusters, setClusterField,
   onGenerate,
+  onResetForm,
+  onLoadSample,
 }) {
   return (
     <section className="space-y-7">
@@ -647,12 +675,34 @@ function ThreeLayerEngine({
 
       {/* LAYER 1 — CLIENT PROFILE */}
       <div className="space-y-3">
-        <LayerBadge n={1} title="Client Profile" hint="Captured once at signup" />
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <LayerBadge n={1} title="Client Profile" hint="Captured once at signup" />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onResetForm}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[rgba(212,175,55,0.25)] bg-[#0E0E0E] px-3 py-1.5 font-mono text-xs font-semibold text-[#F4D67A] hover:bg-[#D4AF37] hover:text-[#050505] transition cursor-pointer"
+            >
+              <Plus size={13} /> New Venture (Clear Form)
+            </button>
+            <button
+              type="button"
+              onClick={onLoadSample}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[rgba(212,175,55,0.18)] bg-[#050505] px-3 py-1.5 font-mono text-xs font-semibold text-[#CFCFCF] hover:text-[#FFFFFF] transition cursor-pointer"
+            >
+              <Sparkles size={13} className="text-[#D4AF37]" /> Load EcoFly Sample
+            </button>
+          </div>
+        </div>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
           <GlassPanel className="p-6 border-[#D4AF37]/50 bg-[#3B0413]/85 text-white">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Field label="Company Name">
-                <Input value={profile.company} onChange={(e) => setProfileField('company', e.target.value)} />
+                <Input
+                  value={profile.company}
+                  onChange={(e) => setProfileField('company', e.target.value)}
+                  placeholder="Enter your venture name..."
+                />
               </Field>
               <Field label="Industry">
                 <Select value={profile.industry} onChange={(e) => setProfileField('industry', e.target.value)}>
@@ -667,7 +717,7 @@ function ThreeLayerEngine({
                 </Select>
               </Field>
               <Field label="Geography">
-                <Input value={profile.geography} onChange={(e) => setProfileField('geography', e.target.value)} />
+                <Input value={profile.geography} onChange={(e) => setProfileField('geography', e.target.value)} placeholder="e.g. Bengaluru, IN" />
               </Field>
               <Field label="Business Model">
                 <Select value={profile.model} onChange={(e) => setProfileField('model', e.target.value)}>
@@ -675,7 +725,7 @@ function ThreeLayerEngine({
                 </Select>
               </Field>
               <Field label="Contact Info">
-                <Input value={profile.contact} onChange={(e) => setProfileField('contact', e.target.value)} />
+                <Input value={profile.contact} onChange={(e) => setProfileField('contact', e.target.value)} placeholder="founder@venture.io" />
               </Field>
             </div>
           </GlassPanel>
