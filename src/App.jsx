@@ -314,38 +314,36 @@ function App() {
 
             {/* ---------- INTAKE VIEW ---------- */}
             {mainView === 'intake' && (
-              <>
-                {activeVertical === 'startups' && (
-                  <>
-                    <ThreeLayerEngine
-                      activeCluster={activeCluster}
-                      setActiveCluster={setActiveCluster}
-                      selectedTracks={selectedTracks}
-                      toggleTrack={toggleTrack}
-                      customPicks={customPicks}
-                      toggleCustom={toggleCustom}
-                      profile={profile}
-                      setProfileField={setProfileField}
-                      clusters={clusters}
-                      setClusterField={setClusterField}
-                      onGenerate={() => setIsGenModalOpen(true)}
-                      onResetForm={handleResetForm}
-                      onLoadSample={handleLoadSample}
-                    />
-                    <div className="mt-10 flex items-center gap-4">
-                      <div className="h-px flex-1 bg-[rgba(212,175,55,0.12)]" />
-                      <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">Function Engine</span>
-                      <div className="h-px flex-1 bg-[rgba(212,175,55,0.12)]" />
-                    </div>
-                    <StartupMarketEngine />
-                  </>
-                )}
+              <div className="space-y-10">
+                <ThreeLayerEngine
+                  activeCluster={activeCluster}
+                  setActiveCluster={setActiveCluster}
+                  selectedTracks={selectedTracks}
+                  toggleTrack={toggleTrack}
+                  customPicks={customPicks}
+                  toggleCustom={toggleCustom}
+                  profile={profile}
+                  setProfileField={setProfileField}
+                  clusters={clusters}
+                  setClusterField={setClusterField}
+                  onGenerate={() => setIsGenModalOpen(true)}
+                  onResetForm={handleResetForm}
+                  onLoadSample={handleLoadSample}
+                />
+                <div className="mt-10 flex items-center gap-4">
+                  <div className="h-px flex-1 bg-[rgba(212,175,55,0.12)]" />
+                  <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+                    {activeVerticalObj?.name || 'Domain'} Specialized Engine
+                  </span>
+                  <div className="h-px flex-1 bg-[rgba(212,175,55,0.12)]" />
+                </div>
+                {activeVertical === 'startups' && <StartupMarketEngine />}
                 {activeVertical === 'msmes' && <MsmeOptimizationEngine />}
                 {activeVertical === 'industries' && <IndustryAnalysisEngine />}
                 {(activeVertical === 'students' || activeVertical === 'institutions') && (
                   <GenericVerticalPanel vertical={activeVerticalObj} />
                 )}
-              </>
+              </div>
             )}
 
             {/* ---------- BOARD VIEW ---------- */}
