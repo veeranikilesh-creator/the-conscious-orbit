@@ -111,6 +111,7 @@ function App() {
   const [isGenModalOpen, setIsGenModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [expandedReport, setExpandedReport] = useState(null);
+  const [viewingReport, setViewingReport] = useState(null);
   const [mainView, setMainView] = useState('pipeline'); // 'pipeline' | 'intake' | 'board'
   const [search, setSearch] = useState('');
   const [notice, setNotice] = useState(null);
@@ -164,30 +165,50 @@ function App() {
         .filter(Boolean)
         .slice(0, 4);
 
-      setReports((prev) => [
-        {
-          id: `r${Date.now()}`,
-          name: newVentureName,
-          vertical: activeVertical,
-          tags: tags.length ? tags : ['AI Analysis'],
-          status: 'RECEIVED',
-          score: 0,
-          brief: {
-            stage: profile.stage,
-            geography: profile.geography,
-            contact: profile.contact,
-            modules: selectedTracks.length + customPicks.length,
-            ...clusters.market,
-            ...clusters.viability,
-            ...clusters.launch,
-          },
+      const calculatedScore = Math.floor(Math.random() * 14) + 79; // 79-92 score
+
+      const newReportObj = {
+        id: `r${Date.now()}`,
+        name: newVentureName,
+        vertical: activeVertical,
+        tags: tags.length ? tags : ['AI Analysis'],
+        status: 'PUBLISHED',
+        score: calculatedScore,
+        metrics: [
+          { k: 'Market Demand', v: Math.floor(Math.random() * 10) + 85 },
+          { k: 'Tech Feasibility', v: Math.floor(Math.random() * 15) + 75 },
+          { k: 'Unit Economics', v: Math.floor(Math.random() * 10) + 84 },
+        ],
+        brief: {
+          company: newVentureName,
+          industry: profile.industry || 'Logistics',
+          stage: profile.stage || 'Seed',
+          geography: profile.geography || 'Global',
+          contact: profile.contact || 'founder@venture.io',
+          model: profile.model || 'B2B',
+          problem: clusters.market.problem || 'Standard market friction & operational delays.',
+          pain: clusters.market.pain || 'Current solutions are fragmented and costly.',
+          wtp: clusters.market.wtp || '$25 per delivery / license',
+          icp: clusters.market.icp || 'Target Enterprise & B2B Customers',
+          revenue: clusters.viability.revenue || 'Subscription + Recurring retainer',
+          margin: clusters.viability.margin || '65% gross margin',
+          costs: clusters.viability.costs || 'Infrastructure, operations, and compliance',
+          breakeven: clusters.viability.breakeven || '18 months',
+          gtm: clusters.launch.gtm || 'Direct enterprise sales & strategic partnerships',
+          milestones: clusters.launch.milestones || 'Product Launch -> 10 Pilot Clients -> Scale Operations',
+          ask: clusters.launch.ask || '$1.2M Seed',
+          modules: selectedTracks.length + customPicks.length,
+          tracksSelected: trackNames,
+          customModules: customPicks,
         },
-        ...prev,
-      ]);
+      };
+
+      setReports((prev) => [newReportObj, ...prev]);
       setIsGenerating(false);
       setIsGenModalOpen(false);
       setMainView('board');
-      setNotice(`Report queued for ${newVentureName}`);
+      setViewingReport(newReportObj);
+      setNotice(`Strategy report ready for ${newVentureName}`);
       handleResetForm();
     }, 1900);
   };
@@ -307,6 +328,7 @@ function App() {
                 moveReport={moveReport}
                 expandedReport={expandedReport}
                 setExpandedReport={setExpandedReport}
+                onViewReport={(r) => setViewingReport(r)}
                 onGenerate={() => setIsGenModalOpen(true)}
               />
             )}
@@ -374,6 +396,12 @@ function App() {
             vertical={activeVerticalObj}
             company={profile.company}
             moduleCount={selectedTracks.length + customPicks.length}
+          />
+        )}
+        {viewingReport && (
+          <ViewReportModal
+            report={viewingReport}
+            onClose={() => setViewingReport(null)}
           />
         )}
       </AnimatePresence>
@@ -974,7 +1002,7 @@ function GenericVerticalPanel({ vertical }) {
 /* ============================================================
    KANBAN BOARD — report lifecycle tracking
    ============================================================ */
-function KanbanBoard({ reports, totalCount, search, columns, moveReport, expandedReport, setExpandedReport, onGenerate }) {
+function KanbanBoard({ reports, totalCount, search, columns, moveReport, expandedReport, setExpandedReport, onViewReport, onGenerate }) {
   // Serialize a published report to a JSON file the browser downloads locally.
   const downloadArtifact = (report) => {
     const payload = {
@@ -1066,7 +1094,7 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
                       </div>
 
                       {/* Score */}
-                      {r.status === 'PUBLISHED' && r.score > 0 && (
+                      {r.score > 0 && (
                         <div className="mt-3 flex items-center gap-2">
                           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#050505]">
                             <div
@@ -1085,8 +1113,16 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
                         </div>
                       )}
 
+                      {/* Quick Action: View Executive Report */}
+                      <button
+                        onClick={() => onViewReport?.(r)}
+                        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[rgba(212,175,55,0.3)] bg-[#050505] py-2 font-mono text-xs font-bold text-[#F4D67A] transition hover:bg-[#D4AF37] hover:text-[#050505] cursor-pointer"
+                      >
+                        <FileText size={13} /> View Strategy Report
+                      </button>
+
                       <AnimatePresence>
-                        {expandedReport === r.id && r.status === 'PUBLISHED' && (
+                        {expandedReport === r.id && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
@@ -1094,11 +1130,11 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
                             className="overflow-hidden"
                           >
                             <div className="mt-3 space-y-2 rounded-lg border border-[rgba(212,175,55,0.2)] bg-[#050505] p-3">
-                              {[
+                              {(r.metrics || [
                                 { k: 'Market Demand', v: 88 },
                                 { k: 'Tech Feasibility', v: 72 },
                                 { k: 'Unit Economics', v: 90 },
-                              ].map((m) => (
+                              ]).map((m) => (
                                 <div key={m.k} className="flex items-center gap-2 text-[0.68rem]">
                                   <span className="w-28 text-[#CFCFCF]">{m.k}</span>
                                   <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#0E0E0E]">
@@ -1255,6 +1291,169 @@ function LayerBadge({ n, title, hint }) {
       </div>
       <span className="ml-1 hidden text-xs text-[#9A9A9A] sm:inline">— {hint}</span>
     </div>
+  );
+}
+
+/* ============================================================
+   VIEW REPORT DETAIL MODAL
+   ============================================================ */
+function ViewReportModal({ report, onClose }) {
+  if (!report) return null;
+  const brief = report.brief || {};
+
+  const handleDownload = () => {
+    const payload = {
+      report: report.name,
+      vertical: report.vertical,
+      status: report.status,
+      orbitalScore: report.score,
+      tags: report.tags,
+      brief: brief,
+      generatedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${report.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-orbital-report.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/85 p-4 backdrop-blur-md overflow-y-auto"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.95, y: 20, opacity: 0 }}
+        className="my-8 w-full max-w-3xl overflow-hidden rounded-3xl border border-[#D4AF37]/40 bg-[#0E0E0E] text-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[rgba(212,175,55,0.2)] bg-[#111111] px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37]">
+              <FileText size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs font-bold text-[#F4D67A] uppercase tracking-wider">{report.vertical || 'Startup'} Vertical</span>
+                <StatusBadge status={report.status} />
+              </div>
+              <h2 className="font-sans text-2xl font-bold text-[#FFFFFF]">{report.name}</h2>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-xl p-2 text-[#CFCFCF] hover:bg-[#050505] hover:text-white transition cursor-pointer">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Report Content Body */}
+        <div className="max-h-[70vh] overflow-y-auto p-6 space-y-6 text-sm">
+          {/* Executive Overview Card */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl border border-[rgba(212,175,55,0.2)] bg-[#050505] p-5">
+            <div className="text-center md:border-r md:border-[rgba(212,175,55,0.15)] pr-4">
+              <span className="font-mono text-[0.65rem] text-[#9A9A9A] uppercase tracking-wider">Conscious Orbital Score</span>
+              <p className="font-mono text-3xl font-extrabold text-[#F4D67A] mt-1">{report.score || 85}/100</p>
+              <span className="inline-block mt-1 text-[0.65rem] font-semibold text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded-full">High Viability</span>
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <p className="text-[#9A9A9A]">Industry: <strong className="text-[#FFFFFF]">{brief.industry || report.tags?.[0] || 'Tech'}</strong></p>
+              <p className="text-[#9A9A9A]">Stage: <strong className="text-[#FFFFFF]">{brief.stage || 'Seed'}</strong></p>
+              <p className="text-[#9A9A9A]">Model: <strong className="text-[#FFFFFF]">{brief.model || 'B2B'}</strong></p>
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <p className="text-[#9A9A9A]">Geography: <strong className="text-[#FFFFFF]">{brief.geography || 'Global'}</strong></p>
+              <p className="text-[#9A9A9A]">Contact: <strong className="text-[#FFFFFF]">{brief.contact || 'founder@venture.io'}</strong></p>
+              <p className="text-[#9A9A9A]">Capital Ask: <strong className="text-[#F4D67A] font-bold">{brief.ask || '$1.2M'}</strong></p>
+            </div>
+          </div>
+
+          {/* Market & Problem Validation */}
+          <div className="rounded-2xl border border-[rgba(212,175,55,0.15)] bg-[#111111] p-5 space-y-3">
+            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[#F4D67A] flex items-center gap-2">
+              <Target size={15} /> 1. Market Opportunity & Problem Statement
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">Core Problem</span>
+                <p className="text-[#CFCFCF]">{brief.problem || 'Market inefficiency and high operational friction.'}</p>
+              </div>
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">Customer Pain Point</span>
+                <p className="text-[#CFCFCF]">{brief.pain || 'Current alternatives are slow and expensive.'}</p>
+              </div>
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">Target ICP</span>
+                <p className="text-[#CFCFCF]">{brief.icp || 'Mid-market to Enterprise Organizations'}</p>
+              </div>
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">Willingness to Pay</span>
+                <p className="text-[#CFCFCF]">{brief.wtp || 'Subscription per seats/usage'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Business Viability & Financial Economics */}
+          <div className="rounded-2xl border border-[rgba(212,175,55,0.15)] bg-[#111111] p-5 space-y-3">
+            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[#F4D67A] flex items-center gap-2">
+              <DollarSign size={15} /> 2. Business Economics & Viability
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">Revenue Model</span>
+                <p className="text-[#CFCFCF]">{brief.revenue || 'Recurring Subscription + Performance retainer'}</p>
+              </div>
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">Gross Margin Target</span>
+                <p className="text-[#CFCFCF]">{brief.margin || '65% target margin'}</p>
+              </div>
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">Key Cost Drivers</span>
+                <p className="text-[#CFCFCF]">{brief.costs || 'Infrastructure, Talent, Regulatory Compliance'}</p>
+              </div>
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">Breakeven Horizon</span>
+                <p className="text-[#CFCFCF]">{brief.breakeven || '18 Months'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Go-To-Market & Execution Plan */}
+          <div className="rounded-2xl border border-[rgba(212,175,55,0.15)] bg-[#111111] p-5 space-y-3">
+            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[#F4D67A] flex items-center gap-2">
+              <Zap size={15} /> 3. Launch & Go-To-Market Roadmap
+            </h4>
+            <div className="space-y-3 text-xs">
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">GTM Channel Strategy</span>
+                <p className="text-[#CFCFCF]">{brief.gtm || 'Direct enterprise sales combined with strategic distribution partners.'}</p>
+              </div>
+              <div className="bg-[#0E0E0E] p-3.5 rounded-xl border border-[rgba(212,175,55,0.1)] space-y-1">
+                <span className="font-mono text-[0.65rem] text-[#D4AF37] font-bold block">Key Growth Milestones</span>
+                <p className="text-[#CFCFCF]">{brief.milestones || 'Product Launch -> Beta Clients -> Scale Operations'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-[rgba(212,175,55,0.2)] bg-[#111111] px-6 py-4">
+          <GhostButton onClick={onClose}>Close</GhostButton>
+          <RoyalButton onClick={handleDownload}>
+            <Download size={15} /> Download Full Strategy Report (.JSON)
+          </RoyalButton>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
