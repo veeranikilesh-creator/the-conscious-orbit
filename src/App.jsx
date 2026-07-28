@@ -813,25 +813,31 @@ function ThreeLayerEngine({
                 <Input
                   value={profile.industry}
                   onChange={(e) => setProfileField('industry', e.target.value)}
-                  placeholder="e.g. AI Robotics, CleanTech, SpaceTech, BioPharma, Logistics..."
+                  placeholder="Type any industry (e.g. AI Robotics, CleanTech, SpaceTech, BioPharma, Logistics...)"
                 />
               </Field>
               <Field label="Stage">
-                <Input
-                  value={profile.stage}
-                  onChange={(e) => setProfileField('stage', e.target.value)}
-                  placeholder="e.g. Seed, Pre-Seed, Series A, Idea, Growth..."
-                />
+                <Select value={profile.stage} onChange={(e) => setProfileField('stage', e.target.value)}>
+                  <option value="Idea">Idea</option>
+                  <option value="Pre-Seed">Pre-Seed</option>
+                  <option value="Seed">Seed</option>
+                  <option value="Series A">Series A</option>
+                  <option value="Growth">Growth</option>
+                  <option value="Scaleup">Scaleup</option>
+                </Select>
               </Field>
               <Field label="Geography">
                 <Input value={profile.geography} onChange={(e) => setProfileField('geography', e.target.value)} placeholder="e.g. Bengaluru, IN / Global" />
               </Field>
-              <Field label="Customer Type / Business Model (Type Any)">
-                <Input
-                  value={profile.model}
-                  onChange={(e) => setProfileField('model', e.target.value)}
-                  placeholder="e.g. B2B Enterprise, B2C D2C, B2G Government, Marketplace..."
-                />
+              <Field label="Customer Type / Business Model">
+                <Select value={profile.model} onChange={(e) => setProfileField('model', e.target.value)}>
+                  <option value="B2B Enterprise">B2B Enterprise</option>
+                  <option value="B2C D2C">B2C D2C (Direct to Consumer)</option>
+                  <option value="B2B2C">B2B2C Hybrid</option>
+                  <option value="Marketplace">Marketplace & Platform</option>
+                  <option value="B2G Government">B2G (Government / Public Sector)</option>
+                  <option value="P2P">Peer-to-Peer (P2P)</option>
+                </Select>
               </Field>
               <Field label="Contact Info">
                 <Input value={profile.contact} onChange={(e) => setProfileField('contact', e.target.value)} placeholder="founder@venture.io" />
