@@ -116,8 +116,13 @@ export default function DarkVeil({
     canvas.className = 'darkveil-canvas';
     parent.appendChild(canvas);
 
+    // Phones run this CPPN shader per-pixel per-frame, and a 3x DPR screen makes
+    // that ~9x the fragment work for an ambient layer that ends up at roughly
+    // 10% opacity behind a dark overlay. Cap the buffer on compact viewports —
+    // visually indistinguishable, materially cheaper on battery.
+    const isCompactViewport = window.matchMedia('(max-width: 767px)').matches;
     const renderer = new Renderer({
-      dpr: Math.min(window.devicePixelRatio, 2),
+      dpr: Math.min(window.devicePixelRatio, isCompactViewport ? 1 : 2),
       canvas,
     });
 

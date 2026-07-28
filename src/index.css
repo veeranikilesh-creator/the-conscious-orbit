@@ -34,6 +34,37 @@
     color: #FFFFFF;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+
+  /* Responsive guards — no page may scroll sideways. `clip` (not `hidden`) is
+     used so html/body never becomes a scroll container, which would break the
+     dashboard's `position: sticky` topbar. */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  /* Long unbroken strings (emails, URLs, "$50,000,000") must wrap rather than
+     push their container wider than the viewport. */
+  h1, h2, h3, h4, h5, h6, p, span, li, label, strong {
+    overflow-wrap: break-word;
+  }
+
+  /* Media never exceeds its column. */
+  img, svg, video, canvas {
+    max-width: 100%;
+  }
+
+  /* Removes the 300ms double-tap-to-zoom delay and the grey tap flash.
+     Deliberately excludes inputs — forcing `touch-action` on a range slider
+     stops the browser handing the drag to the thumb. */
+  button, a, [role="button"], label {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 /* ============================================================
@@ -48,6 +79,15 @@
     radial-gradient(circle at 85% 15%, rgba(244, 214, 122, 0.06) 0%, transparent 40%),
     radial-gradient(circle at 50% 85%, rgba(200, 155, 60, 0.05) 0%, transparent 55%);
   background-attachment: fixed;
+}
+
+/* iOS Safari does not implement `background-attachment: fixed` and renders the
+   gradient at the wrong scale while scrolling. Fall back to `scroll` on touch
+   devices — the gradient is subtle enough that the parallax is not missed. */
+@media (hover: none) {
+  .bg-royal-mesh {
+    background-attachment: scroll;
+  }
 }
 
 /* Executive Card — Dark Onyx background with subtle gold outline & soft shadow */
@@ -243,11 +283,93 @@
     text-align: center;
 }
 
+/* Narrow phones: the fixed 380px face leaves too little room once the card is
+   only ~270px wide, so trim padding and tighten the type instead of clipping. */
+@media (max-width: 400px) {
+  .flip-card {
+    height: 340px;
+  }
+
+  .flip-card-front,
+  .flip-card-back {
+    padding: 18px;
+  }
+
+  .flip-card-title {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .flip-card-subtitle {
+    font-size: 13px;
+    line-height: 1.6;
+    width: 100%;
+  }
+}
+
 .flip-card:hover .flip-card-front,
 .flip-card:hover .flip-card-back {
     box-shadow:
     0 0 30px rgba(212,175,55,.18),
     0 25px 60px rgba(0,0,0,.55);
+}
+
+/* The flip is hover-driven, so on touch the back face — which carries the
+   domain description and the Launch Module cue — can never be seen. Collapse
+   the two faces into one static card there so nothing is hidden. The tap still
+   enters the dashboard exactly as before. */
+@media (hover: none) {
+  .flip-card {
+    height: auto;
+    perspective: none;
+  }
+
+  .flip-card-inner {
+    height: auto;
+    transform: none;
+    transform-style: flat;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    padding: 26px 22px;
+    border-radius: 22px;
+
+    background: linear-gradient(145deg, #111111, #080808);
+    border: 1px solid rgba(212, 175, 55, .25);
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, .5),
+      inset 0 0 0 1px rgba(255, 255, 255, .03);
+  }
+
+  .flip-card-front,
+  .flip-card-back {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    transform: none;
+    backface-visibility: visible;
+
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .flip-card-front::before,
+  .flip-card-back::before {
+    display: none;
+  }
+
+  /* "Hover to Inspect" is meaningless without a pointer, and the back repeats
+     the title the front already shows. */
+  .flip-card-front .flip-card-subtitle,
+  .flip-card-back .flip-card-title {
+    display: none;
+  }
 }
 
 /* ============================================================
@@ -309,4 +431,67 @@
   color: #050505;
   transform: translateY(-2px);
   box-shadow: 0 0 25px rgba(212, 175, 55, 0.35);
+}
+
+/* The marquee only gets a narrow slice of the navbar on phones — scale the pills
+   down so more than one domain is legible at a time. */
+@media (max-width: 767px) {
+  .scroll-velocity-track {
+    gap: 1rem;
+  }
+
+  .scroll-velocity-item {
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+
+  .scroll-velocity-container {
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  }
+}
+
+/* Swipeable, non-animated domain row used on compact viewports in place of the
+   marquee. Reuses .scroll-velocity-item so the pills look identical. */
+.domain-scroller {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-block: 2px;
+}
+
+.domain-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.domain-scroller > .scroll-velocity-item {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+}
+
+/* ============================================================
+   TOUCH-DEVICE AFFORDANCES
+   ============================================================ */
+
+/* Controls revealed on hover are unreachable on touch — show them permanently
+   where no hover capability exists. */
+@media (hover: none) {
+  .hover-reveal {
+    opacity: 1;
+  }
+}
+
+/* iOS zooms the whole page in when a focused field is under 16px. Scoped to
+   coarse pointers so the desktop rendering is byte-for-byte unchanged. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }

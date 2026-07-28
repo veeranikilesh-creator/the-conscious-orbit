@@ -33,11 +33,11 @@ export default function Homepage({ onEnter, onLogin }) {
       <RoyalBackground />
 
       {/* ===== TOP NAVBAR (BRANDING LEFT, USER PROFILE RIGHT) ===== */}
-      <div className="relative z-20 mx-auto max-w-7xl px-6 lg:px-12 pt-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <OrbitBrand size={32} />
-          <span className="text-[#D4AF37]/60 font-thin text-base">–</span>
-          <span className="font-sans text-sm font-bold uppercase tracking-[0.2em] text-[#FFFFFF]">
+      <div className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 pt-8 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <OrbitBrand size={32} className="shrink-0" />
+          <span className="hidden sm:inline text-[#D4AF37]/60 font-thin text-base">–</span>
+          <span className="font-sans text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[#FFFFFF]">
             the conscious orbit
           </span>
         </div>
@@ -45,7 +45,7 @@ export default function Homepage({ onEnter, onLogin }) {
         {/* User Profile Avatar Trigger */}
         <button
           onClick={onLogin}
-          className="group flex items-center gap-2.5 rounded-full border border-[rgba(212,175,55,0.3)] bg-[#0E0E0E]/80 px-3.5 py-1.5 backdrop-blur-md hover:border-[#D4AF37] transition cursor-pointer"
+          className="group flex shrink-0 items-center gap-2.5 rounded-full border border-[rgba(212,175,55,0.3)] bg-[#0E0E0E]/80 px-3.5 py-1.5 backdrop-blur-md hover:border-[#D4AF37] transition cursor-pointer"
         >
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-[#D4AF37] to-[#F4D67A] text-[#050505] font-mono text-xs font-bold shadow-xs">
             EX
@@ -57,16 +57,16 @@ export default function Homepage({ onEnter, onLogin }) {
       </div>
 
       {/* ===== HERO SECTION — SPLIT SCREEN LAYOUT ===== */}
-      <header className="relative z-10 mx-auto min-h-[80vh] lg:min-h-[85vh] max-w-7xl px-6 lg:px-12 flex items-center pt-2 pb-10">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 items-center gap-12 lg:gap-8">
-          
+      <header className="relative z-10 mx-auto min-h-[80vh] lg:min-h-[85vh] max-w-7xl px-4 sm:px-6 lg:px-12 flex items-center pt-8 pb-10 lg:pt-2">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 items-center gap-8 sm:gap-12 lg:gap-8">
+
           {/* LEFT SIDE (45% / 5 Cols on Desktop) */}
-          <div className="lg:col-span-6 xl:col-span-5 text-left flex flex-col items-start space-y-5 z-20 -mt-6 lg:-mt-10">
+          <div className="lg:col-span-6 xl:col-span-5 text-left flex flex-col items-start space-y-5 z-20 lg:-mt-10">
             <motion.h1
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.12] text-left"
+              className="text-[2.1rem] sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.12] text-left"
             >
               <span className="font-serif italic font-normal tracking-tight text-[#FFFFFF] block">Systemic Sovereignty.</span>
               <span className="font-serif italic font-normal bg-gradient-to-r from-[#FFFFFF] via-[#F4D67A] to-[#D4AF37] bg-clip-text text-transparent block mt-2">
@@ -99,13 +99,13 @@ export default function Homepage({ onEnter, onLogin }) {
           </div>
 
           {/* RIGHT SIDE — EXACT HIGH-CONTRAST GOLD CHEVRON ARTWORK (REDUCED THICKNESS, NO FADING) */}
-          <div className="lg:col-span-6 xl:col-span-7 relative flex items-center justify-end z-10 overflow-visible pointer-events-none opacity-30 lg:opacity-100 h-full">
+          <div className="lg:col-span-6 xl:col-span-7 relative hidden sm:flex items-center justify-end z-10 overflow-hidden lg:overflow-visible pointer-events-none opacity-30 lg:opacity-100 h-full">
             <div className="relative w-full lg:w-[130%] xl:w-[145%] lg:-mr-32 xl:-mr-48 flex items-center justify-end h-full">
               <svg
                 viewBox="0 0 1000 800"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
-                className="w-full h-auto min-h-[90vh] object-cover"
+                className="w-full h-auto min-h-[34vh] sm:min-h-[45vh] lg:min-h-[90vh] object-cover"
                 preserveAspectRatio="xMaxYMid slice"
               >
                 <defs>
@@ -151,12 +151,12 @@ export default function Homepage({ onEnter, onLogin }) {
       </header>
 
       {/* ===== SLEEK MINIMALIST DIVIDER WITH TELEMETRY METRICS ===== */}
-      <div className="relative z-10 mx-auto max-w-5xl px-6">
+      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(212,175,55,0.4)] to-transparent" />
         <div className="py-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {STATS.map((s) => (
             <div key={s.label} className="space-y-1">
-              <span className="font-sans text-3xl font-extrabold text-[#FFFFFF] tracking-tight block">{s.value}</span>
+              <span className="font-sans text-2xl sm:text-3xl font-extrabold text-[#FFFFFF] tracking-tight block">{s.value}</span>
               <span className="font-mono text-[0.68rem] uppercase tracking-widest text-[#F4D67A] block">{s.label}</span>
             </div>
           ))}
@@ -165,14 +165,14 @@ export default function Homepage({ onEnter, onLogin }) {
       </div>
 
       {/* ===== TARGET VERTICALS — 3D LUXURY FLIP CARDS ===== */}
-      <section className="relative z-10 mx-auto max-w-6xl px-6 py-20">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-12">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Crown size={15} className="text-[#D4AF37]" />
+              <Crown size={15} className="shrink-0 text-[#D4AF37]" />
               <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#F4D67A] font-bold">Target Verticals</span>
             </div>
-            <h2 className="font-sans text-3xl md:text-4xl font-extrabold text-[#FFFFFF]">Five Core Domains of Strategy</h2>
+            <h2 className="font-sans text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#FFFFFF]">Five Core Domains of Strategy</h2>
           </div>
           <button
             onClick={onEnter}
@@ -182,7 +182,7 @@ export default function Homepage({ onEnter, onLogin }) {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 justify-items-center">
           {VERTICALS.map((v, i) => {
             const Icon = v.icon;
             return (
@@ -224,13 +224,13 @@ export default function Homepage({ onEnter, onLogin }) {
       </section>
 
       {/* ===== FOUR-STAGE PIPELINE — HORIZONTAL TIMELINE ===== */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-16">
-        <div className="text-center mb-16">
+      <section className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-12 sm:py-16">
+        <div className="text-center mb-10 sm:mb-16">
           <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#F4D67A] font-bold block mb-2">Processing Flow</span>
-          <h2 className="font-sans text-3xl md:text-4xl font-extrabold text-[#FFFFFF]">Stage-Gated Strategy Architecture</h2>
+          <h2 className="font-sans text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#FFFFFF]">Stage-Gated Strategy Architecture</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 relative">
           {PIPELINE_STEPS.map((step, idx) => (
             <motion.div
               key={step.n}
@@ -249,14 +249,14 @@ export default function Homepage({ onEnter, onLogin }) {
       </section>
 
       {/* ===== ORBITAL GAUGE SHOWCASE SECTION ===== */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-20">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-12 rounded-3xl border border-[rgba(212,175,55,0.2)] bg-[#0E0E0E] p-8 md:p-12 shadow-2xl">
+      <section className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-14 sm:py-20">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-10 md:gap-12 rounded-3xl border border-[rgba(212,175,55,0.2)] bg-[#0E0E0E] p-6 sm:p-8 md:p-12 shadow-2xl">
           <div className="space-y-4 max-w-xl text-left">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,175,55,0.3)] bg-[#050505] px-4 py-1.5">
-              <ShieldCheck size={14} className="text-[#D4AF37]" />
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[rgba(212,175,55,0.3)] bg-[#050505] px-4 py-1.5">
+              <ShieldCheck size={14} className="shrink-0 text-[#D4AF37]" />
               <span className="font-mono text-xs text-[#F4D67A] font-bold uppercase tracking-wider">Orbital Metric Engine</span>
             </div>
-            <h3 className="font-sans text-3xl font-extrabold text-[#FFFFFF]">The Sovereign 1 / 0 Decision Verdict</h3>
+            <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-[#FFFFFF]">The Sovereign 1 / 0 Decision Verdict</h3>
             <p className="text-sm text-[#CFCFCF] leading-relaxed">
               Every venture strategy is distilled down to unit feasibility, pricing power, and execution risk — resolving into a clear binary GO / PIVOT verdict.
             </p>
@@ -272,10 +272,10 @@ export default function Homepage({ onEnter, onLogin }) {
       </section>
 
       {/* ===== MINIMAL FOOTER ===== */}
-      <footer className="relative z-10 border-t border-[rgba(212,175,55,0.18)] bg-[#050505] px-6 py-10">
+      <footer className="relative z-10 border-t border-[rgba(212,175,55,0.18)] bg-[#050505] px-4 sm:px-6 py-10">
         <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-3">
-            <OrbitBrand size={30} />
+            <OrbitBrand size={30} className="shrink-0" />
             <span className="font-sans text-sm font-bold text-[#FFFFFF]">The Conscious Orbit</span>
           </div>
           <p className="font-mono text-xs text-[#9A9A9A]">

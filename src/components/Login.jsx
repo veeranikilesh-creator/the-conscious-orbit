@@ -51,7 +51,7 @@ export default function Login({ onLogin, onBack }) {
       {/* WebGL Background */}
       <RoyalBackground />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl items-center justify-center px-5 py-8 md:px-8">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl items-center justify-center px-4 py-8 sm:px-5 md:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -114,7 +114,7 @@ export default function Login({ onLogin, onBack }) {
           </div>
 
           {/* ===== RIGHT — DARK FORM CARD ===== */}
-          <div className="relative bg-[#0E0E0E] p-8 md:p-10 text-white">
+          <div className="relative bg-[#0E0E0E] p-6 sm:p-8 md:p-10 text-white">
             {/* Mobile brand header */}
             <div className="mb-8 flex items-center justify-between lg:hidden">
               <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export default function Login({ onLogin, onBack }) {
             </div>
 
             {/* Mode toggle */}
-            <div className="inline-flex rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#050505] p-1">
+            <div className="flex w-full max-w-full rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#050505] p-1 sm:inline-flex sm:w-auto">
               {[
                 { id: 'signin', label: 'Sign In' },
                 { id: 'signup', label: 'Create Account' },
@@ -137,7 +137,7 @@ export default function Login({ onLogin, onBack }) {
                   <button
                     key={opt.id}
                     onClick={() => setMode(opt.id)}
-                    className={`relative rounded-lg px-5 py-2 text-sm font-medium transition cursor-pointer ${
+                    className={`relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition cursor-pointer sm:flex-none sm:px-5 ${
                       active ? 'text-[#050505] font-bold' : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
                     }`}
                   >
@@ -262,16 +262,16 @@ export default function Login({ onLogin, onBack }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-royal-red flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-base font-bold disabled:opacity-70 cursor-pointer mt-4"
+                className="btn-royal-red flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold disabled:opacity-70 cursor-pointer mt-4 sm:px-6 sm:text-base"
               >
                 {loading ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" /> Authenticating…
+                    <Loader2 size={18} className="shrink-0 animate-spin" /> Authenticating…
                   </>
                 ) : (
                   <>
                     {mode === 'signin' ? 'Sign In to Executive Suite' : 'Create Account'}
-                    <ArrowRight size={17} />
+                    <ArrowRight size={17} className="shrink-0" />
                   </>
                 )}
               </button>

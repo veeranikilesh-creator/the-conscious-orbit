@@ -42,7 +42,7 @@ export function StartupMarketEngine() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
         {/* Inputs */}
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
           <Field label="Total Addressable Market (TAM) — USD">
             <Input type="number" value={tam} onChange={(e) => setTam(parseInt(e.target.value) || 0)} />
           </Field>
@@ -51,7 +51,7 @@ export function StartupMarketEngine() {
           </Field>
 
           <div className="space-y-2 pt-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <span className="font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#F4D67A]">Channel Mix Split</span>
               <span className={`font-mono text-[0.62rem] font-bold ${channelTotal === 100 ? 'text-[#10B981]' : 'text-[#F59E0B]'}`}>
                 {channelTotal}% {channelTotal === 100 ? '· balanced' : '· should total 100%'}
@@ -76,7 +76,7 @@ export function StartupMarketEngine() {
         </GlassPanel>
 
         {/* Output metrics */}
-        <GlassPanel className="space-y-5 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
+        <GlassPanel className="space-y-5 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
           <h4 className="font-sans text-base font-bold text-[#FFFFFF]">Converted Market Sizing</h4>
 
           <div className="space-y-3">
@@ -122,7 +122,7 @@ export function MsmeOptimizationEngine() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
           <Field label="Primary Operational Bottleneck">
             <Select value={bottleneck} onChange={(e) => setBottleneck(e.target.value)}>
               <option value="inventory">Inventory Holding & Stockout Delays</option>
@@ -139,7 +139,7 @@ export function MsmeOptimizationEngine() {
           </Field>
         </GlassPanel>
 
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
           <h4 className="font-sans text-base font-bold text-[#FFFFFF]">Diagnostic Findings</h4>
 
           <div className="grid grid-cols-2 gap-3">
@@ -178,7 +178,7 @@ export function IndustryAnalysisEngine() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
           <Field label="Annual Output Volume (Units)">
             <Input type="number" value={outputVolume} onChange={(e) => setOutputVolume(parseInt(e.target.value) || 0)} />
           </Field>
@@ -187,7 +187,7 @@ export function IndustryAnalysisEngine() {
           </Field>
         </GlassPanel>
 
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
           <h4 className="font-sans text-base font-bold text-[#FFFFFF]">Systemic Quality Index</h4>
 
           <div className="grid grid-cols-2 gap-3">
@@ -223,7 +223,7 @@ function EngineHead({ icon: Icon, kicker, title, desc }) {
 function MetricBar({ label, val, pct, color = 'bg-[#F4D67A]' }) {
   return (
     <div>
-      <div className="flex justify-between font-mono text-xs text-[#CFCFCF]">
+      <div className="flex flex-wrap justify-between gap-x-3 gap-y-0.5 font-mono text-xs text-[#CFCFCF]">
         <span>{label}</span>
         <span className="font-bold text-[#FFFFFF]">{val}</span>
       </div>

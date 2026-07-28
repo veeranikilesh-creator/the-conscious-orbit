@@ -222,7 +222,7 @@ function App() {
           onDismissNotice={() => setNotice(null)}
         />
 
-        <div className="flex-1 mx-auto w-full max-w-7xl space-y-12 px-6 py-8 md:px-10">
+        <div className="flex-1 mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:space-y-12 sm:px-6 sm:py-8 md:px-10">
           {/* SCREEN 1: HERO CARD */}
           <VerticalHero vertical={activeVerticalObj} onOpenGenerate={() => setIsGenModalOpen(true)} />
 
@@ -360,6 +360,46 @@ function App() {
 /* ============================================================
    MAGIC UI — Scroll Velocity Infinite Domain Navigator Component
    ============================================================ */
+
+/* The marquee only eases its speed down on hover. Touch devices have no hover,
+   so there the domains never stop moving and every tap chases a sliding target.
+   Compact viewports get a plain swipeable row instead — same buttons, same
+   handler, same pill styling; it just holds still. */
+function useIsCompact(query = '(max-width: 767px)') {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = (e) => setMatches(e.matches);
+    setMatches(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [query]);
+
+  return matches;
+}
+
+function DomainScrollRow({ verticals, activeVertical, setActiveVertical }) {
+  return (
+    <div className="domain-scroller" role="tablist" aria-label="Active domain">
+      {verticals.map((v) => {
+        const active = activeVertical?.id === v.id;
+        return (
+          <button
+            key={v.id}
+            role="tab"
+            aria-selected={active}
+            onClick={() => setActiveVertical(v.id)}
+            className={`scroll-velocity-item ${active ? 'active' : ''}`}
+          >
+            {v.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function ScrollVelocityContainer({ children, className = '' }) {
   return (
     <div className={`scroll-velocity-container ${className}`}>
@@ -416,32 +456,43 @@ function Topbar({
   verticals, activeVertical, setActiveVertical, goHome, onProfileClick,
   search, setSearch, notice, onDismissNotice,
 }) {
+  const isCompact = useIsCompact();
+
   return (
-    <header className="sticky top-0 z-40 scroll-velocity-header px-6 py-3.5 text-[#FFFFFF]">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 md:gap-6">
-        
+    <header className="sticky top-0 z-40 scroll-velocity-header px-3 py-3 text-[#FFFFFF] sm:px-6 sm:py-3.5">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-4 md:gap-6">
+
         {/* LEFT: Minimal Home Button */}
         <button
           onClick={goHome}
-          className="group flex items-center gap-2 text-sm font-semibold text-[#F4F4F4] transition hover:text-[#D4AF37] cursor-pointer shrink-0 px-2 py-1.5"
+          aria-label="Home"
+          className="group flex items-center gap-2 text-sm font-semibold text-[#F4F4F4] transition hover:text-[#D4AF37] cursor-pointer shrink-0 px-1.5 py-1.5 sm:px-2"
         >
-          <Home size={18} className="text-[#F4F4F4] group-hover:text-[#D4AF37] transition" />
-          <span className="font-sans font-medium tracking-wide">Home</span>
+          <Home size={18} className="shrink-0 text-[#F4F4F4] group-hover:text-[#D4AF37] transition" />
+          <span className="hidden sm:inline font-sans font-medium tracking-wide">Home</span>
         </button>
 
         {/* CENTER: Magic UI ScrollVelocity Infinite Domain Navigation (Full Navbar Width) */}
-        <div className="flex-1 mx-2 overflow-hidden">
-          <ScrollVelocityContainer>
-            <ScrollVelocityRow
+        <div className="min-w-0 flex-1 mx-1 overflow-hidden sm:mx-2">
+          {isCompact ? (
+            <DomainScrollRow
               verticals={verticals}
               activeVertical={activeVertical}
               setActiveVertical={setActiveVertical}
             />
-          </ScrollVelocityContainer>
+          ) : (
+            <ScrollVelocityContainer>
+              <ScrollVelocityRow
+                verticals={verticals}
+                activeVertical={activeVertical}
+                setActiveVertical={setActiveVertical}
+              />
+            </ScrollVelocityContainer>
+          )}
         </div>
 
         {/* RIGHT: Search, Notifications, Profile */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 sm:gap-2.5">
           <div className="hidden md:flex items-center gap-2 rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] px-3.5 py-1.5 text-xs text-[#CFCFCF] focus-within:border-[#D4AF37] transition">
             <Search size={14} className="text-[#9A9A9A]" />
             <input
@@ -465,8 +516,9 @@ function Topbar({
           <div className="relative">
             <button
               title={notice || 'No new notifications'}
+              aria-label="Notifications"
               onClick={onDismissNotice}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] text-[#CFCFCF] hover:border-[#D4AF37] hover:text-[#D4AF37] transition cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] text-[#CFCFCF] hover:border-[#D4AF37] hover:text-[#D4AF37] transition cursor-pointer sm:h-8 sm:w-8"
             >
               <Bell size={14} />
               {notice && (
@@ -479,7 +531,7 @@ function Topbar({
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  className="absolute right-0 top-10 z-50 w-60 rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#111111] p-3 shadow-xl"
+                  className="absolute right-0 top-10 z-50 w-60 max-w-[calc(100vw-1.5rem)] rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#111111] p-3 shadow-xl"
                 >
                   <p className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#F4D67A]">
                     Latest Activity
@@ -498,7 +550,8 @@ function Topbar({
 
           <button
             onClick={onProfileClick}
-            className="flex items-center gap-1.5 rounded-full border border-[rgba(212,175,55,0.25)] bg-[#050505] px-3 py-1 text-xs font-bold text-[#FFFFFF] hover:border-[#D4AF37] transition cursor-pointer"
+            aria-label="Profile"
+            className="flex items-center gap-1.5 rounded-full border border-[rgba(212,175,55,0.25)] bg-[#050505] px-2.5 py-1.5 text-xs font-bold text-[#FFFFFF] hover:border-[#D4AF37] transition cursor-pointer sm:px-3 sm:py-1"
           >
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#D4AF37] text-[#050505] font-mono text-[0.6rem] font-bold">
               EX
@@ -556,13 +609,13 @@ function VerticalHero({ vertical, onOpenGenerate }) {
       <GlassPanel className="p-4 md:p-5 border-[rgba(212,175,55,0.15)] bg-[#121212] text-white">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           {/* LEFT: Domain Icon + ACTIVE DOMAIN badge + Title + Short Description */}
-          <div className="flex items-center gap-3.5">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-3.5">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#050505] text-[#D4AF37]">
               {Icon && <Icon className="h-6 w-6 text-[#D4AF37]" />}
             </div>
-            <div className="space-y-0.5 text-left">
-              <div className="flex items-center gap-2">
-                <h2 className="font-sans text-xl font-bold text-[#F8F8F8]">
+            <div className="min-w-0 space-y-0.5 text-left">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <h2 className="font-sans text-lg font-bold text-[#F8F8F8] sm:text-xl">
                   {vertical?.name}
                 </h2>
                 <span className="rounded-md border border-[#D4AF37]/40 bg-[#050505] px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider text-[#D4AF37]">
@@ -574,7 +627,7 @@ function VerticalHero({ vertical, onOpenGenerate }) {
           </div>
 
           {/* RIGHT: Health Status + Secondary CTA + Primary CTA */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:shrink-0 lg:flex-nowrap">
             {/* Health Status */}
             <div className="hidden sm:flex items-center gap-2 rounded-lg border border-[rgba(212,175,55,0.15)] bg-[#050505] px-3 py-1.5 font-mono text-xs text-[#10B981]">
               <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
@@ -582,14 +635,14 @@ function VerticalHero({ vertical, onOpenGenerate }) {
             </div>
 
             {/* Secondary CTA Button */}
-            <GhostButton onClick={() => setBriefOpen((o) => !o)} className="text-xs py-2 px-4">
-              <FileText size={13} /> Strategy Brief
-              <ChevronDown size={12} className={`transition ${briefOpen ? 'rotate-180' : ''}`} />
+            <GhostButton onClick={() => setBriefOpen((o) => !o)} className="text-xs py-2 px-3.5 sm:px-4">
+              <FileText size={13} className="shrink-0" /> Strategy Brief
+              <ChevronDown size={12} className={`shrink-0 transition ${briefOpen ? 'rotate-180' : ''}`} />
             </GhostButton>
 
             {/* Primary CTA Button */}
-            <RoyalButton onClick={onOpenGenerate} className="text-xs font-bold py-2 px-5">
-              <Sparkles size={13} /> Run AI Analysis
+            <RoyalButton onClick={onOpenGenerate} className="text-xs font-bold py-2 px-4 sm:px-5">
+              <Sparkles size={13} className="shrink-0" /> Run AI Analysis
             </RoyalButton>
           </div>
         </div>
@@ -649,7 +702,7 @@ function ThreeLayerEngine({
       <div className="space-y-3">
         <LayerBadge n={1} title="Client Profile" hint="Captured once at signup" />
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-          <GlassPanel className="p-6 border-[#D4AF37]/50 bg-[#3B0413]/85 text-white">
+          <GlassPanel className="p-4 sm:p-6 border-[#D4AF37]/50 bg-[#3B0413]/85 text-white">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Field label="Company Name">
                 <Input value={profile.company} onChange={(e) => setProfileField('company', e.target.value)} />
@@ -693,7 +746,7 @@ function ThreeLayerEngine({
                 <button
                   key={tab.id}
                   onClick={() => setActiveCluster(tab.id)}
-                  className={`relative rounded-lg px-4 py-2 text-sm font-medium transition cursor-pointer ${
+                  className={`relative max-w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition cursor-pointer sm:px-4 ${
                     activeCluster === tab.id ? 'text-[#FFFFFF]' : 'text-[#FECDD3] hover:text-[#FFFFFF]'
                   }`}
                 >
@@ -703,7 +756,7 @@ function ThreeLayerEngine({
                       className="absolute inset-0 rounded-lg bg-[#D4AF37] border border-[#F4D67A] shadow-xs"
                     />
                   )}
-                  <span className="relative z-10 flex items-center gap-2">
+                  <span className="relative z-10 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                     <span className={`font-mono text-[0.62rem] font-bold uppercase tracking-wider ${activeCluster === tab.id ? 'text-[#050505]' : 'text-[#F4D67A]'}`}>
                       {tab.cluster}
                     </span>
@@ -714,7 +767,7 @@ function ThreeLayerEngine({
             </div>
 
             {/* Tab body */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeCluster}
@@ -776,7 +829,7 @@ function ThreeLayerEngine({
                 <button
                   key={track.id}
                   onClick={() => toggleTrack(track.id)}
-                  className={`group relative overflow-hidden rounded-2xl border p-5 text-left transition duration-200 cursor-pointer ${
+                  className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition duration-200 cursor-pointer sm:p-5 ${
                     selected
                       ? 'border-[#D4AF37] bg-[#111111] shadow-md ring-1 ring-[#D4AF37]'
                       : 'border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] hover:border-[#D4AF37]'
@@ -799,9 +852,9 @@ function ThreeLayerEngine({
           </div>
 
           {/* Build your own picker */}
-          <GlassPanel className="p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
+          <GlassPanel className="p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
             <div className="flex items-center gap-2">
-              <Zap size={16} className="text-[#D4AF37]" />
+              <Zap size={16} className="shrink-0 text-[#D4AF37]" />
               <h4 className="font-sans text-lg font-bold text-[#FFFFFF]">Build Your Own Track</h4>
             </div>
             <p className="mt-1 text-sm text-[#CFCFCF]">Compose a custom report from modular components.</p>
@@ -832,10 +885,10 @@ function ThreeLayerEngine({
       <div className="sticky bottom-4 z-10">
         <button
           onClick={onGenerate}
-          className="btn-royal-red flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-bold shadow-lg cursor-pointer"
+          className="btn-royal-red flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-2xl px-4 py-3.5 text-sm font-bold shadow-lg cursor-pointer sm:px-6 sm:py-4 sm:text-base"
         >
-          <Sparkles size={18} /> Generate Report
-          <span className="ml-2 rounded-full bg-[#050505]/40 px-2 py-0.5 font-mono text-xs text-[#050505]">
+          <Sparkles size={18} className="shrink-0" /> Generate Report
+          <span className="ml-0 rounded-full bg-[#050505]/40 px-2 py-0.5 font-mono text-xs text-[#050505] sm:ml-2">
             {selectedTracks.length + customPicks.length} modules
           </span>
         </button>
@@ -881,7 +934,7 @@ function GenericVerticalPanel({ vertical }) {
           const CIcon = c.icon;
           const open = openCard === c.title;
           return (
-            <GlassPanel key={c.title} className="group p-5 transition hover:border-[#D4AF37] bg-[#111111] text-white border-[rgba(212,175,55,0.18)]">
+            <GlassPanel key={c.title} className="group p-4 transition hover:border-[#D4AF37] bg-[#111111] text-white border-[rgba(212,175,55,0.18)] sm:p-5">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#0E0E0E] text-[#D4AF37]">
                 <CIcon className="h-5 w-5 text-[#D4AF37]" />
               </div>
@@ -1005,9 +1058,9 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
                       transition={{ duration: 0.25 }}
                       className="group rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3.5 transition hover:border-[#D4AF37] hover:shadow-sm"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <h5 className="font-sans text-base font-bold leading-snug text-[#FFFFFF]">{r.name}</h5>
-                        <StatusBadge status={r.status} />
+                      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1.5">
+                        <h5 className="min-w-0 font-sans text-base font-bold leading-snug text-[#FFFFFF]">{r.name}</h5>
+                        <StatusBadge status={r.status} className="shrink-0" />
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {r.tags.map((t) => (
@@ -1068,8 +1121,9 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
                         )}
                       </AnimatePresence>
 
-                      {/* Mover controls */}
-                      <div className="mt-3 flex items-center justify-between opacity-0 transition group-hover:opacity-100">
+                      {/* Mover controls — `hover-reveal` keeps these visible on
+                          touch devices, where `group-hover` never fires. */}
+                      <div className="hover-reveal mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 opacity-0 transition group-hover:opacity-100">
                         <button
                           onClick={() => moveReport(r.id, -1)}
                           disabled={r.status === 'RECEIVED'}
@@ -1112,7 +1166,7 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical, company, m
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A0108]/75 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#1A0108]/75 p-4 backdrop-blur-xs"
       onClick={onClose}
     >
       <motion.div
@@ -1120,22 +1174,22 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical, company, m
         animate={{ scale: 1, y: 0, opacity: 1 }}
         exit={{ scale: 0.92, y: 16, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-[rgba(212,175,55,0.25)] bg-[#111111] text-white shadow-2xl"
+        className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[rgba(212,175,55,0.25)] bg-[#111111] text-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative flex items-center justify-between border-b border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-6 py-4">
-          <div className="relative flex items-center gap-2">
-            <Crown className="h-5 w-5 text-[#D4AF37]" />
-            <h3 className="font-sans text-lg font-bold text-[#FFFFFF]">Generate AI Strategy Report</h3>
+        <div className="relative flex items-center justify-between gap-3 border-b border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-4 py-4 sm:px-6">
+          <div className="relative flex min-w-0 items-center gap-2">
+            <Crown className="h-5 w-5 shrink-0 text-[#D4AF37]" />
+            <h3 className="font-sans text-base font-bold text-[#FFFFFF] sm:text-lg">Generate AI Strategy Report</h3>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-[#CFCFCF] transition hover:bg-[#050505] hover:text-[#FFFFFF] cursor-pointer">
+          <button onClick={onClose} aria-label="Close" className="shrink-0 rounded-lg p-1 text-[#CFCFCF] transition hover:bg-[#050505] hover:text-[#FFFFFF] cursor-pointer">
             <X size={18} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-6">
+        <div className="px-4 py-6 sm:px-6">
           <p className="text-sm text-[#CFCFCF] leading-relaxed">
             Compose a new report for <strong className="text-[#F4D67A]">{company?.trim() || 'Untitled Venture'}</strong> in
             the <strong className="text-[#F4D67A]">{vertical?.name}</strong> vertical, synthesizing
@@ -1147,9 +1201,9 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical, company, m
               { icon: Sparkles, label: 'Synthesize' },
               { icon: Download, label: 'Deliver' },
             ].map((step, i) => (
-              <div key={step.label} className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#050505] p-3">
+              <div key={step.label} className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#050505] p-2.5 sm:p-3">
                 <step.icon size={16} className="mx-auto text-[#D4AF37]" />
-                <p className="mt-1.5 font-mono text-[0.68rem] text-[#CFCFCF]">{i + 1}. {step.label}</p>
+                <p className="mt-1.5 font-mono text-[0.6rem] text-[#CFCFCF] sm:text-[0.68rem]">{i + 1}. {step.label}</p>
               </div>
             ))}
           </div>
@@ -1166,10 +1220,10 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical, company, m
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 border-t border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-6 py-4">
+        <div className="flex flex-wrap justify-end gap-2.5 border-t border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-4 py-4 sm:gap-3 sm:px-6">
           <GhostButton onClick={onClose}>Cancel</GhostButton>
           <RoyalButton onClick={onConfirm} disabled={loading}>
-            <Sparkles size={15} /> {loading ? 'Generating…' : 'Confirm & Generate'}
+            <Sparkles size={15} className="shrink-0" /> {loading ? 'Generating…' : 'Confirm & Generate'}
           </RoyalButton>
         </div>
       </motion.div>
