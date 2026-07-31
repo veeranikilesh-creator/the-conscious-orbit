@@ -42,6 +42,22 @@ const KANBAN_COLUMNS = [
   { status: 'PUBLISHED', action: 'DELIVERED',   note: 'Generated scores & downloadable artifacts' },
 ];
 
+/* Offered as a datalist rather than a <Select> so the field stays open to any
+   typed value — that freedom is the point of "Industry / Sector (Type Any)". */
+const INDUSTRY_SECTORS = [
+  'Information Technology (IT)', 'Software Development', 'Artificial Intelligence (AI)',
+  'Education (EdTech)', 'Healthcare', 'Banking', 'Financial Services (FinTech)',
+  'Insurance', 'Retail', 'E-commerce', 'Manufacturing', 'Automotive', 'Construction',
+  'Real Estate', 'Telecommunications', 'Media & Entertainment', 'Marketing & Advertising',
+  'Agriculture', 'Food & Beverage', 'Hospitality', 'Tourism & Travel', 'Transportation',
+  'Logistics & Supply Chain', 'Energy & Utilities', 'Oil & Gas', 'Mining',
+  'Government & Public Sector', 'Non-Profit Organization', 'Legal Services', 'Consulting',
+  'Human Resources (HR)', 'Recruitment & Staffing', 'Biotechnology', 'Pharmaceuticals',
+  'Aerospace & Defense', 'Electronics', 'Fashion & Apparel', 'Sports & Fitness', 'Gaming',
+  'Cybersecurity', 'Cloud Computing', 'Data Analytics', 'Research & Development',
+  'Environmental Services', 'Others',
+];
+
 const BUILD_YOUR_OWN = [
   'Market Sizing', 'Competitor Teardown', 'Pricing Strategy', 'GTM Plan',
   'Financial Model', 'Risk Register', 'User Personas', 'OKR Framework',
@@ -865,10 +881,16 @@ function ThreeLayerEngine({
               </Field>
               <Field label="Industry / Sector (Type Any)">
                 <Input
+                  list="industry-sectors"
                   value={profile.industry}
                   onChange={(e) => setProfileField('industry', e.target.value)}
-                  placeholder="Type any industry (e.g. AI Robotics, CleanTech, SpaceTech, BioPharma, Logistics...)"
+                  placeholder="Pick a sector or type your own (e.g. AI Robotics, CleanTech, SpaceTech...)"
                 />
+                <datalist id="industry-sectors">
+                  {INDUSTRY_SECTORS.map((sector) => (
+                    <option key={sector} value={sector} />
+                  ))}
+                </datalist>
               </Field>
               <Field label="Stage">
                 <Select value={profile.stage} onChange={(e) => setProfileField('stage', e.target.value)}>
