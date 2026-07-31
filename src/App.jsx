@@ -511,7 +511,7 @@ function DomainScrollRow({ verticals, activeVertical, setActiveVertical }) {
             onClick={() => setActiveVertical(v.id)}
             className={`scroll-velocity-item ${active ? 'active' : ''}`}
           >
-            {v.name}
+            {v.short || v.name}
           </button>
         );
       })}
@@ -696,26 +696,27 @@ function Topbar({
    ============================================================ */
 function MainViewTabs({ mainView, setMainView }) {
   const tabs = [
-    { id: 'pipeline', label: 'Venture Intelligence Pipeline', icon: Cpu },
-    { id: 'intake',   label: 'Opportunity Intake',            icon: Layers },
-    { id: 'board',    label: 'Executive Tracking',            icon: ClipboardList },
+    { id: 'pipeline', label: 'Venture Intelligence Pipeline', shortLabel: 'Pipeline', icon: Cpu },
+    { id: 'intake',   label: 'Opportunity Intake',            shortLabel: 'Intake',   icon: Layers },
+    { id: 'board',    label: 'Executive Tracking',            shortLabel: 'Tracking', icon: ClipboardList },
   ];
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-1.5 backdrop-blur-md">
+    <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-1.5 backdrop-blur-md w-full sm:w-auto">
       {tabs.map((tab) => {
         const active = mainView === tab.id;
         return (
           <button
             key={tab.id}
             onClick={() => setMainView(tab.id)}
-            className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+            className={`relative flex flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-2 sm:py-1.5 text-xs font-semibold transition cursor-pointer ${
               active
                 ? 'bg-[#D4AF37] text-[#050505] font-bold shadow-xs'
                 : 'text-[#CFCFCF] hover:text-[#FFFFFF] hover:bg-[#111111]'
             }`}
           >
-            <tab.icon size={13} className={active ? 'text-[#050505]' : 'text-[#D4AF37]'} />
-            <span>{tab.label}</span>
+            <tab.icon size={14} className={active ? 'text-[#050505]' : 'text-[#D4AF37]'} />
+            <span className="hidden sm:inline">{tab.label}</span>
+            <span className="sm:hidden">{tab.shortLabel}</span>
           </button>
         );
       })}
@@ -1264,7 +1265,7 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {columns.map((col) => {
           const items = reports.filter((r) => r.status === col.status);
           return (

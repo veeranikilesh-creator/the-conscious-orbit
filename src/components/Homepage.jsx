@@ -87,12 +87,12 @@ export default function Homepage({ onEnter, onLogin }) {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="pt-2 flex flex-wrap items-center gap-4"
+              className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4 w-full sm:w-auto"
             >
-              <RoyalButton onClick={onEnter} className="px-9 py-4 text-sm font-bold shadow-xl">
+              <RoyalButton onClick={onEnter} className="px-6 sm:px-9 py-3.5 sm:py-4 text-sm font-bold shadow-xl justify-center">
                 <Play size={16} /> Launch Strategy Engine
               </RoyalButton>
-              <GhostButton onClick={onLogin} className="px-8 py-4 text-sm font-semibold">
+              <GhostButton onClick={onLogin} className="px-6 sm:px-8 py-3.5 sm:py-4 text-sm font-semibold justify-center">
                 Sign In <ArrowRight size={15} />
               </GhostButton>
             </motion.div>
