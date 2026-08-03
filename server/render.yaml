@@ -1,0 +1,37 @@
+# Render blueprint for the Conscious Orbit API.
+#
+# Deploy: push this repo, then in Render choose "New → Blueprint" and point it
+# at this file. MONGODB_URI must be set manually (a MongoDB Atlas connection
+# string) — Render has no managed MongoDB.
+services:
+  - type: web
+    name: conscious-orbit-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      # Set in the Render dashboard — never commit these.
+      - key: MONGODB_URI
+        sync: false
+      # Comma-separated list of allowed frontend origins.
+      - key: CORS_ORIGIN
+        value: https://consciousorbita.netlify.app,https://consiousorbit.netlify.app
+      # Optional. Without it module 7 returns a deterministic heuristic verdict.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-5
+      # Optional. Without these module 6 returns labelled placeholder data.
+      - key: SPYFU_API_ID
+        sync: false
+      - key: SPYFU_SECRET_KEY
+        sync: false

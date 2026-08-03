@@ -34,3 +34,6 @@ dist-ssr
 # Ignore empty sub-folder that was causing git submodule issue
 the-conscious-orbit/
 
+
+# Local Netlify folder
+.netlify

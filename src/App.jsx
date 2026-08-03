@@ -18,6 +18,13 @@ import VentureProcessor from './components/VentureProcessor.jsx';
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from './components/VerticalEngines.jsx';
 import Homepage from './components/Homepage.jsx';
 import Login from './components/Login.jsx';
+import {
+  listReports as apiListReports,
+  advanceReport as apiAdvanceReport,
+  revertReport as apiRevertReport,
+  generateReportViaApi,
+  ApiUnavailable,
+} from './api.js';
 import Lenis from 'lenis';
 
 /* ============================================================
@@ -118,6 +125,42 @@ const SEED_REPORTS = [
   { id: 'r6', name: 'Helix Pharma Ops',       vertical: 'industries', tags: ['Pharma'],             status: 'PUBLISHED',  score: 91 },
 ];
 
+/* A server report carries `clusters` but no `brief`/`metrics` — those are the
+   frontend's own presentation shapes. Rebuild them so a report fetched from the
+   API renders identically to one composed locally. */
+function fromServerReport(r) {
+  const c = r.clusters || {};
+  return {
+    id: r.id,
+    name: r.name,
+    vertical: r.vertical,
+    tags: r.tags || [],
+    status: r.status,
+    score: r.score ?? 0,
+    decision: r.decision,
+    fromApi: true,
+    brief: {
+      company: r.name,
+      industry: r.tags?.[0],
+      problem: c.market?.problem,
+      pain: c.market?.pain,
+      wtp: c.market?.wtp,
+      icp: c.market?.icp,
+      revenue: c.viability?.revenue,
+      margin: c.viability?.margin,
+      costs: c.viability?.costs,
+      breakeven: c.viability?.breakeven,
+      geography: c.launch?.geography,
+      gtm: c.launch?.gtm,
+      milestones: c.launch?.milestones,
+      ask: c.launch?.ask,
+      tracksSelected: r.tracks || [],
+      customModules: r.customModules || [],
+      modules: (r.completedModules || []).length,
+    },
+  };
+}
+
 function App() {
   const [page, setPage] = useState('home'); // 'home' | 'login' | 'dashboard'
 
@@ -164,6 +207,27 @@ function App() {
   const [mainView, setMainView] = useState('pipeline'); // 'pipeline' | 'intake' | 'board'
   const [search, setSearch] = useState('');
   const [notice, setNotice] = useState(null);
+  /* 'checking' until the first list call resolves. 'offline' means the API is
+     unreachable and every mutation falls back to the local simulation, so the
+     static build keeps working with no backend attached. */
+  const [apiStatus, setApiStatus] = useState('checking');
+  const [genProgress, setGenProgress] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    apiListReports(controller.signal)
+      .then((data) => {
+        const rows = (data?.reports || []).map(fromServerReport);
+        setApiStatus('online');
+        // An empty database shouldn't blank the board on first run.
+        if (rows.length) setReports(rows);
+      })
+      .catch((err) => {
+        if (err.name === 'AbortError') return;
+        setApiStatus('offline');
+      });
+    return () => controller.abort();
+  }, []);
 
   // Controlled intake state — default to clean empty profile.
   const [profile, setProfile] = useState(EMPTY_PROFILE);
@@ -209,7 +273,7 @@ function App() {
   const toggleCustom = (name) =>
     setCustomPicks((p) => (p.includes(name) ? p.filter((t) => t !== name) : [...p, name]));
 
-  const moveReport = (id, dir) => {
+  const applyLocalMove = (id, dir) =>
     setReports((prev) =>
       prev.map((r) => {
         if (r.id !== id) return r;
@@ -218,15 +282,44 @@ function App() {
         return { ...r, status: REPORT_STATUSES[next] };
       })
     );
+
+  const moveReport = async (id, dir) => {
+    const target = reports.find((r) => r.id === id);
+    if (!target?.fromApi || apiStatus !== 'online') {
+      applyLocalMove(id, dir);
+      return;
+    }
+
+    // Optimistic — the server is authoritative, so roll back if it refuses.
+    applyLocalMove(id, dir);
+    try {
+      const data = dir > 0 ? await apiAdvanceReport(id) : await apiRevertReport(id);
+      if (data?.report) {
+        setReports((prev) => prev.map((r) => (r.id === id ? { ...r, ...fromServerReport(data.report) } : r)));
+      }
+    } catch (err) {
+      applyLocalMove(id, -dir);
+      if (err instanceof ApiUnavailable) {
+        setApiStatus('offline');
+        setNotice('Backend unreachable — board is running locally');
+      } else if (err.status === 409) {
+        // The stage gate's message already names the missing module keys.
+        setNotice(err.message);
+      } else {
+        setNotice(err.message || 'Could not move report');
+      }
+    }
   };
 
-  const handleGenerate = () => {
+  /* Composes the report object from intake state. Used directly when the API is
+     unreachable, and as the narrative layer over a server-generated report —
+     the server owns status/score/decision, this owns the written brief. */
+  const composeLocalReport = () => {
     const newVentureName = profile.company.trim() || 'New Strategic Venture';
     const userIndustry = profile.industry.trim() || activeVerticalObj?.name || 'General Business & Technology';
     const userModel = profile.model.trim() || 'B2B Enterprise';
 
-    setIsGenerating(true);
-    genTimer.current = setTimeout(() => {
+    {
       const trackNames = FLAGSHIP_TRACKS
         .filter((t) => selectedTracks.includes(t.id))
         .map((t) => t.name.replace(/ Track$/, ''));
@@ -300,14 +393,69 @@ function App() {
         },
       };
 
-      setReports((prev) => [newReportObj, ...prev]);
-      setIsGenerating(false);
-      setIsGenModalOpen(false);
-      setMainView('board');
-      setViewingReport(newReportObj);
-      setNotice(`Industry analysis report ready for ${newVentureName}`);
-      handleResetForm();
-    }, 1900);
+      return { report: newReportObj, trackNames, tags };
+    }
+  };
+
+  const finishGenerate = (reportObj, message) => {
+    setReports((prev) => [reportObj, ...prev]);
+    setIsGenerating(false);
+    setGenProgress(null);
+    setIsGenModalOpen(false);
+    setMainView('board');
+    setViewingReport(reportObj);
+    setNotice(message);
+    handleResetForm();
+  };
+
+  const handleGenerate = async () => {
+    const { report: localReport, trackNames, tags } = composeLocalReport();
+    setIsGenerating(true);
+
+    if (apiStatus !== 'online') {
+      // No backend: keep the original simulated delay so the UI reads the same.
+      genTimer.current = setTimeout(
+        () => finishGenerate(localReport, `Industry analysis report ready for ${localReport.name}`),
+        1900
+      );
+      return;
+    }
+
+    try {
+      const data = await generateReportViaApi(
+        {
+          name: localReport.name,
+          vertical: activeVertical,
+          tags,
+          tracks: trackNames,
+          customModules: customPicks,
+          profile,
+          clusters,
+        },
+        (label, done, total) => setGenProgress({ label, done, total })
+      );
+
+      // Server owns id/status/score/decision; the local object owns the brief.
+      const server = fromServerReport(data.report);
+      const merged = {
+        ...localReport,
+        ...server,
+        brief: { ...localReport.brief, ...server.brief, modules: (data.report.completedModules || []).length },
+      };
+      finishGenerate(
+        merged,
+        `Report generated — Orbital Score ${merged.score}${data.report.decision === 1 ? ' · PROCEED' : data.report.decision === 0 ? ' · PIVOT' : ''}`
+      );
+    } catch (err) {
+      if (err instanceof ApiUnavailable) setApiStatus('offline');
+      setGenProgress(null);
+      finishGenerate(
+        localReport,
+        err instanceof ApiUnavailable
+          ? 'Backend unreachable — generated locally'
+          : `Backend error (${err.message}) — generated locally`
+      );
+    }
   };
 
   const activeVerticalObj = verticals.find((v) => v.id === activeVertical) || {
@@ -499,6 +647,7 @@ function App() {
             onClose={() => setIsGenModalOpen(false)}
             onConfirm={handleGenerate}
             loading={isGenerating}
+            progress={genProgress}
             vertical={activeVerticalObj}
             company={profile.company}
             moduleCount={selectedTracks.length + customPicks.length}
@@ -1461,7 +1610,7 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
 /* ============================================================
    GENERATE REPORT MODAL
    ============================================================ */
-function GenerateReportModal({ onClose, onConfirm, loading, vertical, company, moduleCount }) {
+function GenerateReportModal({ onClose, onConfirm, loading, progress, vertical, company, moduleCount }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1509,13 +1658,31 @@ function GenerateReportModal({ onClose, onConfirm, loading, vertical, company, m
             ))}
           </div>
           {loading && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-[#F4D67A]">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                className="h-4 w-4 rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37]"
-              />
-              Synthesizing neural insights...
+            <div className="mt-4">
+              <div className="flex items-center justify-center gap-2 text-sm text-[#F4D67A]">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  className="h-4 w-4 rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37]"
+                />
+                Synthesizing neural insights...
+              </div>
+              {/* Running the real pipeline takes a dozen server round-trips, so
+                  show which one is in flight rather than an opaque spinner. */}
+              {progress && (
+                <>
+                  <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-[#050505]">
+                    <motion.div
+                      className="h-full bg-[#D4AF37]"
+                      animate={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-center font-mono text-[0.62rem] text-[#9A9A9A]">
+                    {progress.label} · {progress.done}/{progress.total}
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>

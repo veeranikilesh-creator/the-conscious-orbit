@@ -8,7 +8,12 @@ import { env, isProduction } from './config/env.js';
 export function createApp() {
   const app = express();
 
-  app.use(cors({ origin: '*', credentials: true }));
+  // CORS_ORIGIN accepts a comma-separated list, or "*" to allow any origin.
+  // Note `credentials` must be false when the origin is a wildcard — browsers
+  // reject that combination outright.
+  const origins = env.corsOrigin.split(',').map((o) => o.trim()).filter(Boolean);
+  const allowAny = origins.includes('*');
+  app.use(cors({ origin: allowAny ? '*' : origins, credentials: !allowAny }));
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
   app.use(morgan(isProduction ? 'combined' : 'dev'));

@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Two independent npm projects in one repo:
 
 - repo root — the Vite/React frontend (`src/`)
-- `server/` — an Express/MongoDB API, added later and **not yet consumed by the frontend**
+- `server/` — an Express/MongoDB API, consumed by the frontend through `src/api.js`
 
 They have separate `package.json` / `node_modules`. `npm install` at the root does not install the server's deps.
 
@@ -35,7 +35,9 @@ There is no test framework anywhere in this repo — no runner, no test files.
 
 React 19 + Vite 8, JavaScript only (`.jsx`, no TypeScript). Tailwind CSS v4 via the `@tailwindcss/vite` plugin — there is **no `tailwind.config.js`**; Tailwind is pulled in with `@import "tailwindcss"` at the top of `src/index.css` and all customization lives in that file as plain CSS. `framer-motion` for animation, `lucide-react` for icons, `ogl` for the WebGL shader background. Lint config is `.oxlintrc.json` (oxlint with the `react` and `oxc` plugins; only `react/rules-of-hooks` and `react/only-export-components` are configured).
 
-**All frontend data is hardcoded.** No router, no auth, no data fetching — there is not a single `fetch()` in `src/`. "Generating a report" and "logging in" are `setTimeout` simulations that mutate local state (`App.jsx:135`, `Login.jsx`).
+No router and no auth. Data fetching lives entirely in `src/api.js`; nothing else in `src/` calls `fetch()`. "Logging in" is still a `setTimeout` simulation (`Login.jsx`).
+
+**The API is optional by design.** `App.jsx` lists reports on mount and sets `apiStatus` to `'online'` or `'offline'`. When offline — no `VITE_API_URL`, server down, CORS refused — Generate falls back to the original local simulation and the board moves cards in local state. This is what keeps the static Netlify build working with no backend attached, so don't remove the fallback paths when adding API calls.
 
 ### Routing
 
@@ -88,7 +90,11 @@ Read env through `config/env.js`, not `process.env`. There is **no authenticatio
 
 ### Frontend ↔ backend
 
-`Report.toJSON()` deliberately emits `{ id, name, vertical, tags, status, score }` — the exact shape `KanbanBoard` renders — and the four statuses are shared verbatim across `src/constants.js` (`REPORT_STATUSES`, `KANBAN_COLUMNS`), `ui.jsx` (`STATUS_STYLES`, `StatusDot`), `VentureProcessor.jsx` (`PIPELINE[].stage`) and the server's `reportState.js`. Changing or adding a status means updating all of them. Wiring the UI up means replacing `SEED_REPORTS` with `GET /api/reports` and mapping the board's Back/Advance buttons to `POST /revert` / `POST /advance`.
+`Report.toJSON()` deliberately emits `{ id, name, vertical, tags, status, score }` — the exact shape `KanbanBoard` renders — and the four statuses are shared verbatim across `src/constants.js` (`REPORT_STATUSES`, `KANBAN_COLUMNS`), `ui.jsx` (`STATUS_STYLES`, `StatusDot`), `VentureProcessor.jsx` (`PIPELINE[].stage`) and the server's `reportState.js`. Changing or adding a status means updating all of them.
+
+`src/api.js` holds the whole integration: the endpoint wrappers, `buildModuleInputs()` (which derives all ten module payloads from the intake form — the form does not collect TAM, competitor prices or feasibility ratings, so those are documented defaults), and `generateReportViaApi()`, which creates a report and drives it RECEIVED → PUBLISHED by running each stage's gating modules before each `POST /advance`, then runs `industryReport` to write the score and verdict. Two mappings exist because the server is stricter than the UI: custom domains (`domain_<ts>`) fall back to the `startups` vertical, and the six intake business models collapse onto the four the modules accept.
+
+The error envelope is flat — `{ error, message, issues? }` — not nested; `issues` carries zod field paths.
 
 ## Known dead weight
 
