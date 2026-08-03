@@ -495,3 +495,29 @@
     font-size: 16px;
   }
 }
+
+/* Smooth Scrolling Custom Configuration */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Lenis smooth scrolling configuration styles */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}

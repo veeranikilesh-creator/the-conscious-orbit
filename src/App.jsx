@@ -18,6 +18,7 @@ import VentureProcessor from './components/VentureProcessor.jsx';
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from './components/VerticalEngines.jsx';
 import Homepage from './components/Homepage.jsx';
 import Login from './components/Login.jsx';
+import Lenis from 'lenis';
 
 /* ============================================================
    THE CONSCIOUS ORBIT — Ultra-Luxury Red & Gold Executive Workspace
@@ -119,6 +120,36 @@ const SEED_REPORTS = [
 
 function App() {
   const [page, setPage] = useState('home'); // 'home' | 'login' | 'dashboard'
+
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      smoothTouch: false,
+      touchMultiplier: 2,
+      infinite: false,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page]);
+
   const [verticals, setVerticals] = useState(VERTICALS);
   const [activeVertical, setActiveVertical] = useState('startups');
   const [activeCluster, setActiveCluster] = useState('market');
