@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Crown,
@@ -11,22 +11,39 @@ import { fieldBase } from './ui.jsx';
    BLACK & GOLD EXECUTIVE AUTHENTICATION SCREEN
    ============================================================ */
 
+const REMEMBER_KEY = 'orbit.rememberedEmail';
+
 export default function Login({ onLogin, onBack }) {
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem(REMEMBER_KEY) || '');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(() => Boolean(localStorage.getItem(REMEMBER_KEY)));
+  const [resetSent, setResetSent] = useState(false);
+
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
+
+    // "Remember me" now actually persists the address for the next visit.
+    if (remember) localStorage.setItem(REMEMBER_KEY, email);
+    else localStorage.removeItem(REMEMBER_KEY);
+
     // Simulate auth then enter dashboard
-    setTimeout(() => {
+    timer.current = setTimeout(() => {
       setLoading(false);
       onLogin();
     }, 1400);
+  };
+
+  const handleForgotPassword = () => {
+    if (!email.trim()) return;
+    setResetSent(true);
   };
 
   return (
@@ -34,7 +51,7 @@ export default function Login({ onLogin, onBack }) {
       {/* WebGL Background */}
       <RoyalBackground />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl items-center justify-center px-5 py-8 md:px-8">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl items-center justify-center px-4 py-8 sm:px-5 md:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -97,7 +114,7 @@ export default function Login({ onLogin, onBack }) {
           </div>
 
           {/* ===== RIGHT — DARK FORM CARD ===== */}
-          <div className="relative bg-[#0E0E0E] p-8 md:p-10 text-white">
+          <div className="relative bg-[#0E0E0E] p-6 sm:p-8 md:p-10 text-white">
             {/* Mobile brand header */}
             <div className="mb-8 flex items-center justify-between lg:hidden">
               <div className="flex items-center gap-2">
@@ -110,7 +127,7 @@ export default function Login({ onLogin, onBack }) {
             </div>
 
             {/* Mode toggle */}
-            <div className="inline-flex rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#050505] p-1">
+            <div className="flex w-full max-w-full rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#050505] p-1 sm:inline-flex sm:w-auto">
               {[
                 { id: 'signin', label: 'Sign In' },
                 { id: 'signup', label: 'Create Account' },
@@ -120,7 +137,7 @@ export default function Login({ onLogin, onBack }) {
                   <button
                     key={opt.id}
                     onClick={() => setMode(opt.id)}
-                    className={`relative rounded-lg px-5 py-2 text-sm font-medium transition cursor-pointer ${
+                    className={`relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition cursor-pointer sm:flex-none sm:px-5 ${
                       active ? 'text-[#050505] font-bold' : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
                     }`}
                   >
@@ -166,6 +183,8 @@ export default function Login({ onLogin, onBack }) {
                     <input
                       type="text"
                       required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                       placeholder="Your name"
                       className={`${fieldBase} pl-11`}
                     />
@@ -215,25 +234,44 @@ export default function Login({ onLogin, onBack }) {
                     />
                     Remember me
                   </label>
-                  <a href="#forgot" className="font-semibold text-[#F4D67A] hover:underline">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={!email.trim()}
+                    className="font-semibold text-[#F4D67A] hover:underline disabled:opacity-40 disabled:hover:no-underline cursor-pointer disabled:cursor-not-allowed"
+                    title={email.trim() ? 'Send a reset link' : 'Enter your email address first'}
+                  >
                     Forgot password?
-                  </a>
+                  </button>
                 </div>
+              )}
+
+              {mode === 'signin' && resetSent && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 rounded-xl border border-[#10B981]/40 bg-[#065F46]/25 px-3.5 py-2.5"
+                >
+                  <CheckCircle2 size={14} className="shrink-0 text-[#10B981]" />
+                  <span className="text-xs text-[#A7F3D0]">
+                    Reset link sent to <strong className="text-[#FFFFFF]">{email}</strong>
+                  </span>
+                </motion.div>
               )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-royal-red flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-base font-bold disabled:opacity-70 cursor-pointer mt-4"
+                className="btn-royal-red flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold disabled:opacity-70 cursor-pointer mt-4 sm:px-6 sm:text-base"
               >
                 {loading ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" /> Authenticating…
+                    <Loader2 size={18} className="shrink-0 animate-spin" /> Authenticating…
                   </>
                 ) : (
                   <>
                     {mode === 'signin' ? 'Sign In to Executive Suite' : 'Create Account'}
-                    <ArrowRight size={17} />
+                    <ArrowRight size={17} className="shrink-0" />
                   </>
                 )}
               </button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, TrendingUp, DollarSign, FileText, Target,
@@ -119,15 +119,22 @@ export default function VentureProcessor() {
 
   const current = PIPELINE[activeStage];
 
+  // Held in a ref so the interval can be cleared if the component unmounts
+  // mid-run (e.g. the user switches away from the Pipeline tab).
+  const intervalRef = useRef(null);
+  useEffect(() => () => clearInterval(intervalRef.current), []);
+
   const handleSimulate = () => {
+    clearInterval(intervalRef.current);
     setIsProcessing(true);
+    setActiveStage(0);
     let step = 0;
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       step += 1;
       if (step < PIPELINE.length) {
         setActiveStage(step);
       } else {
-        clearInterval(interval);
+        clearInterval(intervalRef.current);
         setIsProcessing(false);
       }
     }, 1100);
@@ -178,24 +185,24 @@ export default function VentureProcessor() {
             <div key={p.stage} className="relative">
               <button
                 onClick={() => setActiveStage(i)}
-                className={`group relative flex flex-col w-full rounded-[22px] border p-5 text-left transition-all duration-200 cursor-pointer ${
+                className={`group relative flex flex-col w-full min-w-0 rounded-[22px] border p-4 text-left transition-all duration-200 cursor-pointer sm:p-5 ${
                   active
                     ? 'border-[#D4AF37] bg-[#121212] shadow-md ring-1 ring-[#D4AF37]'
                     : 'border-[rgba(212,175,55,0.12)] bg-[#121212] hover:border-[#D4AF37] hover:-translate-y-1'
                 }`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#9A9A9A]">
                     0{i + 1}
                   </span>
-                  <span className={`rounded-md border px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider ${colors.badge}`}>
+                  <span className={`shrink-0 rounded-md border px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider ${colors.badge}`}>
                     {p.stage}
                   </span>
                 </div>
                 <h4 className="mt-3 font-sans text-base font-bold text-[#F8F8F8] group-hover:text-[#D4AF37] transition">
                   {p.title}
                 </h4>
-                <p className="mt-1 font-mono text-[0.65rem] text-[#CFCFCF] truncate">
+                <p className="mt-1 w-full font-mono text-[0.65rem] text-[#CFCFCF] truncate">
                   {p.input} → {p.output}
                 </p>
                 {active && (
@@ -240,33 +247,33 @@ function StageDetailCard({ stage, colors, index }) {
   const c = colors;
   return (
     <GlassPanel className="overflow-hidden p-0 border-[rgba(212,175,55,0.25)] bg-[#111111]">
-      <div className="flex items-center justify-between border-b border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${c.bg} font-mono text-sm font-bold ${c.text}`}>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-4 py-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.bg} font-mono text-sm font-bold ${c.text}`}>
             0{index + 1}
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#F4D67A]">Active Inspection</span>
-            <h4 className="font-sans text-lg font-bold text-[#FFFFFF]">{stage.title}</h4>
+            <h4 className="font-sans text-base font-bold text-[#FFFFFF] sm:text-lg">{stage.title}</h4>
           </div>
         </div>
-        <span className={`rounded-md border px-2.5 py-0.5 font-mono text-[0.65rem] font-bold uppercase tracking-wider ${c.badge}`}>
+        <span className={`shrink-0 rounded-md border px-2.5 py-0.5 font-mono text-[0.65rem] font-bold uppercase tracking-wider ${c.badge}`}>
           {stage.stage}
         </span>
       </div>
 
       <div className="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_1.2fr]">
         {/* Left */}
-        <div className="border-b border-[rgba(212,175,55,0.18)] p-6 lg:border-b-0 lg:border-r">
+        <div className="border-b border-[rgba(212,175,55,0.18)] p-4 sm:p-6 lg:border-b-0 lg:border-r">
           <p className="text-sm text-[#CFCFCF] leading-relaxed">{stage.desc}</p>
           <h5 className="mt-5 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">Core Processing Modules</h5>
           <div className="mt-3 space-y-2">
             {stage.modules.map((m) => (
               <div key={m.name} className={`flex items-center gap-3 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3`}>
-                <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${c.bg}`}>
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.bg}`}>
                   <m.icon size={16} className={c.text} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-semibold text-[#FFFFFF]">{m.name}</p>
                   <p className="font-mono text-[0.66rem] text-[#9A9A9A]">Module · {stage.stage}</p>
                 </div>
@@ -276,18 +283,18 @@ function StageDetailCard({ stage, colors, index }) {
         </div>
 
         {/* Right */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <h5 className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">Key Input / Output</h5>
           <div className="mt-3 space-y-2">
             {stage.detail.map((d) => (
-              <div key={d.label} className="flex items-center justify-between gap-3 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#050505] px-4 py-2.5">
+              <div key={d.label} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#050505] px-3.5 py-2.5 sm:px-4">
                 <span className="font-mono text-[0.7rem] uppercase tracking-wider text-[#CFCFCF]">{d.label}</span>
-                <span className="text-right text-sm font-semibold text-[#FFFFFF]">{d.value}</span>
+                <span className="text-left text-sm font-semibold text-[#FFFFFF] sm:text-right">{d.value}</span>
               </div>
             ))}
           </div>
-          <div className={`mt-4 flex items-center gap-2 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3`}>
-            <Zap size={14} className="text-[#D4AF37]" />
+          <div className={`mt-4 flex items-start gap-2 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3`}>
+            <Zap size={14} className="mt-0.5 shrink-0 text-[#D4AF37]" />
             <span className="text-xs text-[#CFCFCF]">
               Output <strong className="text-[#F4D67A]">{stage.output}</strong> is forwarded to the next stage.
             </span>
@@ -307,11 +314,11 @@ function ScoreAggregatorCard() {
   ];
 
   return (
-    <GlassPanel className="p-6 border-[rgba(212,175,55,0.15)] bg-[#151515] text-white rounded-[22px]">
+    <GlassPanel className="p-4 border-[rgba(212,175,55,0.15)] bg-[#151515] text-white rounded-[22px] sm:p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Award size={16} className="text-[#D4AF37]" />
+            <Award size={16} className="shrink-0 text-[#D4AF37]" />
             <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
               Score Aggregator
             </span>
@@ -323,12 +330,12 @@ function ScoreAggregatorCard() {
         </div>
 
         {/* RIGHT: Large Final Score Card */}
-        <div className="flex items-center gap-4 rounded-xl border border-[rgba(212,175,55,0.15)] bg-[#1B1B1B] p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-center gap-3 rounded-xl border border-[rgba(212,175,55,0.15)] bg-[#1B1B1B] p-3.5 shadow-sm sm:gap-4 sm:p-4">
           <div className="text-center font-mono">
             <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Final Score</p>
             <p className="font-sans text-3xl font-extrabold text-[#F8F8F8]">86<span className="text-xs text-[#9A9A9A]">/100</span></p>
           </div>
-          <div className="h-10 w-px bg-[rgba(212,175,55,0.2)]" />
+          <div className="hidden h-10 w-px bg-[rgba(212,175,55,0.2)] sm:block" />
           <div className="text-center font-mono space-y-1">
             <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Decision</p>
             <span className="rounded-md border border-[#10B981] bg-[#065F46]/80 px-2 py-0.5 text-xs font-bold text-[#10B981]">
@@ -342,16 +349,16 @@ function ScoreAggregatorCard() {
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((m) => (
           <div key={m.label} className="rounded-xl border border-[rgba(212,175,55,0.15)] bg-[#1B1B1B] p-3.5 transition hover:border-[#D4AF37]">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5">
-                <m.icon size={14} className="text-[#D4AF37]" />
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <m.icon size={14} className="shrink-0 text-[#D4AF37]" />
                 <span className="font-mono text-[0.65rem] uppercase text-[#CFCFCF]">{m.label}</span>
               </div>
-              <span className="font-mono text-[0.6rem] text-[#D4AF37]">{m.weight}</span>
+              <span className="shrink-0 font-mono text-[0.6rem] text-[#D4AF37]">{m.weight}</span>
             </div>
-            <div className="mt-2.5 flex items-center justify-between">
+            <div className="mt-2.5 flex items-center justify-between gap-3">
               <span className="font-sans text-lg font-bold text-[#F8F8F8]">{m.value}</span>
-              <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#050505]">
+              <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-[#050505] sm:w-20">
                 <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${m.value}%` }} />
               </div>
             </div>

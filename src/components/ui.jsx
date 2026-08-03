@@ -101,10 +101,13 @@ export function AiInsightWidget({ verticalName = 'Venture' }) {
       </div>
 
       <div className="space-y-2.5 pt-1">
+        {/* `pct` is the bar fill and is kept separate from the display value —
+            deriving width by parsing `val` produced invalid CSS for non-numeric
+            labels like "Low (1.2%)". */}
         {[
-          { label: 'Neural Confidence', val: '96%', color: 'bg-[#D4AF37]' },
-          { label: 'Data Processing Speed', val: '14ms', color: 'bg-[#F4D67A]' },
-          { label: 'Risk Factor Detection', val: 'Low (1.2%)', color: 'bg-[#10B981]' },
+          { label: 'Neural Confidence', val: '96%', pct: 96, color: 'bg-[#D4AF37]' },
+          { label: 'Data Processing Speed', val: '14ms', pct: 85, color: 'bg-[#F4D67A]' },
+          { label: 'Risk Factor Detection', val: 'Low (1.2%)', pct: 12, color: 'bg-[#10B981]' },
         ].map((item) => (
           <div key={item.label} className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-2.5">
             <div className="flex items-center justify-between text-[0.68rem]">
@@ -112,7 +115,7 @@ export function AiInsightWidget({ verticalName = 'Venture' }) {
               <span className="font-mono font-bold text-[#FFFFFF]">{item.val}</span>
             </div>
             <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#050505]">
-              <div className={`h-full rounded-full ${item.color}`} style={{ width: item.val.includes('%') ? item.val : '85%' }} />
+              <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
             </div>
           </div>
         ))}
