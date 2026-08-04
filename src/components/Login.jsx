@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Crown,
-  ShieldCheck, Loader2, CheckCircle2,
+  ShieldCheck, Loader2, CheckCircle2, User,
 } from 'lucide-react';
 import { OrbitBrand, RoyalBackground } from './ui.jsx';
 import { fieldBase } from './ui.jsx';
@@ -15,6 +15,7 @@ const REMEMBER_KEY = 'orbit.rememberedEmail';
 
 export default function Login({ onLogin, onBack }) {
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+  const [portalRole, setPortalRole] = useState('user'); // 'user' (User Client Portal) | 'admin' (Executive Admin)
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -30,15 +31,14 @@ export default function Login({ onLogin, onBack }) {
     e.preventDefault();
     setLoading(true);
 
-    // "Remember me" now actually persists the address for the next visit.
     if (remember) localStorage.setItem(REMEMBER_KEY, email);
     else localStorage.removeItem(REMEMBER_KEY);
 
-    // Simulate auth then enter dashboard
+    // Enter selected portal (User Client Portal or Admin Portal)
     timer.current = setTimeout(() => {
       setLoading(false);
-      onLogin();
-    }, 1400);
+      onLogin(portalRole);
+    }, 1200);
   };
 
   const handleForgotPassword = () => {
@@ -153,21 +153,60 @@ export default function Login({ onLogin, onBack }) {
               })}
             </div>
 
+            {/* Portal Selection Toggle */}
+            <div className="mt-5 space-y-1.5">
+              <label className="block font-mono text-[0.65rem] font-bold uppercase tracking-wider text-[#F4D67A]">
+                Select Destination Portal
+              </label>
+              <div className="grid grid-cols-2 gap-2 rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#050505] p-1">
+                <button
+                  type="button"
+                  onClick={() => setPortalRole('user')}
+                  className={`flex items-center justify-center gap-2 rounded-lg py-2.5 font-mono text-xs font-bold transition cursor-pointer ${
+                    portalRole === 'user'
+                      ? 'bg-[#10B981] text-[#050505] shadow-xs'
+                      : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
+                  }`}
+                >
+                  <User size={14} /> User Client Portal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPortalRole('admin')}
+                  className={`flex items-center justify-center gap-2 rounded-lg py-2.5 font-mono text-xs font-bold transition cursor-pointer ${
+                    portalRole === 'admin'
+                      ? 'bg-[#D4AF37] text-[#050505] shadow-xs'
+                      : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
+                  }`}
+                >
+                  <Crown size={14} /> Executive Admin
+                </button>
+              </div>
+            </div>
+
             {/* Heading */}
             <div className="mt-6">
               <div className="flex items-center gap-2">
-                <Crown size={16} className="text-[#D4AF37]" />
+                {portalRole === 'admin' ? (
+                  <Crown size={16} className="text-[#D4AF37]" />
+                ) : (
+                  <User size={16} className="text-[#10B981]" />
+                )}
                 <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#F4D67A]">
-                  {mode === 'signin' ? 'Welcome Back' : 'Join the Orbit'}
+                  {portalRole === 'admin' ? 'Executive Admin Portal' : 'User Client Portal'}
                 </span>
               </div>
               <h1 className="mt-2 font-sans text-3xl font-bold text-[#FFFFFF]">
-                {mode === 'signin' ? 'Sign in to your suite' : 'Create your account'}
+                {mode === 'signin'
+                  ? portalRole === 'admin'
+                    ? 'Sign in to Admin Control Center'
+                    : 'Sign in to User Client Portal'
+                  : 'Create Client Account'}
               </h1>
               <p className="mt-2 text-sm text-[#CFCFCF]">
-                {mode === 'signin'
-                  ? 'Enter your credentials to access the executive dashboard.'
-                  : 'Begin your venture intelligence journey in seconds.'}
+                {portalRole === 'admin'
+                  ? 'Access operational pipeline, score management, and system telemetry.'
+                  : 'Submit venture intake details, track application status, and view strategy reports.'}
               </p>
             </div>
 

@@ -193,6 +193,7 @@ function App() {
     window.scrollTo(0, 0);
   }, [page]);
 
+  const [userRole, setUserRole] = useState('user'); // 'user' (User Client Portal) | 'admin' (Executive Admin Portal)
   const [verticals, setVerticals] = useState(VERTICALS);
   const [activeVertical, setActiveVertical] = useState('startups');
   const [activeCluster, setActiveCluster] = useState('market');
@@ -204,7 +205,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [expandedReport, setExpandedReport] = useState(null);
   const [viewingReport, setViewingReport] = useState(null);
-  const [mainView, setMainView] = useState('pipeline'); // 'pipeline' | 'intake' | 'board'
+  const [mainView, setMainView] = useState('intake'); // 'intake' | 'board' | 'pipeline'
   const [search, setSearch] = useState('');
   const [notice, setNotice] = useState(null);
   /* 'checking' until the first list call resolves. 'offline' means the API is
@@ -497,7 +498,16 @@ function App() {
 
       {page === 'login' && (
         <motion.div key="login" {...fade}>
-          <Login onLogin={() => setPage('dashboard')} onBack={() => setPage('home')} />
+          <Login
+            onLogin={(role) => {
+              const selectedRole = role || 'user';
+              setUserRole(selectedRole);
+              setMainView(selectedRole === 'user' ? 'intake' : 'pipeline');
+              setPage('dashboard');
+              setNotice(`Logged into ${selectedRole === 'admin' ? 'Executive Admin Portal' : 'User Client Portal'}`);
+            }}
+            onBack={() => setPage('home')}
+          />
         </motion.div>
       )}
 
@@ -511,8 +521,14 @@ function App() {
           activeVertical={activeVerticalObj}
           setActiveVertical={setActiveVertical}
           onOpenAddDomain={() => setIsAddDomainModalOpen(true)}
+          userRole={userRole}
+          onToggleRole={() => {
+            const next = userRole === 'admin' ? 'user' : 'admin';
+            setUserRole(next);
+            setNotice(`Switched to ${next === 'admin' ? 'Executive Admin Portal' : 'User Client Portal'}`);
+          }}
           goHome={() => setPage('home')}
-          onProfileClick={() => setNotice('Executive Profile Active')}
+          onProfileClick={() => setPage('login')}
           search={search}
           setSearch={setSearch}
           notice={notice}
@@ -523,14 +539,15 @@ function App() {
           {/* SCREEN 1: HERO CARD */}
           <VerticalHero
             vertical={activeVerticalObj}
+            userRole={userRole}
             onOpenGenerate={() => setIsGenModalOpen(true)}
             onOpenAddDomain={() => setIsAddDomainModalOpen(true)}
           />
 
           {/* SCREEN 2: NAVIGATION TABS */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <MainViewTabs mainView={mainView} setMainView={setMainView} />
-            <AiPulseBadge label="AI Co-Pilot Telemetry Active" />
+            <MainViewTabs mainView={mainView} setMainView={setMainView} userRole={userRole} />
+            <AiPulseBadge label={`${userRole === 'admin' ? 'Admin Intelligence' : 'User Client'} Telemetry Active`} />
           </div>
 
           {/* SCREEN 3: PRIMARY WORKSPACE (PIPELINE / INTAKE / BOARD) */}
@@ -768,7 +785,7 @@ function ScrollVelocityRow({ verticals, activeVertical, setActiveVertical }) {
    TOPBAR — Luxury Black & Gold Executive Navbar with ScrollVelocity
    ============================================================ */
 function Topbar({
-  verticals, activeVertical, setActiveVertical, onOpenAddDomain, goHome, onProfileClick,
+  verticals, activeVertical, setActiveVertical, onOpenAddDomain, userRole, onToggleRole, goHome, onProfileClick,
   search, setSearch, notice, onDismissNotice,
 }) {
   const isCompact = useIsCompact();
@@ -777,15 +794,26 @@ function Topbar({
     <header className="sticky top-0 z-40 scroll-velocity-header px-3 py-3 text-[#FFFFFF] sm:px-6 sm:py-3.5">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-4 md:gap-6">
 
-        {/* LEFT: Minimal Home Button */}
-        <button
-          onClick={goHome}
-          aria-label="Home"
-          className="group flex items-center gap-2 text-sm font-semibold text-[#F4F4F4] transition hover:text-[#D4AF37] cursor-pointer shrink-0 px-1.5 py-1.5 sm:px-2"
-        >
-          <Home size={18} className="shrink-0 text-[#F4F4F4] group-hover:text-[#D4AF37] transition" />
-          <span className="hidden sm:inline font-sans font-medium tracking-wide">Home</span>
-        </button>
+        {/* LEFT: Home Button + Portal Role Badge */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <button
+            onClick={goHome}
+            aria-label="Home"
+            className="group flex items-center gap-2 text-sm font-semibold text-[#F4F4F4] transition hover:text-[#D4AF37] cursor-pointer shrink-0 px-1.5 py-1.5 sm:px-2"
+          >
+            <Home size={18} className="shrink-0 text-[#F4F4F4] group-hover:text-[#D4AF37] transition" />
+            <span className="hidden sm:inline font-sans font-medium tracking-wide">Home</span>
+          </button>
+
+          <div className={`hidden md:flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-[0.68rem] font-bold border ${
+            userRole === 'admin'
+              ? 'border-[#D4AF37]/50 bg-[#D4AF37]/15 text-[#F4D67A]'
+              : 'border-[#10B981]/50 bg-[#065F46]/35 text-[#A7F3D0]'
+          }`}>
+            <span className={`h-2 w-2 rounded-full ${userRole === 'admin' ? 'bg-[#D4AF37]' : 'bg-[#10B981]'}`} />
+            {userRole === 'admin' ? 'Executive Admin Portal' : 'User Client Portal'}
+          </div>
+        </div>
 
         {/* CENTER: Magic UI ScrollVelocity Infinite Domain Navigation + Add Industry Button */}
         <div className="min-w-0 flex-1 mx-1 flex items-center gap-2 overflow-hidden sm:mx-2">
@@ -813,9 +841,17 @@ function Topbar({
           </button>
         </div>
 
-        {/* RIGHT: Search, Notifications, Profile */}
+        {/* RIGHT: Switch Portal, Search, Notifications, Profile */}
         <div className="flex items-center gap-1.5 shrink-0 sm:gap-2.5">
-          <div className="hidden md:flex items-center gap-2 rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] px-3.5 py-1.5 text-xs text-[#CFCFCF] focus-within:border-[#D4AF37] transition">
+          <button
+            onClick={onToggleRole}
+            className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#D4AF37]/40 bg-[#050505] px-3 py-1 font-mono text-xs font-bold text-[#F4D67A] hover:bg-[#D4AF37] hover:text-[#050505] transition cursor-pointer"
+            title="Switch portal access mode"
+          >
+            Switch to {userRole === 'admin' ? 'User Portal' : 'Admin Portal'}
+          </button>
+
+          <div className="hidden lg:flex items-center gap-2 rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] px-3.5 py-1.5 text-xs text-[#CFCFCF] focus-within:border-[#D4AF37] transition">
             <Search size={14} className="text-[#9A9A9A]" />
             <input
               type="text"
@@ -875,10 +911,14 @@ function Topbar({
             aria-label="Profile"
             className="flex items-center gap-1.5 rounded-full border border-[rgba(212,175,55,0.25)] bg-[#050505] px-2.5 py-1.5 text-xs font-bold text-[#FFFFFF] hover:border-[#D4AF37] transition cursor-pointer sm:px-3 sm:py-1"
           >
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#D4AF37] text-[#050505] font-mono text-[0.6rem] font-bold">
-              EX
+            <div className={`flex h-5 w-5 items-center justify-center rounded-full font-mono text-[0.6rem] font-bold ${
+              userRole === 'admin' ? 'bg-[#D4AF37] text-[#050505]' : 'bg-[#10B981] text-[#050505]'
+            }`}>
+              {userRole === 'admin' ? 'ADM' : 'USR'}
             </div>
-            <span className="hidden xl:inline font-mono text-xs text-[#CFCFCF]">Profile</span>
+            <span className="hidden xl:inline font-mono text-xs text-[#CFCFCF]">
+              {userRole === 'admin' ? 'Admin' : 'Portal'}
+            </span>
           </button>
         </div>
 
@@ -890,12 +930,19 @@ function Topbar({
 /* ============================================================
    SECONDARY NAVIGATION — Compact Pill Navigation
    ============================================================ */
-function MainViewTabs({ mainView, setMainView }) {
-  const tabs = [
-    { id: 'pipeline', label: 'Venture Intelligence Pipeline', shortLabel: 'Pipeline', icon: Cpu },
-    { id: 'intake',   label: 'Opportunity Intake',            shortLabel: 'Intake',   icon: Layers },
-    { id: 'board',    label: 'Executive Tracking',            shortLabel: 'Tracking', icon: ClipboardList },
-  ];
+function MainViewTabs({ mainView, setMainView, userRole }) {
+  const tabs = userRole === 'user'
+    ? [
+        { id: 'intake',   label: 'Submit Venture Intake',     shortLabel: 'Intake',   icon: Layers },
+        { id: 'board',    label: 'My Venture Reports',        shortLabel: 'Reports',  icon: ClipboardList },
+        { id: 'pipeline', label: 'Strategy Engine View',      shortLabel: 'Strategy', icon: Cpu },
+      ]
+    : [
+        { id: 'pipeline', label: 'Venture Intelligence Pipeline', shortLabel: 'Pipeline', icon: Cpu },
+        { id: 'intake',   label: 'Opportunity Intake',            shortLabel: 'Intake',   icon: Layers },
+        { id: 'board',    label: 'Executive Tracking',            shortLabel: 'Tracking', icon: ClipboardList },
+      ];
+
   return (
     <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-1.5 backdrop-blur-md w-full sm:w-auto">
       {tabs.map((tab) => {
