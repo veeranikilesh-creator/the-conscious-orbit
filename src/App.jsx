@@ -608,6 +608,7 @@ function App() {
                 search={search}
                 columns={KANBAN_COLUMNS}
                 moveReport={moveReport}
+                userRole={userRole}
                 expandedReport={expandedReport}
                 setExpandedReport={setExpandedReport}
                 onViewReport={(r) => setViewingReport(r)}
@@ -978,47 +979,69 @@ function MainViewTabs({ mainView, setMainView, userRole }) {
   );
 }
 
-function VerticalHero({ vertical, onOpenGenerate, onOpenAddDomain }) {
+function VerticalHero({ vertical, userRole, onOpenGenerate, onOpenAddDomain }) {
   const Icon = vertical?.icon;
   const [briefOpen, setBriefOpen] = useState(false);
+  const isUser = userRole === 'user';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <GlassPanel className="p-4 md:p-5 border-[rgba(212,175,55,0.15)] bg-[#121212] text-white">
+      <GlassPanel className={`p-4 md:p-5 border-[#121212] text-white ${
+        isUser
+          ? 'border-[#10B981]/30 bg-gradient-to-r from-[#064E3B]/40 via-[#0A1A14] to-[#0E0E0E]'
+          : 'border-[rgba(212,175,55,0.15)] bg-[#121212]'
+      }`}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          {/* LEFT: Domain Icon + ACTIVE DOMAIN badge + Title + Short Description */}
+          {/* LEFT: Domain Icon + ROLE BADGE + Title + Short Description */}
           <div className="flex min-w-0 items-center gap-3 sm:gap-3.5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[rgba(212,175,55,0.3)] bg-[#050505] text-[#D4AF37]">
-              {Icon && <Icon className="h-6 w-6 text-[#D4AF37]" />}
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${
+              isUser
+                ? 'border-[#10B981]/40 bg-[#050505] text-[#10B981]'
+                : 'border-[rgba(212,175,55,0.3)] bg-[#050505] text-[#D4AF37]'
+            }`}>
+              {Icon && <Icon className={`h-6 w-6 ${isUser ? 'text-[#10B981]' : 'text-[#D4AF37]'}`} />}
             </div>
             <div className="min-w-0 space-y-0.5 text-left">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <h2 className="font-sans text-lg font-bold text-[#F8F8F8] sm:text-xl">
-                  {vertical?.name}
+                  {vertical?.name} {isUser ? 'Client Intake Portal' : 'Executive Domain'}
                 </h2>
-                <span className="rounded-md border border-[#D4AF37]/40 bg-[#050505] px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider text-[#D4AF37]">
-                  ACTIVE DOMAIN
+                <span className={`rounded-md border px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider ${
+                  isUser
+                    ? 'border-[#10B981]/50 bg-[#050505] text-[#A7F3D0]'
+                    : 'border-[#D4AF37]/40 bg-[#050505] text-[#D4AF37]'
+                }`}>
+                  {isUser ? 'USER CLIENT PORTAL' : 'EXECUTIVE ADMIN CONTROL'}
                 </span>
               </div>
-              <p className="text-xs text-[#CFCFCF] truncate max-w-lg">{vertical?.desc}</p>
+              <p className="text-xs text-[#CFCFCF] truncate max-w-lg">
+                {isUser
+                  ? `Submit your ${vertical?.name} venture details to generate your strategy report and orbital score.`
+                  : vertical?.desc}
+              </p>
             </div>
           </div>
 
           {/* RIGHT: Health Status + Secondary CTAs + Primary CTA */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:shrink-0 lg:flex-nowrap">
             {/* Health Status */}
-            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-[rgba(212,175,55,0.15)] bg-[#050505] px-3 py-1.5 font-mono text-xs text-[#10B981]">
-              <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
-              <span>Optimal</span>
+            <div className={`hidden sm:flex items-center gap-2 rounded-lg border px-3 py-1.5 font-mono text-xs ${
+              isUser ? 'border-[#10B981]/30 bg-[#050505] text-[#A7F3D0]' : 'border-[rgba(212,175,55,0.15)] bg-[#050505] text-[#10B981]'
+            }`}>
+              <span className={`h-2 w-2 rounded-full animate-pulse ${isUser ? 'bg-[#10B981]' : 'bg-[#10B981]'}`} />
+              <span>{isUser ? 'Client Portal Ready' : 'Admin Pipeline Optimal'}</span>
             </div>
 
-            {/* Add Custom Industry Domain CTA */}
-            <GhostButton onClick={onOpenAddDomain} className="text-xs py-2 px-3">
-              <Plus size={13} /> Add Industry Domain
-            </GhostButton>
+            {/* Add Custom Industry Domain CTA (ADMIN ONLY) */}
+            {!isUser && (
+              <GhostButton onClick={onOpenAddDomain} className="text-xs py-2 px-3 border-[#D4AF37]/40 text-[#F4D67A] hover:bg-[#D4AF37]/15">
+                <Plus size={13} /> Add Industry Domain
+              </GhostButton>
+            )}
 
             {/* Secondary CTA Button */}
             <GhostButton onClick={() => setBriefOpen((o) => !o)} className="text-xs py-2 px-3.5 sm:px-4">
@@ -1028,7 +1051,7 @@ function VerticalHero({ vertical, onOpenGenerate, onOpenAddDomain }) {
 
             {/* Primary CTA Button */}
             <RoyalButton onClick={onOpenGenerate} className="text-xs font-bold py-2 px-4 sm:px-5">
-              <Sparkles size={13} className="shrink-0" /> Run AI Analysis
+              <Sparkles size={13} className="shrink-0" /> {isUser ? 'Submit & Analyze Venture' : 'Run AI Strategy Engine'}
             </RoyalButton>
           </div>
         </div>
@@ -1403,7 +1426,8 @@ function GenericVerticalPanel({ vertical }) {
 /* ============================================================
    KANBAN BOARD — report lifecycle tracking
    ============================================================ */
-function KanbanBoard({ reports, totalCount, search, columns, moveReport, expandedReport, setExpandedReport, onViewReport, onGenerate }) {
+function KanbanBoard({ reports, totalCount, search, columns, moveReport, userRole, expandedReport, setExpandedReport, onViewReport, onGenerate }) {
+  const isUser = userRole === 'user';
   // Export executive strategy report to DOC format (.doc)
   const downloadArtifact = (report) => {
     if (!report) return;
@@ -1505,13 +1529,13 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
       <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionTitle
           icon={ClipboardList}
-          kicker="Operations Pipeline"
-          title="Application & Report Tracking"
-          subtitle="The lifecycle of every generated report — from intake to published artifact."
+          kicker={isUser ? 'Client Venture Applications' : 'Operations Pipeline'}
+          title={isUser ? 'My Venture Applications & Reports' : 'Venture Intelligence Pipeline'}
+          subtitle={isUser ? 'Track application status, view Conscious Orbital Scores, and download strategy reports.' : 'Executive admin control center for moving reports across lifecycle evaluation stages.'}
           noMargin
         />
         <RoyalButton onClick={onGenerate}>
-          <Plus size={15} /> New Report
+          <Plus size={15} /> {isUser ? 'Submit New Venture' : 'New Report'}
         </RoyalButton>
       </div>
 
@@ -1629,25 +1653,26 @@ function KanbanBoard({ reports, totalCount, search, columns, moveReport, expande
                         )}
                       </AnimatePresence>
 
-                      {/* Mover controls — `hover-reveal` keeps these visible on
-                          touch devices, where `group-hover` never fires. */}
-                      <div className="hover-reveal mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 opacity-0 transition group-hover:opacity-100">
-                        <button
-                          onClick={() => moveReport(r.id, -1)}
-                          disabled={r.status === 'RECEIVED'}
-                          className="font-mono text-[0.62rem] text-[#FECDD3] transition hover:text-[#FFFFFF] disabled:opacity-30 cursor-pointer"
-                        >
-                          ← Back
-                        </button>
-                        <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[#E6C878]">{r.vertical}</span>
-                        <button
-                          onClick={() => moveReport(r.id, 1)}
-                          disabled={r.status === 'PUBLISHED'}
-                          className="font-mono text-[0.62rem] text-[#FECDD3] transition hover:text-[#FFFFFF] disabled:opacity-30 cursor-pointer"
-                        >
-                          Advance →
-                        </button>
-                      </div>
+                      {/* Mover controls (ADMIN ONLY) */}
+                      {!isUser && (
+                        <div className="hover-reveal mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 opacity-0 transition group-hover:opacity-100">
+                          <button
+                            onClick={() => moveReport(r.id, -1)}
+                            disabled={r.status === 'RECEIVED'}
+                            className="font-mono text-[0.62rem] text-[#FECDD3] transition hover:text-[#FFFFFF] disabled:opacity-30 cursor-pointer"
+                          >
+                            ← Back
+                          </button>
+                          <span className="font-mono text-[0.6rem] uppercase tracking-wider text-[#E6C878]">{r.vertical}</span>
+                          <button
+                            onClick={() => moveReport(r.id, 1)}
+                            disabled={r.status === 'PUBLISHED'}
+                            className="font-mono text-[0.62rem] text-[#FECDD3] transition hover:text-[#FFFFFF] disabled:opacity-30 cursor-pointer"
+                          >
+                            Advance →
+                          </button>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </AnimatePresence>
