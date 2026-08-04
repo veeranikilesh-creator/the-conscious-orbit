@@ -89,8 +89,13 @@ export const runModule      = (id, key, input) =>
 const SERVER_VERTICALS = ['students', 'institutions', 'msmes', 'industries', 'startups'];
 export const toServerVertical = (v) => (SERVER_VERTICALS.includes(v) ? v : 'startups');
 
-/** Intake offers six business models; the modules accept four. */
-function toServerBusinessModel(model = '') {
+/** The Client model's `stage` is an enum that has no "Scaleup" — the intake
+ *  Select offers one. Anything unrecognised folds into the nearest valid value. */
+const SERVER_STAGES = ['Idea', 'Pre-Seed', 'Seed', 'Series A', 'Growth'];
+export const toServerStage = (s) => (SERVER_STAGES.includes(s) ? s : s === 'Scaleup' ? 'Growth' : 'Idea');
+
+/** Intake offers six business models; the modules and the Client model accept four. */
+export function toServerBusinessModel(model = '') {
   if (/b2b2c/i.test(model)) return 'B2B2C';
   if (/marketplace/i.test(model)) return 'Marketplace';
   if (/b2c|d2c|consumer|p2p/i.test(model)) return 'B2C';
@@ -285,7 +290,8 @@ export async function generateReportViaApi(
   onProgress = () => {}
 ) {
   const inputs = buildModuleInputs({ profile, clusters, vertical, tracks, customModules });
-  const totalSteps = STAGE_MODULES.flat().length + STAGE_MODULES.length + 2;
+  // create + every gating module + one advance per stage + consolidate + fetch
+  const totalSteps = 1 + STAGE_MODULES.flat().length + STAGE_MODULES.length + 2;
   let done = 0;
   const tick = (label) => onProgress(label, ++done, totalSteps);
 
@@ -299,9 +305,11 @@ export async function generateReportViaApi(
     client: {
       company: profile.company?.trim() || name,
       industry: profile.industry?.trim() || undefined,
-      stage: profile.stage || undefined,
+      // Both of these are strict enums on the Client model and narrower than
+      // what the intake form offers, so they must be mapped, not passed through.
+      stage: toServerStage(profile.stage),
       geography: profile.geography?.trim() || undefined,
-      businessModel: profile.model || undefined,
+      businessModel: toServerBusinessModel(profile.model),
       contact: profile.contact?.trim() || undefined,
     },
   });

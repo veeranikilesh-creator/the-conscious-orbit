@@ -19,6 +19,7 @@ import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } f
 import Homepage from './components/Homepage.jsx';
 import Login from './components/Login.jsx';
 import {
+  getHealth as apiGetHealth,
   listReports as apiListReports,
   advanceReport as apiAdvanceReport,
   revertReport as apiRevertReport,
@@ -216,17 +217,27 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
-    apiListReports(controller.signal)
-      .then((data) => {
+    /* Probe /health before listing. The API answers health even when Mongo is
+       down, but every real query then blocks for the full 10s Mongoose buffer
+       timeout before failing — so treat a disconnected DB as offline outright
+       rather than making the user wait for that on each action. */
+    (async () => {
+      try {
+        const health = await apiGetHealth(controller.signal);
+        if (!health?.ok || health.db !== 'connected') {
+          setApiStatus('offline');
+          return;
+        }
+        const data = await apiListReports(controller.signal);
         const rows = (data?.reports || []).map(fromServerReport);
         setApiStatus('online');
         // An empty database shouldn't blank the board on first run.
         if (rows.length) setReports(rows);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (err.name === 'AbortError') return;
         setApiStatus('offline');
-      });
+      }
+    })();
     return () => controller.abort();
   }, []);
 
