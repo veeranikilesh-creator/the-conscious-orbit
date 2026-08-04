@@ -37,3 +37,9 @@ the-conscious-orbit/
 
 # Local Netlify folder
 .netlify
+
+# Python build & DB files
+__pycache__/
+*.pyc
+*.db
+
