@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, TrendingUp, DollarSign, FileText, Target,
-  BarChart3, Cpu, CheckCircle2, ChevronRight, Zap, Layers,
+  BarChart3, Cpu, Zap, Layers,
   Briefcase, Award, Loader2,
 } from 'lucide-react';
-import { GlassPanel, GhostButton } from './ui.jsx';
+import { GlassPanel } from './ui.jsx';
 
 /* ============================================================
-   VENTURE PROCESSOR — the conscious-orbit processing architecture
-   Stage → Core Modules → Key Input/Output → final Score Aggregator
+   VENTURE PROCESSOR — Ultra-Luxury Processing Architecture
    ============================================================ */
 
-// Architecture definition (from spec)
 const PIPELINE = [
   {
     stage: 'RECEIVED',
@@ -29,7 +27,7 @@ const PIPELINE = [
       { label: 'Consumer Communication', value: 'Feasible — direct clinic outreach' },
       { label: 'Interaction Volume', value: '45 stakeholders · 12 weekly' },
     ],
-    color: 'cyan',
+    color: 'royal',
   },
   {
     stage: 'PENDING',
@@ -46,376 +44,259 @@ const PIPELINE = [
       { label: 'Target Sector', value: 'Logistics · Healthcare · Remote Aviation' },
       { label: 'Ideal Company Profile', value: 'Regional health networks, 50+ clinics' },
     ],
-    color: 'amber',
+    color: 'gold',
   },
   {
     stage: 'PROCESSED',
-    title: 'Mapping & Market Sizing',
+    title: 'Market Sizing',
     modules: [
-      { name: 'Market Calculator', icon: BarChart3 },
-      { name: 'Feasibility Evaluator', icon: ShieldCheck },
+      { name: 'TAM/SAM/SOM Calculator', icon: BarChart3 },
+      { name: 'Viability Diagnostic', icon: TrendingUp },
     ],
-    input: 'TAM / SAM / SOM',
-    output: 'Conversion % & Viability',
-    desc: 'Quantitative market sizing with funnel conversion analytics and B2B/B2C ROI feasibility.',
+    input: 'Industry Data & Conversion Rates',
+    output: 'Converted Market Size & Score',
+    desc: 'Calculate Total Addressable Market, Serviceable Available Market, and Serviceable Obtainable Market conversion rates.',
     detail: [
-      { label: 'TAM', value: '$50.0M' },
-      { label: 'SAM (15% of TAM)', value: '$7.5M' },
-      { label: 'SOM (10% of SAM)', value: '$0.75M' },
-      { label: 'Viability Verdict', value: 'B2B ROI positive · Proceed' },
+      { label: 'TAM (Total Addressable)', value: '$50,000,000' },
+      { label: 'SAM (Serviceable Available)', value: '$7,500,000 (15%)' },
+      { label: 'SOM (Serviceable Obtainable)', value: '$750,000 (10% SAM)' },
     ],
-    color: 'indigo',
+    color: 'purple',
   },
   {
     stage: 'PUBLISHED',
-    title: 'Execution & Strategy Engine',
+    title: 'Strategy Engine',
     modules: [
-      { name: 'Pricing Matrix', icon: DollarSign },
-      { name: 'Industry Doc Gen', icon: FileText },
-      { name: 'GTM & OKR Builder', icon: Target },
+      { name: 'GTM & Pricing Engine', icon: DollarSign },
+      { name: 'Score Aggregator', icon: Award },
     ],
-    input: 'Competitor Grid · GTM Roadmap',
-    output: 'OKR Framework',
-    desc: 'Generate structured strategy: market intelligence, industry report, pricing, validation, GTM, and OKRs.',
+    input: 'Cluster Forms + Track Catalogue',
+    output: 'Final Score (0-100) & Decision (1/0)',
+    desc: 'Synthesize profile data, market size, and custom tracks into the Conscious Orbital Score and binary viability decision.',
     detail: [
-      { label: 'Competitor Grid', value: '3 positioned · $150 vs $180 / $210' },
-      { label: 'GTM Roadmap', value: 'Govt partnerships + NGO tenders' },
-      { label: 'OKR Framework', value: '2 objectives · 4 key results' },
+      { label: 'Conscious Orbital Score', value: '86 / 100' },
+      { label: 'Decision Verdict', value: '1 · PROCEED (Viable)' },
+      { label: 'Deliverable Status', value: 'Report Generated & Unlocked' },
     ],
     color: 'emerald',
   },
 ];
 
 const COLOR_MAP = {
-  cyan:    { text: 'text-cyan-300',    border: 'border-cyan-400/40',    bg: 'bg-cyan-500/10',    glow: 'rgba(6,182,212,0.4)',    dot: 'bg-cyan-400' },
-  amber:   { text: 'text-amber-300',   border: 'border-amber-400/40',   bg: 'bg-amber-500/10',   glow: 'rgba(245,158,11,0.4)',   dot: 'bg-amber-400' },
-  indigo:  { text: 'text-indigo-300',  border: 'border-indigo-400/40',  bg: 'bg-indigo-500/10',  glow: 'rgba(99,102,241,0.4)',   dot: 'bg-indigo-400' },
-  emerald: { text: 'text-emerald-300', border: 'border-emerald-400/40', bg: 'bg-emerald-500/10', glow: 'rgba(16,185,129,0.4)',   dot: 'bg-emerald-400' },
+  royal: {
+    badge: 'bg-[#D4AF37] text-[#050505] border-[#F4D67A] font-bold',
+    border: 'border-[#D4AF37]/50',
+    bg: 'bg-[#111111]',
+    text: 'text-[#F4D67A]',
+    fill: 'bg-[#D4AF37]',
+  },
+  gold: {
+    badge: 'bg-[#78350F]/80 text-[#E6C878] border-[#E6C878]',
+    border: 'border-[#E6C878]/50',
+    bg: 'bg-[#78350F]',
+    text: 'text-[#E6C878]',
+    fill: 'bg-[#D4AF37]',
+  },
+  purple: {
+    badge: 'bg-[#4C1D95]/80 text-[#DDD6FE] border-[#C084FC]',
+    border: 'border-[#C084FC]/50',
+    bg: 'bg-[#4C1D95]',
+    text: 'text-[#DDD6FE]',
+    fill: 'bg-[#7C3AED]',
+  },
+  emerald: {
+    badge: 'bg-[#065F46]/80 text-[#A7F3D0] border-[#34D399]',
+    border: 'border-[#34D399]/50',
+    bg: 'bg-[#065F46]',
+    text: 'text-[#A7F3D0]',
+    fill: 'bg-[#059669]',
+  },
 };
 
 export default function VentureProcessor() {
   const [activeStage, setActiveStage] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [runStep, setRunStep] = useState(-1); // -1 = idle, 0-4 = processing each stage, 5 = done
-  const [score, setScore] = useState(86);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Run the full pipeline simulation
-  const runPipeline = () => {
-    if (isRunning) return;
-    setIsRunning(true);
-    setRunStep(0);
+  const current = PIPELINE[activeStage];
+
+  // Held in a ref so the interval can be cleared if the component unmounts
+  // mid-run (e.g. the user switches away from the Pipeline tab).
+  const intervalRef = useRef(null);
+  useEffect(() => () => clearInterval(intervalRef.current), []);
+
+  const handleSimulate = () => {
+    clearInterval(intervalRef.current);
+    setIsProcessing(true);
+    setActiveStage(0);
+    let step = 0;
+    intervalRef.current = setInterval(() => {
+      step += 1;
+      if (step < PIPELINE.length) {
+        setActiveStage(step);
+      } else {
+        clearInterval(intervalRef.current);
+        setIsProcessing(false);
+      }
+    }, 1100);
   };
-
-  // Step through stages on a timer
-  useEffect(() => {
-    if (!isRunning) return;
-    if (runStep < 0) return;
-    if (runStep >= 5) {
-      const t = setTimeout(() => { setIsRunning(false); }, 600);
-      return () => clearTimeout(t);
-    }
-    setActiveStage(runStep);
-    const t = setTimeout(() => setRunStep((s) => s + 1), 1100);
-    return () => clearTimeout(t);
-  }, [runStep, isRunning]);
-
-  const isComplete = runStep >= 5;
 
   return (
     <section className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      {/* Title */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Cpu size={16} className="text-amber-400" />
-            <span className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-amber-300/70">
+            <Cpu size={16} className="text-[#D4AF37]" />
+            <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#F4D67A]">
               Processing Architecture
             </span>
           </div>
-          <h2 className="mt-1 font-serif text-2xl font-bold text-stone-100 md:text-3xl">
-            Venture Processing Pipeline
+          <h2 className="mt-1 font-sans text-2xl font-bold leading-tight text-[#F2F2F2] md:text-3xl">
+            Venture Intelligence Pipeline
           </h2>
-          <p className="mt-1 max-w-2xl text-sm text-stone-400">
-            Every venture flows through four stages of modules, each transforming key inputs into the
-            outputs that feed the next — culminating in the <span className="text-amber-300">Conscious Orbital Score</span>.
+          <p className="mt-1 max-w-xl text-sm text-[#CFCFCF]">
+            Interactive four-stage pipeline: from raw discovery input to the final Conscious Orbital Score.
           </p>
         </div>
-        <div className="flex gap-3">
-          <GhostButton onClick={runPipeline} disabled={isRunning}>
-            {isRunning ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
-            {isRunning ? 'Processing…' : 'Run Pipeline'}
-          </GhostButton>
-        </div>
+
+        <button
+          onClick={handleSimulate}
+          disabled={isProcessing}
+          className="btn-royal-red flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold shadow-xs cursor-pointer disabled:opacity-50"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 size={14} className="animate-spin" /> Processing Stages...
+            </>
+          ) : (
+            <>
+              <Zap size={14} /> Run Live Pipeline
+            </>
+          )}
+        </button>
       </div>
 
-      {/* Horizontal pipeline flow */}
-      <GlassPanel className="p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
-          {PIPELINE.map((stage, idx) => {
-            const c = COLOR_MAP[stage.color];
-            const isActive = activeStage === idx;
-            const isProcessing = isRunning && runStep === idx;
-            const isDone = isRunning && runStep > idx;
-            return (
-              <div key={stage.stage} className="flex flex-1 items-center gap-3">
-                {/* Stage node */}
-                <button
-                  onClick={() => { if (!isRunning) setActiveStage(idx); }}
-                  className={`group relative flex-1 rounded-2xl border p-4 text-left transition-all ${
-                    isActive
-                      ? `${c.border} ${c.bg} shadow-[0_0_28px_${c.glow}]`
-                      : 'border-amber-500/15 bg-black/30 hover:border-amber-400/30'
-                  }`}
-                >
-                  {/* Processing shimmer */}
-                  {isProcessing && (
-                    <motion.div
-                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      <motion.div
-                        className={`absolute inset-y-0 w-1/3 ${c.bg} blur-xl`}
-                        animate={{ x: ['-100%', '350%'] }}
-                        transition={{ duration: 1.1, repeat: Infinity, ease: 'linear' }}
-                      />
-                    </motion.div>
-                  )}
-
-                  <div className="relative flex items-center justify-between">
-                    <span className={`text-[0.6rem] font-bold uppercase tracking-[0.15em] ${isActive ? c.text : 'text-stone-500'}`}>
-                      {String(idx + 1).padStart(2, '0')} · {stage.stage}
-                    </span>
-                    {isDone ? (
-                      <CheckCircle2 size={15} className="text-emerald-400" />
-                    ) : isProcessing ? (
-                      <Loader2 size={15} className={`animate-spin ${c.text}`} />
-                    ) : (
-                      <span className={`h-2 w-2 rounded-full ${isActive ? c.dot : 'bg-amber-200/20'}`} />
-                    )}
-                  </div>
-
-                  <h4 className={`relative mt-2 font-serif text-base font-bold ${isActive ? 'text-stone-100' : 'text-stone-300'}`}>
-                    {stage.title}
-                  </h4>
-
-                  {/* Module chips */}
-                  <div className="relative mt-3 space-y-1.5">
-                    {stage.modules.map((m) => (
-                      <div key={m.name} className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[0.62rem] ${isActive ? `${c.border} bg-black/30` : 'border-transparent bg-white/[0.02]'}`}>
-                        <m.icon size={11} className={isActive ? c.text : 'text-stone-600'} />
-                        <span className="text-stone-300">{m.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </button>
-
-                {/* Connector arrow */}
-                {idx < PIPELINE.length - 1 && (
-                  <div className="hidden lg:flex shrink-0 items-center">
-                    <motion.div
-                      animate={isProcessing ? { x: [0, 4, 0] } : {}}
-                      transition={{ duration: 0.6, repeat: isProcessing ? Infinity : 0 }}
-                    >
-                      <ChevronRight size={18} className="text-amber-400/50" />
-                    </motion.div>
-                  </div>
+      {/* PIPELINE CONNECTED HORIZONTAL JOURNEY NODES */}
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {PIPELINE.map((p, i) => {
+          const colors = COLOR_MAP[p.color];
+          const active = activeStage === i;
+          return (
+            <div key={p.stage} className="relative">
+              <button
+                onClick={() => setActiveStage(i)}
+                className={`group relative flex flex-col w-full min-w-0 rounded-[22px] border p-4 text-left transition-all duration-200 cursor-pointer sm:p-5 ${
+                  active
+                    ? 'border-[#D4AF37] bg-[#121212] shadow-md ring-1 ring-[#D4AF37]'
+                    : 'border-[rgba(212,175,55,0.12)] bg-[#121212] hover:border-[#D4AF37] hover:-translate-y-1'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#9A9A9A]">
+                    0{i + 1}
+                  </span>
+                  <span className={`shrink-0 rounded-md border px-2 py-0.5 font-mono text-[0.58rem] font-bold uppercase tracking-wider ${colors.badge}`}>
+                    {p.stage}
+                  </span>
+                </div>
+                <h4 className="mt-3 font-sans text-base font-bold text-[#F8F8F8] group-hover:text-[#D4AF37] transition">
+                  {p.title}
+                </h4>
+                <p className="mt-1 w-full font-mono text-[0.65rem] text-[#CFCFCF] truncate">
+                  {p.input} → {p.output}
+                </p>
+                {active && (
+                  <motion.div
+                    layoutId="active-stage-indicator"
+                    className="mt-3 h-1 w-full rounded-full bg-[#D4AF37]"
+                  />
                 )}
-              </div>
-            );
-          })}
-        </div>
+              </button>
 
-        {/* Final Score Aggregator */}
-        <div className="mt-5 border-t border-amber-500/15 pt-5">
-          <ScoreAggregator score={score} setScore={setScore} decision={isComplete || score >= 60 ? 1 : 0} isComplete={isComplete} />
-        </div>
-      </GlassPanel>
+              {/* Connecting Gold Progress Line */}
+              {i < PIPELINE.length - 1 && (
+                <div className="absolute -right-2 top-1/2 -translate-y-1/2 z-20 hidden lg:block pointer-events-none">
+                  <div className="h-0.5 w-4 bg-gradient-to-r from-[#D4AF37] to-[#D4AF37]/20" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-      {/* Active stage detail */}
+      {/* ACTIVE STAGE DETAIL VIEW */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={activeStage}
-          initial={{ opacity: 0, y: 12 }}
+          key={current.stage}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.3 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.25 }}
         >
-          <StageDetail stage={PIPELINE[activeStage]} index={activeStage} />
+          <StageDetailCard stage={current} colors={COLOR_MAP[current.color]} index={activeStage} />
         </motion.div>
       </AnimatePresence>
+
+      {/* FINAL SCORE AGGREGATOR PANEL */}
+      <ScoreAggregatorCard />
     </section>
   );
 }
 
-/* ============================================================
-   SCORE AGGREGATOR — final Conscious Orbital Score + 1/0 decision
-   ============================================================ */
-function ScoreAggregator({ score, setScore, decision, isComplete }) {
-  const verdict = score >= 75 ? 'HIGH VIABILITY' : score >= 50 ? 'MODERATE VIABILITY' : 'LOW VIABILITY';
-  const verdictColor = score >= 75 ? 'text-emerald-300' : score >= 50 ? 'text-amber-300' : 'text-rose-300';
-  const ringColor = score >= 75 ? '#10b981' : score >= 50 ? '#f59e0b' : '#f43f5e';
-
-  const R = 52;
-  const C = 2 * Math.PI * R;
-
-  const subScores = [
-    { label: 'Feasibility', value: 82, icon: ShieldCheck },
-    { label: 'Market Potential', value: 88, icon: TrendingUp },
-    { label: 'Pricing Power', value: 74, icon: DollarSign },
-    { label: 'GTM Viability', value: 90, icon: Target },
-  ];
-
+function StageDetailCard({ stage, colors, index }) {
+  const c = colors;
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[auto_1fr_auto] lg:items-center">
-      {/* Gauge */}
-      <div className="flex items-center gap-5">
-        <div className="relative h-32 w-32">
-          <svg width="128" height="128" className="-rotate-90">
-            <circle cx="64" cy="64" r={R} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="9" />
-            <motion.circle
-              cx="64" cy="64" r={R} fill="none"
-              stroke={ringColor}
-              strokeWidth="9"
-              strokeLinecap="round"
-              strokeDasharray={C}
-              animate={{ strokeDashoffset: C * (1 - score / 100) }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-              style={{ filter: `drop-shadow(0 0 8px ${ringColor})` }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="font-serif text-4xl font-bold text-shimmer-gold">{score}</span>
-            <span className="text-[0.58rem] uppercase tracking-[0.15em] text-stone-500">/ 100</span>
+    <GlassPanel className="overflow-hidden p-0 border-[rgba(212,175,55,0.25)] bg-[#111111]">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] px-4 py-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.bg} font-mono text-sm font-bold ${c.text}`}>
+            0{index + 1}
+          </div>
+          <div className="min-w-0">
+            <span className="font-mono text-[0.62rem] font-bold uppercase tracking-wider text-[#F4D67A]">Active Inspection</span>
+            <h4 className="font-sans text-base font-bold text-[#FFFFFF] sm:text-lg">{stage.title}</h4>
           </div>
         </div>
-        <div>
-          <div className="flex items-center gap-1.5">
-            <Award size={14} className="text-amber-400" />
-            <span className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-amber-300/70">Final Action</span>
-            {isComplete && (
-              <span className="ml-1 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-wider text-emerald-300">
-                <CheckCircle2 size={9} /> Synthesized
-              </span>
-            )}
-          </div>
-          <h4 className="font-serif text-lg font-bold text-stone-100">Score Aggregator</h4>
-          <p className={`mt-0.5 text-xs font-bold ${verdictColor}`}>{verdict}</p>
-          {/* Interactive override */}
-          <label className="mt-2 flex items-center gap-2 text-[0.62rem] text-stone-500">
-            <span>Weighting</span>
-            <input
-              type="range" min={0} max={100} value={score}
-              onChange={(e) => setScore(parseInt(e.target.value))}
-              className="w-24"
-            />
-          </label>
-        </div>
-      </div>
-
-      {/* Sub-scores */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-        {subScores.map((s) => (
-          <div key={s.label} className="rounded-xl border border-amber-500/15 bg-black/30 p-3">
-            <div className="flex items-center gap-1.5">
-              <s.icon size={12} className="text-amber-400" />
-              <span className="text-[0.6rem] uppercase tracking-wider text-stone-500">{s.label}</span>
-            </div>
-            <div className="mt-1.5 flex items-center gap-2">
-              <span className="font-serif text-xl font-bold text-stone-100">{s.value}</span>
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-black/40">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${s.value}%` }}
-                  transition={{ duration: 0.6 }}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Binary decision */}
-      <div className={`flex items-center gap-4 rounded-2xl border p-4 ${
-        decision === 1 ? 'border-emerald-400/40 bg-emerald-500/10' : 'border-rose-400/40 bg-rose-500/10'
-      }`}>
-        <div className={`flex h-12 w-12 items-center justify-center rounded-full font-serif text-2xl font-bold ${
-          decision === 1 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
-        }`}>
-          {decision}
-        </div>
-        <div>
-          <span className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-stone-500">Decision</span>
-          <p className={`font-serif text-base font-bold ${decision === 1 ? 'text-emerald-300' : 'text-rose-300'}`}>
-            {decision === 1 ? 'Proceed · Viable' : 'Pivot · Abort'}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   STAGE DETAIL — expanded input/output for the active stage
-   ============================================================ */
-function StageDetail({ stage, index }) {
-  const c = COLOR_MAP[stage.color];
-  return (
-    <GlassPanel className="overflow-hidden p-0">
-      {/* Header bar */}
-      <div className={`flex flex-wrap items-center justify-between gap-3 border-b border-amber-500/15 px-6 py-4 ${c.bg}`}>
-        <div className="flex items-center gap-3">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${c.border} ${c.bg}`}>
-            <span className={`font-serif text-base font-bold ${c.text}`}>{index + 1}</span>
-          </div>
-          <div>
-            <span className={`text-[0.6rem] font-bold uppercase tracking-[0.18em] ${c.text}`}>Stage {index + 1} · {stage.stage}</span>
-            <h3 className="font-serif text-xl font-bold text-stone-100">{stage.title}</h3>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-black/30 px-3 py-1.5">
-          <span className={`font-semibold ${c.text}`}>{stage.input}</span>
-          <ChevronRight size={14} className="text-amber-400/60" />
-          <span className="font-semibold text-stone-100">{stage.output}</span>
-        </div>
+        <span className={`shrink-0 rounded-md border px-2.5 py-0.5 font-mono text-[0.65rem] font-bold uppercase tracking-wider ${c.badge}`}>
+          {stage.stage}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_1.2fr]">
-        {/* Left: description + modules */}
-        <div className="border-b border-amber-500/15 p-6 lg:border-b-0 lg:border-r">
-          <p className="text-sm text-stone-400">{stage.desc}</p>
-          <h5 className="mt-5 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-amber-300/70">Core Processing Modules</h5>
+        {/* Left */}
+        <div className="border-b border-[rgba(212,175,55,0.18)] p-4 sm:p-6 lg:border-b-0 lg:border-r">
+          <p className="text-sm text-[#CFCFCF] leading-relaxed">{stage.desc}</p>
+          <h5 className="mt-5 font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">Core Processing Modules</h5>
           <div className="mt-3 space-y-2">
             {stage.modules.map((m) => (
-              <div key={m.name} className={`flex items-center gap-3 rounded-xl border ${c.border} bg-black/30 p-3`}>
-                <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${c.bg}`}>
+              <div key={m.name} className={`flex items-center gap-3 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3`}>
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.bg}`}>
                   <m.icon size={16} className={c.text} />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-stone-100">{m.name}</p>
-                  <p className="text-[0.66rem] text-stone-200/45">Module · {stage.stage}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#FFFFFF]">{m.name}</p>
+                  <p className="font-mono text-[0.66rem] text-[#9A9A9A]">Module · {stage.stage}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Right: data transform */}
-        <div className="p-6">
-          <h5 className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-amber-300/70">Key Input / Output</h5>
+        {/* Right */}
+        <div className="p-4 sm:p-6">
+          <h5 className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#F4D67A]">Key Input / Output</h5>
           <div className="mt-3 space-y-2">
             {stage.detail.map((d) => (
-              <div key={d.label} className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/15 bg-black/30 px-4 py-2.5">
-                <span className="text-[0.7rem] uppercase tracking-wider text-stone-500">{d.label}</span>
-                <span className="text-right text-sm font-semibold text-stone-100">{d.value}</span>
+              <div key={d.label} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#050505] px-3.5 py-2.5 sm:px-4">
+                <span className="font-mono text-[0.7rem] uppercase tracking-wider text-[#CFCFCF]">{d.label}</span>
+                <span className="text-left text-sm font-semibold text-[#FFFFFF] sm:text-right">{d.value}</span>
               </div>
             ))}
           </div>
-          <div className={`mt-4 flex items-center gap-2 rounded-xl border ${c.border} bg-black/40 p-3`}>
-            <Zap size={14} className={c.text} />
-            <span className="text-xs text-stone-300">
-              Output <strong className={c.text}>{stage.output}</strong> is forwarded to the next stage.
+          <div className={`mt-4 flex items-start gap-2 rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3`}>
+            <Zap size={14} className="mt-0.5 shrink-0 text-[#D4AF37]" />
+            <span className="text-xs text-[#CFCFCF]">
+              Output <strong className="text-[#F4D67A]">{stage.output}</strong> is forwarded to the next stage.
             </span>
           </div>
         </div>
@@ -423,3 +304,68 @@ function StageDetail({ stage, index }) {
     </GlassPanel>
   );
 }
+
+function ScoreAggregatorCard() {
+  const metrics = [
+    { label: 'Feasibility Score', value: 82, weight: '30%', icon: ShieldCheck },
+    { label: 'Market Potential',  value: 88, weight: '30%', icon: TrendingUp },
+    { label: 'Pricing Power',     value: 74, weight: '20%', icon: DollarSign },
+    { label: 'GTM Viability',     value: 90, weight: '20%', icon: Target },
+  ];
+
+  return (
+    <GlassPanel className="p-4 border-[rgba(212,175,55,0.15)] bg-[#151515] text-white rounded-[22px] sm:p-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Award size={16} className="shrink-0 text-[#D4AF37]" />
+            <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+              Score Aggregator
+            </span>
+          </div>
+          <h3 className="font-sans text-2xl font-bold text-[#F8F8F8]">Conscious Orbital Score Synthesis</h3>
+          <p className="max-w-lg text-xs text-[#CFCFCF]">
+            Weighted formula synthesizing feasibility, TAM metrics, unit economics, and GTM readiness.
+          </p>
+        </div>
+
+        {/* RIGHT: Large Final Score Card */}
+        <div className="flex flex-wrap items-center justify-center gap-3 rounded-xl border border-[rgba(212,175,55,0.15)] bg-[#1B1B1B] p-3.5 shadow-sm sm:gap-4 sm:p-4">
+          <div className="text-center font-mono">
+            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Final Score</p>
+            <p className="font-sans text-3xl font-extrabold text-[#F8F8F8]">86<span className="text-xs text-[#9A9A9A]">/100</span></p>
+          </div>
+          <div className="hidden h-10 w-px bg-[rgba(212,175,55,0.2)] sm:block" />
+          <div className="text-center font-mono space-y-1">
+            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Decision</p>
+            <span className="rounded-md border border-[#10B981] bg-[#065F46]/80 px-2 py-0.5 text-xs font-bold text-[#10B981]">
+              1 · PROCEED
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* LEFT: 4 Compact Score Cards */}
+      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {metrics.map((m) => (
+          <div key={m.label} className="rounded-xl border border-[rgba(212,175,55,0.15)] bg-[#1B1B1B] p-3.5 transition hover:border-[#D4AF37]">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <m.icon size={14} className="shrink-0 text-[#D4AF37]" />
+                <span className="font-mono text-[0.65rem] uppercase text-[#CFCFCF]">{m.label}</span>
+              </div>
+              <span className="shrink-0 font-mono text-[0.6rem] text-[#D4AF37]">{m.weight}</span>
+            </div>
+            <div className="mt-2.5 flex items-center justify-between gap-3">
+              <span className="font-sans text-lg font-bold text-[#F8F8F8]">{m.value}</span>
+              <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-[#050505] sm:w-20">
+                <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${m.value}%` }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </GlassPanel>
+  );
+}
+

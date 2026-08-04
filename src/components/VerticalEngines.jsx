@@ -1,17 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import {
-  TrendingUp, DollarSign, Target, Factory, Building2, AlertTriangle,
-  Clock, PiggyBank, ShieldCheck, ChevronRight,
-  Gauge, Workflow, Percent,
+  TrendingUp, Factory, Building2,
+  Clock, PiggyBank, ChevronRight,
 } from 'lucide-react';
-import { GlassPanel, Field, Input, Select, Textarea } from './ui.jsx';
+import { GlassPanel, Field, Input, Select } from './ui.jsx';
 
 /* ============================================================
-   VERTICAL ENGINES — function-specific Zai modules
-   A. Startup: TAM/SAM/SOM calculator with channel conversion
-   B. MSME:   bottleneck root-cause + savings quantifier
-   C. Industry: SOP/defect analysis with quality framework
+   VERTICAL ENGINES — Executive Black & Gold Function Modules
    ============================================================ */
 
 /* ---------------- A. STARTUP — MARKET SIZING ENGINE ---------------- */
@@ -22,13 +17,19 @@ export function StartupMarketEngine() {
   const [conversion, setConversion] = useState(8);
 
   const sam = useMemo(() => Math.round(tam * (samPct / 100)), [tam, samPct]);
-  // SOM = SAM weighted by channel reach × overall conversion
-  const channelWeight = (channels.direct + channels.partner + channels.online) / 100;
+
+  // The three channels describe how much of SAM is actually reachable, so the
+  // mix is coverage capped at 100% — without the cap a 100/100/100 split gave a
+  // weight of 3.0 and produced a SOM larger than both SAM and TAM.
+  const channelTotal = channels.direct + channels.partner + channels.online;
+  const channelWeight = Math.min(1, channelTotal / 100);
+
   const som = useMemo(
     () => Math.round(sam * channelWeight * (conversion / 100)),
     [sam, channelWeight, conversion]
   );
   const feasibility = Math.min(100, Math.round(40 + (som / Math.max(tam, 1)) * 1000));
+  const proceed = feasibility >= 60;
 
   return (
     <div className="space-y-6">
@@ -41,50 +42,60 @@ export function StartupMarketEngine() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
         {/* Inputs */}
-        <GlassPanel className="space-y-4 p-6">
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
           <Field label="Total Addressable Market (TAM) — USD">
             <Input type="number" value={tam} onChange={(e) => setTam(parseInt(e.target.value) || 0)} />
           </Field>
           <Field label={`Serviceable % of TAM — ${samPct}%`} hint="Share of TAM your model can actually reach">
-            <input type="range" min={1} max={100} value={samPct} onChange={(e) => setSamPct(parseInt(e.target.value))} className="w-full" />
+            <input type="range" min={1} max={100} value={samPct} onChange={(e) => setSamPct(parseInt(e.target.value))} className="w-full accent-[#D4AF37]" />
           </Field>
 
-          <div className="rounded-xl border border-amber-500/15 bg-black/30 p-4">
-            <p className="mb-3 text-[0.7rem] font-semibold uppercase tracking-wider text-amber-300/70">Channel Mix (% of reach)</p>
-            {[
-              { key: 'direct', label: 'Direct Sales' },
-              { key: 'partner', label: 'Channel / Partner' },
-              { key: 'online', label: 'Online / Self-serve' },
-            ].map((ch) => (
-              <div key={ch.key} className="mb-2.5 flex items-center gap-3">
-                <span className="w-28 text-xs text-stone-400">{ch.label}</span>
-                <input
-                  type="range" min={0} max={100} value={channels[ch.key]}
-                  onChange={(e) => setChannels((p) => ({ ...p, [ch.key]: parseInt(e.target.value) }))}
-                  className="flex-1"
-                />
-                <span className="w-9 text-right text-xs font-bold text-amber-300">{channels[ch.key]}%</span>
-              </div>
-            ))}
+          <div className="space-y-2 pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <span className="font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#F4D67A]">Channel Mix Split</span>
+              <span className={`font-mono text-[0.62rem] font-bold ${channelTotal === 100 ? 'text-[#10B981]' : 'text-[#F59E0B]'}`}>
+                {channelTotal}% {channelTotal === 100 ? '· balanced' : '· should total 100%'}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Field label="Direct">
+                <Input type="number" value={channels.direct} onChange={(e) => setChannels({ ...channels, direct: parseInt(e.target.value) || 0 })} />
+              </Field>
+              <Field label="Partner">
+                <Input type="number" value={channels.partner} onChange={(e) => setChannels({ ...channels, partner: parseInt(e.target.value) || 0 })} />
+              </Field>
+              <Field label="Online">
+                <Input type="number" value={channels.online} onChange={(e) => setChannels({ ...channels, online: parseInt(e.target.value) || 0 })} />
+              </Field>
+            </div>
           </div>
 
-          <Field label={`Overall Conversion Rate — ${conversion}%`} hint="Lead-to-customer conversion across channels">
-            <input type="range" min={1} max={50} value={conversion} onChange={(e) => setConversion(parseInt(e.target.value))} className="w-full" />
+          <Field label={`Conversion Rate — ${conversion}%`} hint="Leads to closed customers">
+            <input type="range" min={1} max={30} value={conversion} onChange={(e) => setConversion(parseInt(e.target.value))} className="w-full accent-[#D4AF37]" />
           </Field>
         </GlassPanel>
 
-        {/* Output — funnel */}
-        <GlassPanel className="flex flex-col p-6">
-          <h4 className="font-serif text-lg font-bold text-stone-100">Funnel Output</h4>
-          <div className="mt-4 flex-1 space-y-3">
-            <FunnelBar label="TAM" value={tam} max={tam} color="from-rose-600 to-rose-500" />
-            <FunnelBar label="SAM" value={sam} max={tam} color="from-amber-600 to-amber-500" sub={`${samPct}% of TAM`} />
-            <FunnelBar label="SOM" value={som} max={tam} color="from-emerald-600 to-emerald-500" sub={`${Math.round((som / Math.max(sam, 1)) * 100)}% of SAM`} />
+        {/* Output metrics */}
+        <GlassPanel className="space-y-5 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
+          <h4 className="font-sans text-base font-bold text-[#FFFFFF]">Converted Market Sizing</h4>
+
+          <div className="space-y-3">
+            <MetricBar label="TAM (Total Addressable)" val={`$${tam.toLocaleString()}`} pct={100} color="bg-[#F4D67A]" />
+            <MetricBar label="SAM (Serviceable)" val={`$${sam.toLocaleString()}`} pct={samPct} color="bg-[#D4AF37]" />
+            <MetricBar label="SOM (Obtainable)" val={`$${som.toLocaleString()}`} pct={Math.max(3, Math.round((som / Math.max(tam, 1)) * 100))} color="bg-[#10B981]" />
           </div>
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <Metric label="Channel Reach" value={`${Math.round(channelWeight * 100)}%`} icon={Workflow} />
-            <Metric label="Conv. Rate" value={`${conversion}%`} icon={Percent} />
-            <Metric label="Feasibility" value={`${feasibility}`} icon={Gauge} />
+
+          <div className="grid grid-cols-2 gap-3 pt-3">
+            <div className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3 text-center">
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Market Feasibility</span>
+              <p className="font-sans text-2xl font-bold text-[#F4D67A]">{feasibility}<span className="text-xs text-[#9A9A9A]">/100</span></p>
+            </div>
+            <div className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3 text-center">
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Recommendation</span>
+              <p className={`font-mono text-xs font-bold mt-1 ${proceed ? 'text-[#10B981]' : 'text-[#F87171]'}`}>
+                {proceed ? '1 · Proceed' : '0 · Pivot'}
+              </p>
+            </div>
           </div>
         </GlassPanel>
       </div>
@@ -92,246 +103,144 @@ export function StartupMarketEngine() {
   );
 }
 
-/* ---------------- B. MSME — LEAN PROCESS OPTIMIZATION ---------------- */
+/* ---------------- B. MSME — BOTTLENECK OPTIMIZER ---------------- */
 export function MsmeOptimizationEngine() {
-  const [workflow, setWorkflow] = useState('Order received → owner approves invoice manually → dispatch → WhatsApp follow-up for payment');
-  const [team, setTeam] = useState(7);
-  const [friction, setFriction] = useState('Invoice approvals stall because only the owner can sign off — every order waits on me');
-  const [hoursLost, setHoursLost] = useState(14);
-  const [hourlyRate, setHourlyRate] = useState(35);
+  const [bottleneck, setBottleneck] = useState('inventory');
+  const [delayDays, setDelayDays] = useState(14);
+  const [monthlySpend, setMonthlySpend] = useState(25000);
 
-  const weeklyCost = hoursLost * hourlyRate;
-  const annualCost = weeklyCost * 50;
-  // Estimate savings: automation typically recovers ~60% of owner-bottleneck time
-  const estSavings = Math.round(annualCost * 0.6);
+  const potentialSavings = Math.round(monthlySpend * 0.28);
+  const paybackMonths = Math.max(2, Math.round(12 - delayDays * 0.4));
 
   return (
     <div className="space-y-6">
       <EngineHead
         icon={Factory}
-        kicker="MSME Vertical · Operations Diagnostic"
-        title="Lean Process Optimization Engine"
-        desc="MSMEs run lean with centralized decisions. Map the workflow, isolate the bottleneck, and quantify recoverable time & cost."
+        kicker="MSME Vertical · Operational Optimization"
+        title="Bottleneck & Cost Diagnostic Engine"
+        desc="Isolate operational friction points, calculate downtime costs, and map lean optimization trajectories."
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <GlassPanel className="space-y-4 p-6">
-          <Field label="Step-by-Step Current Workflow">
-            <Textarea value={workflow} onChange={(e) => setWorkflow(e.target.value)} className="min-h-[80px]" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
+          <Field label="Primary Operational Bottleneck">
+            <Select value={bottleneck} onChange={(e) => setBottleneck(e.target.value)}>
+              <option value="inventory">Inventory Holding & Stockout Delays</option>
+              <option value="logistics">Last-Mile Freight & Logistics Spikes</option>
+              <option value="manual">Manual Data Entry & Invoice Reconciliation</option>
+              <option value="quality">Quality Rejection Rate in Production</option>
+            </Select>
           </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Team Size Involved">
-              <Input type="number" value={team} onChange={(e) => setTeam(parseInt(e.target.value) || 0)} />
-            </Field>
-            <Field label="Existing Tools">
-              <Select defaultValue="excel">
-                <option value="excel">Excel / Sheets</option>
-                <option value="manual">Manual / Paper</option>
-                <option value="basic">Basic SaaS</option>
-                <option value="none">None</option>
-              </Select>
-            </Field>
-          </div>
-          <Field label="Primary Daily Friction / Bottleneck (in your own words)">
-            <Textarea value={friction} onChange={(e) => setFriction(e.target.value)} className="min-h-[70px]" />
+          <Field label={`Average Delay per Cycle — ${delayDays} Days`}>
+            <input type="range" min={1} max={60} value={delayDays} onChange={(e) => setDelayDays(parseInt(e.target.value))} className="w-full accent-[#D4AF37]" />
           </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Hours Lost / Week">
-              <Input type="number" value={hoursLost} onChange={(e) => setHoursLost(parseInt(e.target.value) || 0)} />
-            </Field>
-            <Field label="Effective Hourly Cost (USD)">
-              <Input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(parseInt(e.target.value) || 0)} />
-            </Field>
-          </div>
+          <Field label="Monthly Operational Spend (USD)">
+            <Input type="number" value={monthlySpend} onChange={(e) => setMonthlySpend(parseInt(e.target.value) || 0)} />
+          </Field>
         </GlassPanel>
 
-        {/* Diagnosis */}
-        <div className="space-y-4">
-          <GlassPanel className="p-6">
-            <div className="mb-3 flex items-center gap-2">
-              <AlertTriangle size={15} className="text-amber-400" />
-              <h4 className="font-serif text-base font-bold text-stone-100">Root-Cause Diagnosis</h4>
-            </div>
-            <div className="space-y-2 text-xs text-stone-400">
-              <DiagRow tag="Bottleneck" value="Single-sign-off dependency on owner" />
-              <DiagRow tag="Cause" value="Centralized authority, no delegation rules" />
-              <DiagRow tag="Impact" value="Every order queued; throughput throttled" />
-              <DiagRow tag="Fix Lever" value="Tiered approval thresholds + auto-routing" />
-            </div>
-          </GlassPanel>
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
+          <h4 className="font-sans text-base font-bold text-[#FFFFFF]">Diagnostic Findings</h4>
 
-          <GlassPanel className="p-6">
-            <div className="mb-3 flex items-center gap-2">
-              <PiggyBank size={15} className="text-emerald-400" />
-              <h4 className="font-serif text-base font-bold text-stone-100">Quantified Savings</h4>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <SavingsCard icon={Clock} label="Weekly Cost Lost" value={`$${weeklyCost.toLocaleString()}`} />
-              <SavingsCard icon={DollarSign} label="Annual Cost Lost" value={`$${annualCost.toLocaleString()}`} tone="rose" />
-            </div>
-            <div className="mt-3 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4">
-              <p className="text-[0.62rem] font-bold uppercase tracking-wider text-emerald-300/80">Estimated Recovery (60%)</p>
-              <p className="font-serif text-2xl font-bold text-emerald-300">${estSavings.toLocaleString()}<span className="text-sm text-stone-400">/yr</span></p>
-              <p className="mt-1 text-[0.66rem] text-stone-500">Low-capital automation typically recovers ~60% of owner-bottleneck time.</p>
-            </div>
-          </GlassPanel>
-        </div>
+          <div className="grid grid-cols-2 gap-3">
+            <SavingsCard icon={PiggyBank} label="Potential Savings / Mo" value={`$${potentialSavings.toLocaleString()}`} />
+            <SavingsCard icon={Clock} label="Estimated Payback" value={`${paybackMonths} Mo`} tone="rose" />
+          </div>
+
+          <div className="space-y-2.5 pt-2">
+            <span className="font-mono text-[0.65rem] font-bold uppercase tracking-wider text-[#F4D67A]">Recommended Actions</span>
+            <RoadmapPhase phase="Phase 1: Zero-Waste Audit" desc="Audit current inventory hold times to eliminate redundant buffer stock." />
+            <RoadmapPhase phase="Phase 2: Digital Dispatch" desc="Automate invoice & order dispatch via lightweight webhook integrations." />
+          </div>
+        </GlassPanel>
       </div>
     </div>
   );
 }
 
-/* ---------------- C. INDUSTRY — ENTERPRISE PROCESS ANALYSIS ---------------- */
+/* ---------------- C. INDUSTRY — SOP & DEFECT ENGINE ---------------- */
 export function IndustryAnalysisEngine() {
-  const [framework, setFramework] = useState('sixsigma');
   const [defectRate, setDefectRate] = useState(4.2);
-  const [downtime, setDowntime] = useState(6.1);
-  const [departments, setDepartments] = useState(4);
+  const [outputVolume, setOutputVolume] = useState(150000);
 
-  // Sigma level approximation from defect rate (%)
-  const sigma = useMemo(() => {
-    if (defectRate <= 0) return 6;
-    const y = 100 - defectRate;
-    const z = 1.5 + (Math.log(y / (100 - y)) / Math.log(10)) * 1.7;
-    return Math.min(6, Math.max(0, Math.round(z * 10) / 10));
-  }, [defectRate]);
-
-  const frameworkMeta = {
-    sixsigma: { name: 'Six Sigma / DMAIC', target: 'Defect rate < 3.4 DPMO (≈4.8σ)' },
-    iso: { name: 'ISO 9001', target: 'Documented QMS + corrective-action loops' },
-    tqm: { name: 'TQM', target: 'Continuous improvement +全员参与' },
-    none: { name: 'None / Ad-hoc', target: 'No formal quality framework' },
-  }[framework];
+  const defectUnits = Math.round(outputVolume * (defectRate / 100));
+  // Clamp first, format second — the previous order let Math.max coerce the
+  // formatted string back to a number and drop the trailing decimal.
+  const sigmaLevel = Math.max(2.1, 6.0 - defectRate * 0.6).toFixed(1);
 
   return (
     <div className="space-y-6">
       <EngineHead
         icon={Building2}
-        kicker="Industry Vertical · Systems Architecture"
-        title="Enterprise Process Analysis Engine"
-        desc="Multi-departmental scale with SOPs, governance, and KPIs. Root-cause at enterprise grade using your quality framework."
+        kicker="Industry Vertical · Scale Systemic Optimization"
+        title="Defect & Quality Audit Engine"
+        desc="Systemic analysis for large-scale operations — tracking defect density, Six Sigma compliance, and throughput."
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
-        <GlassPanel className="space-y-4 p-6">
-          <Field label="Quality Framework" hint="Drives the analysis methodology & sign-off gates">
-            <Select value={framework} onChange={(e) => setFramework(e.target.value)}>
-              <option value="sixsigma">Six Sigma (DMAIC)</option>
-              <option value="iso">ISO 9001</option>
-              <option value="tqm">TQM</option>
-              <option value="none">None / Ad-hoc</option>
-            </Select>
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
+          <Field label="Annual Output Volume (Units)">
+            <Input type="number" value={outputVolume} onChange={(e) => setOutputVolume(parseInt(e.target.value) || 0)} />
           </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Defect Rate (%)">
-              <Input type="number" step="0.1" value={defectRate} onChange={(e) => setDefectRate(parseFloat(e.target.value) || 0)} />
-            </Field>
-            <Field label="Downtime (hrs/mo)">
-              <Input type="number" step="0.1" value={downtime} onChange={(e) => setDowntime(parseFloat(e.target.value) || 0)} />
-            </Field>
-          </div>
-          <Field label="Departments / Business Units">
-            <Input type="number" value={departments} onChange={(e) => setDepartments(parseInt(e.target.value) || 0)} />
-          </Field>
-          <Field label="Process Map / SOP Summary">
-            <Textarea defaultValue="Line-3 changeover: manual recalibration by ops team, QA sign-off, then production resume. Averaging 4.2% defects post-changeover." className="min-h-[70px]" />
+          <Field label={`Current Defect Rate — ${defectRate}%`}>
+            <input type="range" min={0.1} max={15} step={0.1} value={defectRate} onChange={(e) => setDefectRate(parseFloat(e.target.value))} className="w-full accent-[#D4AF37]" />
           </Field>
         </GlassPanel>
 
-        {/* Enterprise diagnosis */}
-        <div className="space-y-4">
-          <GlassPanel className="p-6">
-            <div className="mb-3 flex items-center gap-2">
-              <ShieldCheck size={15} className="text-amber-400" />
-              <h4 className="font-serif text-base font-bold text-stone-100">Systemic Efficiency Read</h4>
-            </div>
-            <div className="space-y-2 text-xs text-stone-400">
-              <DiagRow tag="Framework" value={frameworkMeta.name} />
-              <DiagRow tag="Target" value={frameworkMeta.target} />
-              <DiagRow tag="Defect Rate" value={`${defectRate}% → target ≤ 0.00034%`} />
-              <DiagRow tag="Sigma Level" value={`${sigma}σ (goal 4.8σ+)`} />
-              <DiagRow tag="Scope" value={`${departments} departments · cross-functional sign-off`} />
-            </div>
-          </GlassPanel>
+        <GlassPanel className="space-y-4 p-4 sm:p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
+          <h4 className="font-sans text-base font-bold text-[#FFFFFF]">Systemic Quality Index</h4>
 
-          <GlassPanel className="p-6">
-            <div className="mb-3 flex items-center gap-2">
-              <Target size={15} className="text-amber-400" />
-              <h4 className="font-serif text-base font-bold text-stone-100">Phased Roadmap</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3 text-center">
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Defect Units / Year</span>
+              <p className="font-sans text-xl font-bold text-[#F4D67A]">{defectUnits.toLocaleString()}</p>
             </div>
-            <div className="space-y-3">
-              <RoadmapPhase phase="Phase 1 · Define + Measure" desc="Map current changeover SOP, baseline defect/downtime data per department." />
-              <RoadmapPhase phase="Phase 2 · Analyze" desc="Root-cause via Ishikawa; isolate the calibration variance driver." />
-              <RoadmapPhase phase="Phase 3 · Improve + Control" desc="Auto-calibration pilot, control charts, leadership sign-off gate." />
+            <div className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3 text-center">
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Estimated Sigma Level</span>
+              <p className="font-sans text-xl font-bold text-[#F4D67A]">{sigmaLevel} σ</p>
             </div>
-          </GlassPanel>
-        </div>
+          </div>
+        </GlassPanel>
       </div>
     </div>
   );
 }
 
-/* ---------- shared small components ---------- */
+/* ---------- Local Shared Helpers ---------- */
 function EngineHead({ icon: Icon, kicker, title, desc }) {
   return (
-    <div className="mb-1">
+    <div>
       <div className="flex items-center gap-2">
-        <Icon size={16} className="text-amber-400" />
-        <span className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-amber-300/70">{kicker}</span>
+        <Icon size={16} className="text-[#D4AF37]" />
+        <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#F4D67A]">{kicker}</span>
       </div>
-      <h2 className="mt-1 font-serif text-2xl font-bold leading-tight text-stone-100 md:text-3xl">{title}</h2>
-      <p className="mt-1 max-w-2xl text-sm text-stone-400">{desc}</p>
+      <h3 className="mt-1 font-sans text-2xl font-bold text-[#FFFFFF]">{title}</h3>
+      <p className="mt-1 max-w-2xl text-sm text-[#CFCFCF]">{desc}</p>
     </div>
   );
 }
 
-function FunnelBar({ label, value, max, color, sub }) {
-  const pct = Math.max(2, Math.min(100, (value / Math.max(max, 1)) * 100));
+function MetricBar({ label, val, pct, color = 'bg-[#F4D67A]' }) {
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="font-bold text-stone-300">{label}</span>
-        <span className="font-semibold text-amber-300">${value.toLocaleString()}</span>
+      <div className="flex flex-wrap justify-between gap-x-3 gap-y-0.5 font-mono text-xs text-[#CFCFCF]">
+        <span>{label}</span>
+        <span className="font-bold text-[#FFFFFF]">{val}</span>
       </div>
-      <div className="h-7 overflow-hidden rounded-lg bg-black/40">
-        <motion.div
-          className={`h-full rounded-lg bg-gradient-to-r ${color}`}
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.6 }}
-        />
+      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[#0E0E0E]">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(100, Math.max(2, pct))}%` }} />
       </div>
-      {sub && <span className="mt-0.5 block text-[0.62rem] text-stone-500">{sub}</span>}
     </div>
   );
 }
 
-function Metric({ label, value, icon: Icon }) {
-  return (
-    <div className="rounded-xl border border-amber-500/15 bg-black/30 p-3 text-center">
-      <Icon size={13} className="mx-auto text-amber-400" />
-      <p className="mt-1 font-serif text-lg font-bold text-stone-100">{value}</p>
-      <p className="text-[0.58rem] uppercase tracking-wider text-stone-500">{label}</p>
-    </div>
-  );
-}
-
-function DiagRow({ tag, value }) {
-  return (
-    <div className="flex items-start justify-between gap-3 rounded-lg border border-amber-500/10 bg-black/20 px-3 py-2">
-      <span className="text-[0.62rem] font-bold uppercase tracking-wider text-amber-300/60">{tag}</span>
-      <span className="text-right text-stone-300">{value}</span>
-    </div>
-  );
-}
-
-function SavingsCard({ icon: Icon, label, value, tone = 'amber' }) {
-  const toneCls = tone === 'rose' ? 'text-rose-300 border-rose-400/20 bg-rose-500/5' : 'text-amber-300 border-amber-400/20 bg-amber-500/5';
+function SavingsCard({ icon: Icon, label, value, tone = 'gold' }) {
+  const toneCls = tone === 'rose' ? 'text-[#F4D67A] border-[rgba(212,175,55,0.2)] bg-[#111111]' : 'text-[#FFFFFF] border-[rgba(212,175,55,0.18)] bg-[#0E0E0E]';
   return (
     <div className={`rounded-xl border p-3 ${toneCls}`}>
       <Icon size={13} />
-      <p className="mt-1 font-serif text-lg font-bold">{value}</p>
-      <p className="text-[0.58rem] uppercase tracking-wider opacity-70">{label}</p>
+      <span className="mt-1 block font-mono text-[0.62rem] uppercase text-[#9A9A9A]">{label}</span>
+      <span className="font-sans text-sm font-bold text-[#FFFFFF]">{value}</span>
     </div>
   );
 }
@@ -339,12 +248,12 @@ function SavingsCard({ icon: Icon, label, value, tone = 'amber' }) {
 function RoadmapPhase({ phase, desc }) {
   return (
     <div className="flex gap-3">
-      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-amber-400/30 bg-amber-500/10">
-        <ChevronRight size={12} className="text-amber-400" />
+      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#D4AF37] bg-[#050505]">
+        <ChevronRight size={12} className="text-[#D4AF37]" />
       </div>
       <div>
-        <p className="text-xs font-bold text-stone-200">{phase}</p>
-        <p className="text-[0.7rem] text-stone-500">{desc}</p>
+        <p className="text-xs font-bold text-[#FFFFFF]">{phase}</p>
+        <p className="text-[0.7rem] text-[#CFCFCF]">{desc}</p>
       </div>
     </div>
   );

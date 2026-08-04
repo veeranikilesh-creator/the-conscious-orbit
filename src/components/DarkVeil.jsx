@@ -65,20 +65,19 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord){
     fragColor=cppn_fn(uv,0.1*sin(0.3*uTime),0.1*sin(0.69*uTime),0.1*sin(0.44*uTime));
 }
 
-// Royal gold ramp — maps a 0..1 value onto the site's crimson→amber→gold palette.
-// Keeps the CPPN motion but renders every pixel in the brand gold.
-vec3 goldRamp(float t){
-    vec3 c0=vec3(0.039,0.012,0.024);  // near-black crimson
-    vec3 c1=vec3(0.298,0.024,0.098);  // deep crimson  (#4c0519)
-    vec3 c2=vec3(0.706,0.196,0.035);  // amber-700     (#b45309)
-    vec3 c3=vec3(0.961,0.620,0.043);  // amber-500     (#f59f0b)
-    vec3 c4=vec3(1.0,0.808,0.282);    // amber-300     (#fcd34d)
-    vec3 c5=vec3(1.0,0.945,0.769);    // pale gold     (#fdeec4)
-    vec3 a=mix(c0,c1,smoothstep(0.0,0.2,t));
-    vec3 b=mix(a,c2,smoothstep(0.2,0.45,t));
-    vec3 c=mix(b,c3,smoothstep(0.45,0.7,t));
-    vec3 d=mix(c,c4,smoothstep(0.7,0.88,t));
-    return mix(d,c5,smoothstep(0.88,1.0,t));
+// Black & Gold ambient ramp — maps a 0..1 value onto deep black, metallic gold, and champagne highlights
+vec3 royalLuxuryRamp(float t){
+    vec3 c0=vec3(0.020,0.020,0.020);  // deep onyx black (#050505)
+    vec3 c1=vec3(0.055,0.055,0.055);  // dark secondary black (#0E0E0E)
+    vec3 c2=vec3(0.450,0.340,0.120);  // deep antique gold
+    vec3 c3=vec3(0.831,0.686,0.216);  // primary metallic gold (#D4AF37)
+    vec3 c4=vec3(0.956,0.839,0.478);  // light gold (#F4D67A)
+    vec3 c5=vec3(1.000,0.950,0.750);  // champagne gold highlight
+    vec3 a=mix(c0,c1,smoothstep(0.0,0.25,t));
+    vec3 b=mix(a,c2,smoothstep(0.25,0.5,t));
+    vec3 c=mix(b,c3,smoothstep(0.5,0.75,t));
+    vec3 d=mix(c,c4,smoothstep(0.75,0.9,t));
+    return mix(d,c5,smoothstep(0.9,1.0,t));
 }
 
 void main(){
@@ -87,9 +86,9 @@ void main(){
     float scanline_val=sin(gl_FragCoord.y*uScanFreq)*0.5+0.5;
     col.rgb*=1.-(scanline_val*scanline_val)*uScan;
     col.rgb+=(rand(gl_FragCoord.xy+uTime)-0.5)*uNoise;
-    // Recolor the full range into royal gold using the CPPN luminance.
+    // Recolor into Ultra-Luxury Red & Gold tones using CPPN luminance.
     float l=clamp(dot(col.rgb,vec3(0.299,0.587,0.114)),0.0,1.0);
-    col.rgb=goldRamp(l);
+    col.rgb=royalLuxuryRamp(l);
     gl_FragColor=vec4(clamp(col.rgb,0.0,1.0),1.0);
 }
 `;
@@ -106,12 +105,24 @@ export default function DarkVeil({
   const ref = useRef(null);
 
   useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const parent = canvas.parentElement;
+    const parent = ref.current;
+    if (!parent) return;
 
+    // Own the canvas here rather than rendering it via JSX. Cleanup releases the
+    // WebGL context, and a released context cannot be re-initialised on the same
+    // canvas element — under StrictMode's mount/unmount/remount that produced a
+    // dead context and crashed Program.use(). A fresh canvas per run avoids it.
+    const canvas = document.createElement('canvas');
+    canvas.className = 'darkveil-canvas';
+    parent.appendChild(canvas);
+
+    // Phones run this CPPN shader per-pixel per-frame, and a 3x DPR screen makes
+    // that ~9x the fragment work for an ambient layer that ends up at roughly
+    // 10% opacity behind a dark overlay. Cap the buffer on compact viewports —
+    // visually indistinguishable, materially cheaper on battery.
+    const isCompactViewport = window.matchMedia('(max-width: 767px)').matches;
     const renderer = new Renderer({
-      dpr: Math.min(window.devicePixelRatio, 2),
+      dpr: Math.min(window.devicePixelRatio, isCompactViewport ? 1 : 2),
       canvas,
     });
 
@@ -163,8 +174,17 @@ export default function DarkVeil({
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', resize);
+
+      // Release GPU resources and the WebGL context itself. Without this, every
+      // mount (Homepage <-> Login navigation, StrictMode double-mount in dev)
+      // leaks a context until the browser's ~16-context limit kills the canvas.
+      geometry.remove();
+      program.remove();
+      const loseContext = gl.getExtension('WEBGL_lose_context');
+      if (loseContext) loseContext.loseContext();
+      canvas.remove();
     };
   }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale]);
 
-  return <canvas ref={ref} className="darkveil-canvas" />;
+  return <div ref={ref} className="darkveil-root" />;
 }

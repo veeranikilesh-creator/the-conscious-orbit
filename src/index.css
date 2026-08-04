@@ -1,148 +1,523 @@
 @import "tailwindcss";
 
-/* ============================================================
-   THE CONSCIOUS ORBIT — Royal Design System
-   Golden-red gradient · glassmorphism · shimmering gold accents
-   ============================================================ */
-
-@theme {
-  /* Royal font families */
-  --font-serif: "Playfair Display", Georgia, serif;
-  --font-sans: "Inter", system-ui, sans-serif;
-
-  /* Royal palette — neutral stone base + amber accent + rose glow */
-  --color-royal-bg: #0c0a09;       /* stone-950 */
-  --color-royal-panel: #1c1917;    /* stone-900 */
-  --color-gold: #f59e0b;           /* amber-500 */
-  --color-gold-bright: #fcd34d;    /* amber-300 */
-  --color-gold-deep: #b45309;      /* amber-700 */
-  --color-rose-deep: #4c0519;      /* rose-950 */
-}
-
-/* Base layer — body background + global text */
 @layer base {
-  html {
-    scroll-behavior: smooth;
+  /* Black & Gold Executive Design System Tokens */
+  :root {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color-scheme: dark;
   }
+
+  :root {
+    /* Theme Colors */
+    --color-bg-primary: #050505;
+    --color-bg-secondary: #0E0E0E;
+    --color-bg-card: #111111;
+    
+    /* Gold Tones */
+    --color-gold-primary: #D4AF37;
+    --color-gold-light: #F4D67A;
+    --color-gold-accent: #C89B3C;
+    
+    /* Borders & Glow */
+    --color-border-subtle: rgba(212, 175, 55, 0.18);
+    --color-border-gold: rgba(212, 175, 55, 0.35);
+    --color-hover-glow: rgba(212, 175, 55, 0.35);
+
+    /* Typography */
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: #CFCFCF;
+    --color-text-muted: #9A9A9A;
+  }
+
   body {
-    margin: 0;
-    min-height: 100vh;
-    font-family: var(--font-sans);
-    color: #f5f5f4;                /* stone-100 — neutral base text */
-    background-color: #0c0a09;     /* stone-950 */
-    /* Ambient royal glows: rose + amber radials over neutral stone base */
-    background-image:
-      radial-gradient(ellipse 60% 50% at 25% 0%, rgba(76, 5, 25, 0.45), transparent 60%),
-      radial-gradient(ellipse 50% 50% at 85% 100%, rgba(120, 53, 15, 0.22), transparent 60%);
-    background-attachment: fixed;
-    -webkit-font-smoothing: antialiased;
+    background-color: #050505;
+    color: #FFFFFF;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Responsive guards — no page may scroll sideways. `clip` (not `hidden`) is
+     used so html/body never becomes a scroll container, which would break the
+     dashboard's `position: sticky` topbar. */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  /* Long unbroken strings (emails, URLs, "$50,000,000") must wrap rather than
+     push their container wider than the viewport. */
+  h1, h2, h3, h4, h5, h6, p, span, li, label, strong {
+    overflow-wrap: break-word;
+  }
+
+  /* Media never exceeds its column. */
+  img, svg, video, canvas {
+    max-width: 100%;
+  }
+
+  /* Removes the 300ms double-tap-to-zoom delay and the grey tap flash.
+     Deliberately excludes inputs — forcing `touch-action` on a range slider
+     stops the browser handing the drag to the thumb. */
+  button, a, [role="button"], label {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
 /* ============================================================
-   Reusable component utilities
+   LAYERED LUXURY BACKGROUNDS & UTILITIES
    ============================================================ */
 
-/* Glassmorphism panel — used for cards / panels */
-.glass {
-  background: rgba(12, 10, 9, 0.55);          /* stone-950/55 */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(245, 158, 11, 0.20); /* amber-500/20 */
+/* Layered Black Background with Gold Radial Glow & Grid Overlay */
+.bg-royal-mesh {
+  background-color: #050505;
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(244, 214, 122, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 85%, rgba(200, 155, 60, 0.05) 0%, transparent 55%);
+  background-attachment: fixed;
 }
 
-/* Shimmering gold text for accents / headers */
-.text-shimmer-gold {
-  background: linear-gradient(110deg, #fde68a 0%, #fbbf24 30%, #fcd34d 50%, #f59e0b 80%);
-  background-size: 200% auto;
+/* iOS Safari does not implement `background-attachment: fixed` and renders the
+   gradient at the wrong scale while scrolling. Fall back to `scroll` on touch
+   devices — the gradient is subtle enough that the parallax is not missed. */
+@media (hover: none) {
+  .bg-royal-mesh {
+    background-attachment: scroll;
+  }
+}
+
+/* Executive Card — Dark Onyx background with subtle gold outline & soft shadow */
+.card-royal-luxury {
+  background: #111111;
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.8), 0 0 15px rgba(212, 175, 55, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #FFFFFF;
+}
+
+.card-royal-luxury:hover {
+  border-color: rgba(212, 175, 55, 0.45);
+  box-shadow: 0 18px 45px -5px rgba(0, 0, 0, 0.9), 0 0 25px rgba(212, 175, 55, 0.25);
+  transform: translateY(-3px);
+}
+
+/* Glassmorphism Luxury Black Panel */
+.glass-royal-luxury {
+  background: rgba(14, 14, 14, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  color: #FFFFFF;
+}
+
+/* Gold Gradient Shimmer Text */
+.text-shimmer-champagne {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F4D67A 50%, #D4AF37 100%);
   -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: shimmer 5s linear infinite;
+  -webkit-text-fill-color: transparent;
 }
 
-@keyframes shimmer {
-  to { background-position: 200% center; }
-}
-
-/* Glowing gold focus / hover ring for form fields */
-.field-glow {
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
-}
-.field-glow:hover {
-  border-color: rgba(245, 158, 11, 0.45);
-}
-.field-glow:focus {
+/* Field focus glow in Gold */
+.field-luxury-gold:focus {
   outline: none;
-  border-color: rgba(251, 191, 36, 0.9);       /* amber-400 */
-  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5);
-  background-color: rgba(28, 25, 23, 0.7);      /* stone-900/70 */
+  border-color: #D4AF37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
 }
 
-/* Royal gold gradient button surface */
-.btn-royal {
-  background-image: linear-gradient(90deg, #f59e0b 0%, #fbbf24 50%, #f59e0b 100%); /* amber-500 → amber-400 → amber-500 */
-  background-size: 200% auto;
-  color: #0c0a09;                              /* stone-950 */
-  transition: background-position 0.4s ease, box-shadow 0.3s ease, transform 0.15s ease;
-}
-.btn-royal:hover {
-  background-position: right center;
-  filter: brightness(1.08);
-  box-shadow: 0 0 24px rgba(245, 158, 11, 0.30);
-}
-.btn-royal:active {
-  transform: scale(0.99);
+/* Primary Gold Button: Gold Background, Black Text, Soft Lift */
+.btn-royal-red {
+  background: linear-gradient(135deg, #F4D67A 0%, #D4AF37 100%);
+  border: 1px solid #D4AF37;
+  color: #050505;
+  font-weight: 700;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
 }
 
-/* Thin custom scrollbar (royal) */
-*::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
-}
-*::-webkit-scrollbar-track {
-  background: rgba(12, 10, 9, 0.5);
-}
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #b45309, #4c0519);
-  border-radius: 999px;
-}
-*::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #f59e0b, #b45309);
+.btn-royal-red:hover {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F4D67A 100%);
+  border-color: #F4D67A;
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45);
+  transform: translateY(-3px);
 }
 
-/* Custom range slider — gold thumb */
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 5px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #92400e, #4c0519);
-  outline: none;
+.btn-royal-red:active {
+  background-color: #C89B3C;
+  transform: translateY(0);
 }
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  border: 2px solid #0c0a09;
+
+/* Secondary Button: Transparent, Gold Border, White Text -> Hover Gold Background */
+.btn-royal-gold-outline {
+  background-color: transparent;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: #FFFFFF;
+  font-weight: 600;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-royal-gold-outline:hover {
+  background-color: #D4AF37;
+  border-color: #D4AF37;
+  color: #050505;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #111111;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+/* 3D Luxury Flip Cards for Target Domains */
+.flip-card {
+  background: transparent;
+  width: 100%;
+  max-width: 320px;
+  height: 380px;
+  perspective: 1200px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 22px;
+  padding: 24px;
+
+  backface-visibility: hidden;
+
+  background: linear-gradient(
+      145deg,
+      #111111,
+      #080808
+  );
+
+  border: 1px solid rgba(212,175,55,.25);
+
+  box-shadow:
+      0 20px 40px rgba(0,0,0,.5),
+      inset 0 0 0 1px rgba(255,255,255,.03);
+
+  overflow: hidden;
+}
+
+.flip-card-front::before,
+.flip-card-back::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    background:
+    radial-gradient(circle at top right,
+    rgba(212,175,55,.18),
+    transparent 45%);
+
+    pointer-events: none;
+}
+
+.flip-card-front {
+    color: #fff;
+}
+
+.flip-card-back {
+    transform: rotateY(180deg);
+
+    background:
+    linear-gradient(
+    145deg,
+    #181818,
+    #090909);
+}
+
+.flip-card-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #F5D76E;
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.flip-card-subtitle {
+    color: #C7C7C7;
+    font-size: 14px;
+    line-height: 1.7;
+    width: 90%;
+    text-align: center;
+}
+
+/* Narrow phones: the fixed 380px face leaves too little room once the card is
+   only ~270px wide, so trim padding and tighten the type instead of clipping. */
+@media (max-width: 400px) {
+  .flip-card {
+    height: 340px;
+  }
+
+  .flip-card-front,
+  .flip-card-back {
+    padding: 18px;
+  }
+
+  .flip-card-title {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .flip-card-subtitle {
+    font-size: 13px;
+    line-height: 1.6;
+    width: 100%;
+  }
+}
+
+.flip-card:hover .flip-card-front,
+.flip-card:hover .flip-card-back {
+    box-shadow:
+    0 0 30px rgba(212,175,55,.18),
+    0 25px 60px rgba(0,0,0,.55);
+}
+
+/* The flip is hover-driven, so on touch the back face — which carries the
+   domain description and the Launch Module cue — can never be seen. Collapse
+   the two faces into one static card there so nothing is hidden. The tap still
+   enters the dashboard exactly as before. */
+@media (hover: none) {
+  .flip-card {
+    height: auto;
+    perspective: none;
+  }
+
+  .flip-card-inner {
+    height: auto;
+    transform: none;
+    transform-style: flat;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    padding: 26px 22px;
+    border-radius: 22px;
+
+    background: linear-gradient(145deg, #111111, #080808);
+    border: 1px solid rgba(212, 175, 55, .25);
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, .5),
+      inset 0 0 0 1px rgba(255, 255, 255, .03);
+  }
+
+  .flip-card-front,
+  .flip-card-back {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    transform: none;
+    backface-visibility: visible;
+
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .flip-card-front::before,
+  .flip-card-back::before {
+    display: none;
+  }
+
+  /* "Hover to Inspect" is meaningless without a pointer, and the back repeats
+     the title the front already shows. */
+  .flip-card-front .flip-card-subtitle,
+  .flip-card-back .flip-card-title {
+    display: none;
+  }
+}
+
+/* ============================================================
+   MAGIC UI — DEDICATED SCROLL VELOCITY NAVBAR CSS
+   ============================================================ */
+.scroll-velocity-header {
+  background: #0B0B0B;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.scroll-velocity-container {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+}
+
+.scroll-velocity-track {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  width: max-content;
+  will-change: transform;
+}
+
+.scroll-velocity-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 28px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.25px;
+  color: #D5D5D5;
+  border-radius: 9999px;
+  white-space: nowrap;
+  transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+  border: 1px solid transparent;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
-}
-input[type="range"]::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  border: 2px solid #0c0a09;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
 }
 
-/* Text selection — royal amber */
-::selection {
-  background: #f59e0b;
-  color: #0c0a09;
+.scroll-velocity-item:hover {
+  color: #D4AF37;
+  transform: translateY(-2px);
+}
+
+.scroll-velocity-item.active {
+  background: #D4AF37;
+  color: #050505;
+  border-color: #F4D67A;
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.18);
+}
+
+.scroll-velocity-item.active:hover {
+  color: #050505;
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.35);
+}
+
+/* The marquee only gets a narrow slice of the navbar on phones — scale the pills
+   down so more than one domain is legible at a time. */
+@media (max-width: 767px) {
+  .scroll-velocity-track {
+    gap: 1rem;
+  }
+
+  .scroll-velocity-item {
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+
+  .scroll-velocity-container {
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  }
+}
+
+/* Swipeable, non-animated domain row used on compact viewports in place of the
+   marquee. Reuses .scroll-velocity-item so the pills look identical. */
+.domain-scroller {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-block: 2px;
+}
+
+.domain-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.domain-scroller > .scroll-velocity-item {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+}
+
+/* ============================================================
+   TOUCH-DEVICE AFFORDANCES
+   ============================================================ */
+
+/* Controls revealed on hover are unreachable on touch — show them permanently
+   where no hover capability exists. */
+@media (hover: none) {
+  .hover-reveal {
+    opacity: 1;
+  }
+}
+
+/* iOS zooms the whole page in when a focused field is under 16px. Scoped to
+   coarse pointers so the desktop rendering is byte-for-byte unchanged. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Smooth Scrolling Custom Configuration */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Lenis smooth scrolling configuration styles */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }
