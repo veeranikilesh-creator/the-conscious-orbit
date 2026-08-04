@@ -19,6 +19,7 @@ import Homepage from './components/Homepage.jsx';
 import Login from './components/Login.jsx';
 import Contact from './components/Contact.jsx';
 import ExecutiveDashboard from './components/ExecutiveDashboard.jsx';
+import AdminDashboard from './components/AdminDashboard.jsx';
 
 /* ============================================================
    THE CONSCIOUS ORBIT — Ultra-Luxury Red & Gold Executive Workspace
@@ -66,7 +67,7 @@ const SEED_REPORTS = [
 ];
 
 function App() {
-  const [page, setPage] = useState('home'); // 'home' | 'login' | 'dashboard'
+  const [page, setPage] = useState('home'); // 'home' | 'login' | 'dashboard' | 'admin-dashboard'
   const [activeVertical, setActiveVertical] = useState('startups');
   const [activeCluster, setActiveCluster] = useState('market');
   const [selectedTracks, setSelectedTracks] = useState(['validation', 'investor']);
@@ -161,7 +162,28 @@ function App() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <Login onLogin={() => setPage('dashboard')} onBack={() => setPage('home')} />
+          <Login
+            onLogin={(role) => setPage(role === 'admin' ? 'admin-dashboard' : 'dashboard')}
+            onBack={() => setPage('home')}
+          />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+  if (page === 'admin-dashboard') {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="admin-dashboard"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <AdminDashboard
+            onLogout={() => setPage('home')}
+            onGoHome={() => setPage('home')}
+          />
         </motion.div>
       </AnimatePresence>
     );
