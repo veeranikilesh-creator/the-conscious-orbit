@@ -88,6 +88,9 @@ export default function Login({ onLogin, onBack }) {
               <p className="mt-3 max-w-xs text-sm text-[#CFCFCF] leading-relaxed">
                 Sign in to run ventures through the four-stage intelligence pipeline and your decision engine.
               </p>
+              <div className="mt-4 rounded-full border border-[#10B981]/50 bg-[#065F46]/30 px-3.5 py-1 font-mono text-[0.65rem] font-bold text-[#A7F3D0]">
+                v2.5 · Dual Portal System Active (User & Admin)
+              </div>
 
               {/* Feature ticks */}
               <div className="mt-8 w-full max-w-xs space-y-3 text-left">
