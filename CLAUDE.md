@@ -121,9 +121,11 @@ The Express error envelope is flat — `{ error, message, issues? }` — not nes
 
 ## Deployment
 
-Netlify hosts the frontend only (`netlify.toml`: `npm run build` → `dist`, SPA redirect, `NODE_VERSION = "22"`, no-cache headers on `index.html`). Neither backend can run there; both need separate hosting. `server/render.yaml` is a Render blueprint for the Express API — MongoDB must be supplied externally (Atlas), since Render has no managed MongoDB.
+**There is none — this is deliberate.** The project is distributed through git and run locally by each team member; `README.md` is the setup guide. Netlify hosting was removed along with `netlify.toml` and `public/_redirects`, so don't reintroduce a deploy config or a hosting step without being asked.
 
-Point the frontend at a deployed API with `VITE_API_URL` (see `.env.example`). Vite inlines it at build time, so changing it requires a rebuild, not just an env change.
+`server/render.yaml` remains as a Render blueprint for the Express API should hosting ever come back, but nothing consumes it.
+
+`VITE_API_URL` (see `.env.example`) still points the frontend at a non-default API. Vite inlines it at build time, so changing it requires restarting the dev server, not just editing the env.
 
 ## Known dead weight
 

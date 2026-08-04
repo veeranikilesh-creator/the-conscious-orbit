@@ -7,6 +7,10 @@ export default function Login({ onLogin, onBack }) {
   const [isChecked, setIsChecked] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  /* Which portal a sign-in lands in. App.jsx reads this to pick the initial
+     view and to gate admin-only affordances. Sign up is always 'user' —
+     new accounts never provision admin access. */
+  const [portalRole, setPortalRole] = useState("user");
 
   // Form states
   const [fullName, setFullName] = useState("");
@@ -19,7 +23,7 @@ export default function Login({ onLogin, onBack }) {
       alert("Please agree to the Terms & Privacy Policy to proceed.");
       return;
     }
-    if (onLogin) onLogin();
+    if (onLogin) onLogin(isChecked ? "user" : portalRole);
   };
 
   return (
@@ -87,7 +91,9 @@ export default function Login({ onLogin, onBack }) {
         </div>
 
         {/* 3D FLIP CARD */}
-        <div className="w-full h-[390px] [perspective:1000px]">
+        {/* Height accommodates the tallest face — sign-up's four fields, and
+            sign-in's portal selector. */}
+        <div className="w-full h-[440px] [perspective:1000px]">
           <div
             className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${
               isChecked ? "[transform:rotateY(180deg)]" : ""
@@ -155,11 +161,38 @@ export default function Login({ onLogin, onBack }) {
                   </div>
                 </div>
 
+                {/* Destination portal — sign-in only. */}
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">
+                    Portal
+                  </label>
+                  <div className="grid grid-cols-2 gap-1 rounded-xl border border-[#D4AF37]/60 bg-[#F1E7D4] p-0.5">
+                    {[
+                      { id: "user", label: "User Client" },
+                      { id: "admin", label: "Executive Admin" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setPortalRole(opt.id)}
+                        aria-pressed={portalRole === opt.id}
+                        className={`rounded-lg py-1.5 text-[0.62rem] font-bold transition cursor-pointer ${
+                          portalRole === opt.id
+                            ? "bg-[#4A0A13] text-[#F5D77F] shadow-xs"
+                            : "text-[#7A1C29] hover:text-[#4A0A13]"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   className="w-full rounded-full border border-[#D4AF37] bg-[#4A0A13] hover:bg-[#5C0F1A] active:scale-[0.98] py-3 text-xs font-bold text-[#F5D77F] shadow-md transition cursor-pointer mt-2"
                 >
-                  Let's go!
+                  {portalRole === "admin" ? "Enter Admin Portal" : "Let's go!"}
                 </button>
               </form>
 
