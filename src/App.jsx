@@ -855,13 +855,16 @@ function Topbar({
 
         {/* RIGHT: Switch Portal, Search, Notifications, Profile */}
         <div className="flex items-center gap-1.5 shrink-0 sm:gap-2.5">
-          <button
-            onClick={onToggleRole}
-            className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#D4AF37]/40 bg-[#050505] px-3 py-1 font-mono text-xs font-bold text-[#F4D67A] hover:bg-[#D4AF37] hover:text-[#050505] transition cursor-pointer"
-            title="Switch portal access mode"
-          >
-            Switch to {userRole === 'admin' ? 'User Portal' : 'Admin Portal'}
-          </button>
+          {/* Role Indicator & Admin Portal Switcher */}
+          {userRole === 'admin' && (
+            <button
+              onClick={onToggleRole}
+              className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#D4AF37]/40 bg-[#050505] px-3 py-1 font-mono text-xs font-bold text-[#F4D67A] hover:bg-[#D4AF37] hover:text-[#050505] transition cursor-pointer"
+              title="Switch portal access view"
+            >
+              Switch to User Portal
+            </button>
+          )}
 
           <div className="hidden lg:flex items-center gap-2 rounded-full border border-[rgba(212,175,55,0.2)] bg-[#050505] px-3.5 py-1.5 text-xs text-[#CFCFCF] focus-within:border-[#D4AF37] transition">
             <Search size={14} className="text-[#9A9A9A]" />
