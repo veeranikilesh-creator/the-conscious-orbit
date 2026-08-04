@@ -139,7 +139,10 @@ export default function Login({ onLogin, onBack }) {
                 return (
                   <button
                     key={opt.id}
-                    onClick={() => setMode(opt.id)}
+                    onClick={() => {
+                      setMode(opt.id);
+                      if (opt.id === 'signup') setPortalRole('user');
+                    }}
                     className={`relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition cursor-pointer sm:flex-none sm:px-5 ${
                       active ? 'text-[#050505] font-bold' : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
                     }`}
@@ -156,36 +159,51 @@ export default function Login({ onLogin, onBack }) {
               })}
             </div>
 
-            {/* Portal Selection Toggle */}
-            <div className="mt-5 space-y-1.5">
-              <label className="block font-mono text-[0.65rem] font-bold uppercase tracking-wider text-[#F4D67A]">
-                Select Destination Portal
-              </label>
-              <div className="grid grid-cols-2 gap-2 rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#050505] p-1">
-                <button
-                  type="button"
-                  onClick={() => setPortalRole('user')}
-                  className={`flex items-center justify-center gap-2 rounded-lg py-2.5 font-mono text-xs font-bold transition cursor-pointer ${
-                    portalRole === 'user'
-                      ? 'bg-[#10B981] text-[#050505] shadow-xs'
-                      : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
-                  }`}
-                >
-                  <User size={14} /> User Client Portal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPortalRole('admin')}
-                  className={`flex items-center justify-center gap-2 rounded-lg py-2.5 font-mono text-xs font-bold transition cursor-pointer ${
-                    portalRole === 'admin'
-                      ? 'bg-[#D4AF37] text-[#050505] shadow-xs'
-                      : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
-                  }`}
-                >
-                  <Crown size={14} /> Executive Admin
-                </button>
+            {/* Portal Selection: Toggle for Sign In / Fixed User for Create Account */}
+            {mode === 'signin' ? (
+              <div className="mt-5 space-y-1.5">
+                <label className="block font-mono text-[0.65rem] font-bold uppercase tracking-wider text-[#F4D67A]">
+                  Select Destination Portal
+                </label>
+                <div className="grid grid-cols-2 gap-2 rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#050505] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setPortalRole('user')}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-2.5 font-mono text-xs font-bold transition cursor-pointer ${
+                      portalRole === 'user'
+                        ? 'bg-[#10B981] text-[#050505] shadow-xs'
+                        : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
+                    }`}
+                  >
+                    <User size={14} /> User Client Portal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPortalRole('admin')}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-2.5 font-mono text-xs font-bold transition cursor-pointer ${
+                      portalRole === 'admin'
+                        ? 'bg-[#D4AF37] text-[#050505] shadow-xs'
+                        : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
+                    }`}
+                  >
+                    <Crown size={14} /> Executive Admin
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mt-5 space-y-1.5">
+                <label className="block font-mono text-[0.65rem] font-bold uppercase tracking-wider text-[#F4D67A]">
+                  Account Access Type
+                </label>
+                <div className="flex items-center gap-3 rounded-xl border border-[#10B981]/40 bg-[#065F46]/25 p-3 text-xs text-[#A7F3D0]">
+                  <User size={18} className="text-[#10B981] shrink-0" />
+                  <div>
+                    <strong className="block text-[#FFFFFF] font-bold text-xs">User Client Portal Account</strong>
+                    <span className="text-[0.7rem] text-[#A7F3D0]/80">All new accounts automatically receive dedicated User Client Workspace access.</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Heading */}
             <div className="mt-6">
