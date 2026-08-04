@@ -4,44 +4,63 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Layout
 
-Two independent npm projects in one repo:
+Three independent projects in one repo, with **two competing backends**:
 
 - repo root — the Vite/React frontend (`src/`)
-- `server/` — an Express/MongoDB API, consumed by the frontend through `src/api.js`
+- `server/` — Express 5 + Mongoose/MongoDB, ESM JavaScript. Complete: ten calculator modules, two state machines, zod validation, AI + SpyFu integrations.
+- `server_python/` — FastAPI + SQLAlchemy, Postgres with a SQLite fallback. Added later and now the frontend's default target, but it is a **persistence shim, not a reimplementation** — see below.
 
-They have separate `package.json` / `node_modules`. `npm install` at the root does not install the server's deps.
+Each has its own dependency manifest. `npm install` at the root installs neither backend's deps.
 
 ## Commands
 
 ```bash
 # frontend (repo root)
 npm install
-npm run dev      # Vite dev server with HMR, :5173
+npm run dev      # Vite dev server with HMR + --host, :5173
 npm run build    # production build to dist/
 npm run preview  # serve the built bundle
 npm run lint     # oxlint — note it lints server/ too, since it runs from the root
 
-# backend
-cd server
-npm install
-cp .env.example .env   # MONGODB_URI is the only one required
-npm run dev            # node --watch, http://localhost:4000/api
-npm start
+# Express/Mongo backend
+cd server && npm install
+cp .env.example .env       # MONGODB_URI is the only required var
+npm run dev                # node --watch, http://localhost:4000/api
+
+# FastAPI backend
+cd server_python && pip install -r requirements.txt
+uvicorn main:app --reload --port 8000   # http://localhost:8000/api
 ```
 
-There is no test framework anywhere in this repo — no runner, no test files.
+There is **no test framework anywhere in this repo** — no runner, no test files, no test script. To exercise backend logic, import the modules directly in a scratch `.mjs` file run from inside `server/` (so `node_modules` resolves) and call `run(input, context)`; every calculator is a pure function. `server/` has `mongodb-memory-server` as a devDependency for database-backed checks without installing MongoDB.
+
+## The two backends diverge in behaviour, not just stack
+
+This is the single most important thing to understand before touching API code.
+
+`server/` **computes**. Ten modules in `server/src/modules/` each export `{ key, title, action, inputSchema, run }`; `run()` validates with zod and returns `{ output, score }`. `industryReport` (module 7) is the consolidator — it weights every other module's score into the Conscious Orbital Score and passes a dossier to the AI decision engine, writing the verdict back to `report.score` / `report.decision`. Advancing a report is **gated**: `requireStageComplete()` returns 409 listing missing module keys.
+
+`server_python/` **records**. `POST /api/reports/{id}/modules/{key}` appends the key to `completed_modules` and returns `{ok: true}` — it runs no calculator. `score` is assigned once at creation as `random.randint(80, 95)`. `/advance` and `/revert` just step through `STAGE_FLOW` with no gate.
+
+So identical frontend calls produce a real analysis against `server/` and a random number against `server_python/`. Response envelopes differ too — Express returns `{ report: {...} }` from advance/revert, FastAPI returns `{ status: "PUBLISHED" }`.
+
+### Known live bug
+
+`src/api.js` defaults to `http://localhost:8000/api` (FastAPI) with `http://localhost:4000/api` as a network-level fallback. But `App.jsx` gates on `health.ok === true && health.db === 'connected'`, which is the **Express** health shape. FastAPI returns `{status: "ok", db: "SQLite (Local Fallback)"}` — no `ok` key. The gate therefore always fails against FastAPI and the dashboard drops to offline mode. Either loosen the gate or align the health payloads.
 
 ## Frontend
 
-React 19 + Vite 8, JavaScript only (`.jsx`, no TypeScript). Tailwind CSS v4 via the `@tailwindcss/vite` plugin — there is **no `tailwind.config.js`**; Tailwind is pulled in with `@import "tailwindcss"` at the top of `src/index.css` and all customization lives in that file as plain CSS. `framer-motion` for animation, `lucide-react` for icons, `ogl` for the WebGL shader background. Lint config is `.oxlintrc.json` (oxlint with the `react` and `oxc` plugins; only `react/rules-of-hooks` and `react/only-export-components` are configured).
+React 19 + Vite 8, JavaScript only (`.jsx`, no TypeScript). Tailwind CSS v4 via the `@tailwindcss/vite` plugin — there is **no `tailwind.config.js`**; Tailwind is pulled in with `@import "tailwindcss"` at the top of `src/index.css` and all customization lives in that file as plain CSS. Default breakpoints only, so **there is no `xs:`** — writing one silently yields a permanently-hidden element. `framer-motion` for animation, `lenis` for smooth scrolling, `lucide-react` for icons, `ogl` for the WebGL shader background. Lint config is `.oxlintrc.json` (oxlint with the `react` and `oxc` plugins; only `react/rules-of-hooks` and `react/only-export-components` are configured).
 
-No router and no auth. Data fetching lives entirely in `src/api.js`; nothing else in `src/` calls `fetch()`. "Logging in" is still a `setTimeout` simulation (`Login.jsx`).
+Data fetching lives entirely in `src/api.js`; nothing else in `src/` calls `fetch()`.
 
-**The API is optional by design.** `App.jsx` lists reports on mount and sets `apiStatus` to `'online'` or `'offline'`. When offline — no `VITE_API_URL`, server down, CORS refused — Generate falls back to the original local simulation and the board moves cards in local state. This is what keeps the static Netlify build working with no backend attached, so don't remove the fallback paths when adding API calls.
+**The API is optional by design.** `App.jsx` probes health on mount and sets `apiStatus` to `'online'` or `'offline'`. When offline — no `VITE_API_URL`, server down, CORS refused — Generate falls back to the original local simulation and the board moves cards in local state. This is what keeps the static Netlify build working with no backend attached, so don't remove the fallback paths when adding API calls.
 
-### Routing
+### Routing and auth
 
-A single `page` string in `App.jsx` state (`'home' | 'login' | 'dashboard'`), switched by early `return`s wrapped in `AnimatePresence`. Navigation happens by passing callbacks down (`onEnter`, `onLogin`, `onBack`, `goHome`). Adding a URL-driven route means restructuring this state machine.
+No router. A single `page` string in `App.jsx` state (`'home' | 'login' | 'dashboard'`), switched by early `return`s wrapped in `AnimatePresence`. Navigation happens by passing callbacks down (`onEnter`, `onLogin`, `onBack`, `goHome`). Adding a URL-driven route means restructuring this state machine.
+
+Login is still a `setTimeout` simulation with **no real authentication**. It does carry a `portalRole` (`'user' | 'admin'`) out through `onLogin(role)`, which sets `userRole` and picks the landing view — `'intake'` for users, `'pipeline'` for admins. `userRole` then gates UI affordances throughout the dashboard. Nothing server-side enforces any of it; every backend endpoint is open.
 
 ### Dashboard structure
 
@@ -50,18 +69,17 @@ Two orthogonal selectors drive everything:
 - `activeVertical` — one of the five `VERTICALS` (students, institutions, msmes, industries, startups), chosen from the scroll-velocity marquee in `Topbar`.
 - `mainView` — `'pipeline' | 'intake' | 'board'`, chosen from `MainViewTabs`.
 
-`mainView` picks the panel; inside the intake panel `activeVertical` picks the engine (`StartupMarketEngine`, `MsmeOptimizationEngine`, `IndustryAnalysisEngine`, or `GenericVerticalPanel`). Adding a vertical means touching both `VERTICALS` in `src/constants.js` and the conditional dispatch around `App.jsx:241-271`.
+`mainView` picks the panel; inside the intake panel `activeVertical` picks the engine (`StartupMarketEngine`, `MsmeOptimizationEngine`, `IndustryAnalysisEngine`, or `GenericVerticalPanel`). Adding a vertical means touching both `VERTICALS` in `src/constants.js` and the conditional dispatch in `App.jsx`.
 
 Intake forms are **controlled from `App.jsx`** (`profile` / `clusters` state plus `setProfileField` / `setClusterField`), so values survive cluster-tab switches and are read by `handleGenerate` to compose the new report. Don't reintroduce local form state inside the engine components.
 
 ### Frontend files
 
-- `src/constants.js` — `VERTICALS` and `REPORT_STATUSES`, the single source of truth shared by `App.jsx` and `Homepage.jsx`.
-- `src/App.jsx` (~1200 lines) — page routing, dashboard shell, plus inline components: `Topbar`, `ScrollVelocityRow`, `MainViewTabs`, `VerticalHero`, `ThreeLayerEngine`, `GenericVerticalPanel`, `KanbanBoard`, `GenerateReportModal`. Domain constants (`CLUSTER_TABS`, `FLAGSHIP_TRACKS`, `KANBAN_COLUMNS`, `SEED_REPORTS`) sit at the top.
+- `src/constants.js` — `VERTICALS` and `REPORT_STATUSES`, shared by `App.jsx` and `Homepage.jsx`.
+- `src/App.jsx` (~1300 lines) — page routing, dashboard shell, plus inline components: `Topbar`, `ScrollVelocityRow`, `DomainScrollRow`, `MainViewTabs`, `VerticalHero`, `ThreeLayerEngine`, `GenericVerticalPanel`, `KanbanBoard`, `GenerateReportModal`. Domain constants (`CLUSTER_TABS`, `FLAGSHIP_TRACKS`, `KANBAN_COLUMNS`, `INDUSTRY_SECTORS`, `SEED_REPORTS`) sit at the top.
 - `src/components/ui.jsx` — design-system primitives every other file imports: `GlassPanel`, `RoyalButton`, `GhostButton`, `Field`/`Input`/`Textarea`/`Select` (sharing the exported `fieldBase` class string), `StatusBadge`/`StatusDot`, `OrbitBrand`, `RoyalBackground`. Compose these rather than re-inventing panel/button markup.
-- `src/components/VentureProcessor.jsx` — the 4-stage pipeline view, with per-stage module/input/output metadata in the `PIPELINE` constant.
 - `src/components/VerticalEngines.jsx` — the three per-vertical calculators; the TAM/SAM/SOM derivation (`useMemo` in `StartupMarketEngine`) is the only real logic on the frontend. Channel-mix coverage is deliberately capped at 100% so SOM cannot exceed SAM.
-- `src/components/DarkVeil.jsx` — OGL/WebGL CPPN shader, mounted through `RoyalBackground`. Heavy; rendered at `resolutionScale={0.75}` and low opacity behind a dark overlay, and it releases the GL context on unmount.
+- `src/components/DarkVeil.jsx` — OGL/WebGL CPPN shader, mounted through `RoyalBackground`. Heavy; DPR is capped at 1 below 768px, and it releases the GL context on unmount.
 
 ### Styling conventions
 
@@ -69,33 +87,44 @@ Colors are written as **literal Tailwind arbitrary values** in JSX (`text-[#D4AF
 
 Palette: `#050505` background, `#0E0E0E`/`#111111` surfaces, `#D4AF37` primary gold, `#F4D67A` light gold, `#CFCFCF`/`#9A9A9A` secondary/muted text. Class names still say "red" from an earlier theme (`.btn-royal-red`, `bg-royal-mesh`) but render gold.
 
-Reusable non-utility styles live in `src/index.css`: `.card-royal-luxury` (used by `GlassPanel`), `.btn-royal-red`, `.btn-royal-gold-outline`, `.field-luxury-gold`, `.flip-card*`, `.scroll-velocity-*`.
+Reusable non-utility styles live in `src/index.css`: `.card-royal-luxury` (used by `GlassPanel`), `.btn-royal-red`, `.field-luxury-gold`, `.flip-card*`, `.scroll-velocity-*`, `.domain-scroller`. Touch-specific behaviour is handled there too — under `@media (hover: none)` the flip cards collapse to a single face (their back-face content is otherwise unreachable by finger) and `.hover-reveal` forces `opacity: 1` for controls that would only appear on `group-hover`.
 
-## Backend (`server/`)
+## Express backend (`server/`)
 
-Node + Express 5 + Mongoose, ESM, zod for input validation. `server/README.md` has the full endpoint table and folder map — read it before touching the API.
+`server/README.md` has the full endpoint table and folder map — read it before touching the API.
 
 The core idea is two coupled state machines over a `Report`:
 
 - `state/reportState.js` — the linear status chain `RECEIVED → PENDING → PROCESSED → PUBLISHED`. Every change goes through `assertTransition()` (illegal jumps 400 rather than being silently written) and is appended to `report.transitions`.
-- `state/actionPipeline.js` — pairs each status with an action (`SCRUMING`, `REQUIREMENT`, `MAPPING`, `DELIVERED`) and with the modules that must have results before the report may leave that status. `requireStageComplete()` gates `POST /advance` with a **409** listing the missing module keys; reverting is ungated.
+- `state/actionPipeline.js` — pairs each status with an action (`SCRUMING`, `REQUIREMENT`, `MAPPING`, `DELIVERED`) and with the modules that must have results before the report may leave that status. `requireStageComplete()` gates `POST /advance` with a 409 listing the missing module keys; reverting is ungated.
 
-Ten report-generation modules in `server/src/modules/` each export `{ key, title, action, inputSchema, run }`; `run(input, context)` returns `{ output, score, integrations? }`. They are dispatched exclusively through the registry in `modules/index.js` — adding a module means one import and one entry there, plus adding its key to a stage in `PIPELINE_STAGES`. One generic controller handler (`moduleController.js`) drives all ten and upserts a `ModuleResult` (unique on report+module, so re-running overwrites).
-
-`industryReport` (module 7) is the consolidator: it weights every other module's score into the Conscious Orbital Score and passes a dossier to the AI decision engine, writing the verdict back to `report.score` / `report.decision`.
+Modules are dispatched exclusively through the registry in `modules/index.js` — adding one means an import and an entry there, plus adding its key to a stage in `PIPELINE_STAGES`. One generic controller handler (`moduleController.js`) drives all ten and upserts a `ModuleResult` (unique on report+module, so re-running overwrites).
 
 Both integrations degrade instead of throwing: without `ANTHROPIC_API_KEY`, `integrations/aiProvider.js` returns a deterministic heuristic verdict; without SpyFu credentials, `integrations/spyfu.js` returns clearly-labelled placeholder data. Keep that property — the pipeline is expected to always complete.
 
-Read env through `config/env.js`, not `process.env`. There is **no authentication** on any endpoint.
+Read env through `config/env.js`, not `process.env`.
 
-### Frontend ↔ backend
+## Frontend ↔ backend
 
-`Report.toJSON()` deliberately emits `{ id, name, vertical, tags, status, score }` — the exact shape `KanbanBoard` renders — and the four statuses are shared verbatim across `src/constants.js` (`REPORT_STATUSES`, `KANBAN_COLUMNS`), `ui.jsx` (`STATUS_STYLES`, `StatusDot`), `VentureProcessor.jsx` (`PIPELINE[].stage`) and the server's `reportState.js`. Changing or adding a status means updating all of them.
+`Report.toJSON()` deliberately emits `{ id, name, vertical, tags, status, score }` — the exact shape `KanbanBoard` renders — and the four statuses are shared verbatim across `src/constants.js` (`REPORT_STATUSES`, `KANBAN_COLUMNS`), `ui.jsx` (`STATUS_STYLES`, `StatusDot`), `VentureProcessor.jsx` (`PIPELINE[].stage`), `server/src/state/reportState.js` and `server_python/main.py` (`STAGE_FLOW`). Changing or adding a status means updating all five.
 
-`src/api.js` holds the whole integration: the endpoint wrappers, `buildModuleInputs()` (which derives all ten module payloads from the intake form — the form does not collect TAM, competitor prices or feasibility ratings, so those are documented defaults), and `generateReportViaApi()`, which creates a report and drives it RECEIVED → PUBLISHED by running each stage's gating modules before each `POST /advance`, then runs `industryReport` to write the score and verdict. Two mappings exist because the server is stricter than the UI: custom domains (`domain_<ts>`) fall back to the `startups` vertical, and the six intake business models collapse onto the four the modules accept.
+`src/api.js` holds the whole integration: endpoint wrappers, `buildModuleInputs()` (which derives all ten module payloads from the intake form) and `generateReportViaApi()`, which creates a report and drives it RECEIVED → PUBLISHED by running each stage's gating modules before each `POST /advance`, then runs `industryReport` to write the score and verdict.
 
-The error envelope is flat — `{ error, message, issues? }` — not nested; `issues` carries zod field paths.
+**Three mappings exist because the Express server is stricter than the UI**, and all three were found by hitting real validation errors:
+- custom domains (`domain_<ts>`) fall back to the `startups` vertical (`vertical` is a five-value enum)
+- the six intake business models collapse onto the four `BUSINESS_MODELS` accepts
+- `Scaleup` is not in the `Client` model's `STAGES` enum and maps to `Growth`
+
+The intake form does not collect TAM, competitor prices, or feasibility ratings, so `buildModuleInputs()` supplies documented defaults for those. Scores are therefore partly driven by placeholders, not purely by user input.
+
+The Express error envelope is flat — `{ error, message, issues? }` — not nested; `issues` carries zod field paths.
+
+## Deployment
+
+Netlify hosts the frontend only (`netlify.toml`: `npm run build` → `dist`, SPA redirect, `NODE_VERSION = "22"`, no-cache headers on `index.html`). Neither backend can run there; both need separate hosting. `server/render.yaml` is a Render blueprint for the Express API — MongoDB must be supplied externally (Atlas), since Render has no managed MongoDB.
+
+Point the frontend at a deployed API with `VITE_API_URL` (see `.env.example`). Vite inlines it at build time, so changing it requires a rebuild, not just an env change.
 
 ## Known dead weight
 
-`src/components/PulpSenseHero.jsx` and the standalone `PulpSenseHero.html` at the repo root are unused, as is the empty `the-conscious-orbit/` directory. `npm run lint` currently reports one warning (an unused import in `server/src/modules/customerDiscovery.js`); the build is otherwise clean.
+`src/components/PulpSenseHero.jsx` and the standalone `PulpSenseHero.html` at the repo root are unused. `docs/superpowers/` contains a plan and spec for a *third* backend (TypeScript + Prisma + Postgres) that was never built and contradicts both existing ones — treat it as historical, not as direction. `server_python/__pycache__/` and `server_python/conscious_orbit_local.db` are committed build artifacts that should be gitignored. `npm run lint` reports one pre-existing warning (an unused import in `server/src/modules/customerDiscovery.js`); the build is otherwise clean.
