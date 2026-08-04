@@ -7,7 +7,8 @@
    so the static Netlify build keeps working with no backend attached.
    ============================================================ */
 
-export const API_BASE = (import.meta.env?.VITE_API_URL || 'http://localhost:4000/api').replace(/\/$/, '');
+export const API_BASE = (import.meta.env?.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/, '');
+const FALLBACK_API_BASE = 'http://localhost:4000/api';
 
 /** Thrown when the server answered but rejected the request. */
 export class ApiError extends Error {
@@ -31,6 +32,7 @@ export class ApiUnavailable extends Error {
 async function request(path, { method = 'GET', body, signal } = {}) {
   let res;
   try {
+    // Try primary Python FastAPI backend first
     res = await fetch(`${API_BASE}${path}`, {
       method,
       headers: body ? { 'Content-Type': 'application/json' } : undefined,
@@ -38,7 +40,17 @@ async function request(path, { method = 'GET', body, signal } = {}) {
       signal,
     });
   } catch (err) {
-    throw new ApiUnavailable(err);
+    try {
+      // Try secondary Express backend fallback
+      res = await fetch(`${FALLBACK_API_BASE}${path}`, {
+        method,
+        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+        signal,
+      });
+    } catch (fallbackErr) {
+      throw new ApiUnavailable(err);
+    }
   }
 
   const text = await res.text();
