@@ -37,7 +37,7 @@ export default function Login({ onLogin, onBack }) {
     // Enter selected portal (User Client Portal or Admin Portal)
     timer.current = setTimeout(() => {
       setLoading(false);
-      onLogin(portalRole);
+      onLogin(mode === 'signup' ? 'user' : portalRole);
     }, 1200);
   };
 
@@ -208,13 +208,13 @@ export default function Login({ onLogin, onBack }) {
             {/* Heading */}
             <div className="mt-6">
               <div className="flex items-center gap-2">
-                {portalRole === 'admin' ? (
+                {mode === 'signin' && portalRole === 'admin' ? (
                   <Crown size={16} className="text-[#D4AF37]" />
                 ) : (
                   <User size={16} className="text-[#10B981]" />
                 )}
                 <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#F4D67A]">
-                  {portalRole === 'admin' ? 'Executive Admin Portal' : 'User Client Portal'}
+                  {mode === 'signin' && portalRole === 'admin' ? 'Executive Admin Portal' : 'User Client Portal'}
                 </span>
               </div>
               <h1 className="mt-2 font-sans text-3xl font-bold text-[#FFFFFF]">
@@ -222,10 +222,10 @@ export default function Login({ onLogin, onBack }) {
                   ? portalRole === 'admin'
                     ? 'Sign in to Admin Control Center'
                     : 'Sign in to User Client Portal'
-                  : 'Create Client Account'}
+                  : 'Create User Client Account'}
               </h1>
               <p className="mt-2 text-sm text-[#CFCFCF]">
-                {portalRole === 'admin'
+                {mode === 'signin' && portalRole === 'admin'
                   ? 'Access operational pipeline, score management, and system telemetry.'
                   : 'Submit venture intake details, track application status, and view strategy reports.'}
               </p>
