@@ -4,7 +4,7 @@
    Point it somewhere with VITE_API_URL (see .env.example). When the
    API is unreachable every call here rejects with an ApiUnavailable
    error; App.jsx catches that and falls back to the local simulation,
-   so the static Netlify build keeps working with no backend attached.
+   so the app stays fully usable with no backend running.
    ============================================================ */
 
 export const API_BASE = (import.meta.env?.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/, '');

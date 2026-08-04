@@ -22,9 +22,10 @@ services:
       # Set in the Render dashboard — never commit these.
       - key: MONGODB_URI
         sync: false
-      # Comma-separated list of allowed frontend origins.
+      # Comma-separated list of allowed frontend origins. The frontend is run
+      # locally by each developer, so this is the Vite dev server.
       - key: CORS_ORIGIN
-        value: https://consciousorbita.netlify.app,https://consiousorbit.netlify.app
+        value: http://localhost:5173
       # Optional. Without it module 7 returns a deterministic heuristic verdict.
       - key: ANTHROPIC_API_KEY
         sync: false
