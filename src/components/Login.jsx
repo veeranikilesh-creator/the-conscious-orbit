@@ -1,261 +1,390 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Crown,
-  ShieldCheck, Loader2, CheckCircle2,
-} from 'lucide-react';
-import { OrbitBrand, RoyalBackground } from './ui.jsx';
-import { fieldBase } from './ui.jsx';
-
-/* ============================================================
-   BLACK & GOLD EXECUTIVE AUTHENTICATION SCREEN
-   ============================================================ */
+import React, { useState } from "react";
+import { ArrowLeft, Eye, EyeOff, ShieldCheck, UserCheck, Lock, Sparkles } from "lucide-react";
 
 export default function Login({ onLogin, onBack }) {
-  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+  // isAdmin: false -> Executive Sign in, true -> Admin Sign in (Triggers 3D Card Flip)
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // isSignUp: inside Executive Sign in card, toggle for users without account
+  const [isSignUp, setIsSignUp] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(true);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // Form states
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [adminSecurityKey, setAdminSecurityKey] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    // Simulate auth then enter dashboard
-    setTimeout(() => {
-      setLoading(false);
-      onLogin();
-    }, 1400);
+    if (!isAdmin && isSignUp && !agreedToTerms) {
+      alert("Please agree to the Terms & Privacy Policy to proceed.");
+      return;
+    }
+    if (onLogin) onLogin(isAdmin ? "admin" : "executive");
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050505] text-[#FFFFFF]">
-      {/* WebGL Background */}
-      <RoyalBackground />
+    <div
+      className={`relative min-h-screen h-screen w-full flex flex-col justify-between items-center p-4 sm:p-6 overflow-hidden selection:bg-[#D4AF37] selection:text-[#4A0A13] transition-colors duration-700 ${
+        isAdmin ? "bg-[#FAF4E8] text-[#4A0A13]" : "bg-[#4A0A13] text-[#FAF4E8]"
+      }`}
+    >
+      {/* Soft Ambient Radial Background Glow */}
+      <div
+        className={`pointer-events-none absolute inset-0 transition-opacity duration-700 ${
+          isAdmin
+            ? "bg-[radial-gradient(circle_at_50%_50%,rgba(74,10,19,0.08)_0%,transparent_65%)]"
+            : "bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.15)_0%,transparent_65%)]"
+        }`}
+      />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl items-center justify-center px-5 py-8 md:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="grid w-full overflow-hidden rounded-3xl border border-[rgba(212,175,55,0.25)] bg-[#0E0E0E] shadow-2xl lg:grid-cols-2"
+      {/* Top Navigation Header */}
+      <header className="relative z-10 w-full max-w-4xl flex items-center justify-between">
+        <button
+          onClick={onBack}
+          type="button"
+          className={`group flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer px-3.5 py-1.5 rounded-full border shadow-xs ${
+            isAdmin
+              ? "bg-[#FAF4E8] hover:bg-[#F5EAD4] text-[#4A0A13] border-[#4A0A13]/30"
+              : "bg-[#38070E] hover:bg-[#38070E]/80 text-[#F5D77F] border-[#D4AF37]/30"
+          }`}
         >
-          {/* ===== LEFT — BLACK & GOLD BRAND HERO PANEL ===== */}
-          <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-b from-[#111111] via-[#0E0E0E] to-[#050505] p-10 text-[#FFFFFF] lg:flex border-r border-[rgba(212,175,55,0.18)]">
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute right-0 top-1/4 h-64 w-64 rounded-full bg-[#D4AF37]/15 blur-3xl" />
-              <div className="absolute bottom-10 left-10 h-48 w-48 rounded-full bg-[#F4D67A]/10 blur-3xl" />
-            </div>
+          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition" />
+          <span>Home</span>
+        </button>
 
-            {/* Top: back + brand */}
-            <div className="relative flex items-center justify-between">
-              <button
-                onClick={onBack}
-                className="inline-flex items-center gap-1.5 font-mono text-xs text-[#CFCFCF] transition hover:text-[#D4AF37] cursor-pointer"
-              >
-                <ArrowLeft size={15} /> Home
-              </button>
-              <div className="flex items-center gap-2">
-                <OrbitBrand size={28} />
-                <span className="font-sans text-sm font-bold text-[#FFFFFF]">Conscious Orbit</span>
+        <div className="cursor-pointer" onClick={onBack}>
+          <span
+            className={`font-mono text-xs font-extrabold uppercase tracking-[0.2em] transition-colors ${
+              isAdmin ? "text-[#4A0A13]" : "text-[#F5D77F]"
+            }`}
+          >
+            Conscious Orbital
+          </span>
+        </div>
+      </header>
+
+      {/* Centered Main Container */}
+      <main className="relative z-10 w-full max-w-[370px] my-auto flex flex-col items-center justify-center">
+        
+        {/* Toggle Switcher: ONLY 2 OPTIONS (Sign in vs Admin Sign in) */}
+        <div
+          className={`relative mb-6 flex items-center justify-center gap-5 select-none px-4 py-2 rounded-full border shadow-md transition-colors duration-700 ${
+            isAdmin
+              ? "bg-[#FAF4E8]/90 border-[#4A0A13]/40 text-[#4A0A13]"
+              : "bg-[#38070E]/80 border-[#D4AF37]/40 text-[#FAF4E8]"
+          }`}
+        >
+          <span
+            onClick={() => setIsAdmin(false)}
+            className={`text-xs font-bold cursor-pointer transition-colors ${
+              !isAdmin
+                ? "text-[#F5D77F]"
+                : "text-[#4A0A13]/60 hover:text-[#4A0A13]"
+            }`}
+          >
+            Sign in
+          </span>
+
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAdmin}
+              onChange={(e) => setIsAdmin(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div
+              className={`w-10 h-5.5 rounded-full border peer transition-colors relative ${
+                isAdmin
+                  ? "bg-[#FAF4E8] border-[#4A0A13]/60"
+                  : "bg-[#4A0A13] border-[#D4AF37]/60"
+              }`}
+            >
+              <div
+                className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-500 ${
+                  isAdmin
+                    ? "translate-x-[18px] bg-[#4A0A13]"
+                    : "translate-x-0 bg-[#F5D77F]"
+                }`}
+              />
+            </div>
+          </label>
+
+          <span
+            onClick={() => setIsAdmin(true)}
+            className={`text-xs font-bold cursor-pointer transition-colors ${
+              isAdmin
+                ? "text-[#4A0A13]"
+                : "text-[#FAF4E8]/60 hover:text-[#FAF4E8]"
+            }`}
+          >
+            Admin Sign in
+          </span>
+        </div>
+
+        {/* 3D FLIP CARD CONTAINER */}
+        <div className="w-full h-[420px] [perspective:1000px]">
+          <div
+            className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${
+              isAdmin ? "[transform:rotateY(180deg)]" : ""
+            }`}
+          >
+            
+            {/* ============================================================ */}
+            {/* FRONT FACE: SIGN IN (Executive Profile) — CARD COLOUR = IVORY */}
+            {/* ============================================================ */}
+            <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-[#FAF4E8] text-[#4A0A13] rounded-3xl border border-[#D4AF37] p-6 shadow-2xl flex flex-col justify-between items-center text-center">
+              
+              {/* Card Header */}
+              <div className="space-y-1 w-full">
+                <div className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-[#B8860B] uppercase font-mono tracking-wider">
+                  {isSignUp ? <Sparkles size={13} /> : <UserCheck size={13} />}
+                  <span>{isSignUp ? "New Account" : "Executive Profile"}</span>
+                </div>
+                <h2 className="font-serif italic text-2xl sm:text-3xl font-extrabold text-[#4A0A13]">
+                  {isSignUp ? "Sign up" : "Sign in"}
+                </h2>
+                <p className="text-[0.72rem] text-[#7A1C29] font-medium">
+                  {isSignUp
+                    ? "Start your intelligence journey"
+                    : "Welcome back to Conscious Orbital"}
+                </p>
               </div>
-            </div>
 
-            {/* Center: showcase */}
-            <div className="relative my-8 flex flex-col items-center text-center">
-              <OrbitBrand size={84} />
-              <h2 className="mt-8 font-sans text-3xl font-extrabold leading-tight text-[#FFFFFF]">
-                Strategy with <span className="text-[#F4D67A]">Sovereignty</span>
-              </h2>
-              <p className="mt-3 max-w-xs text-sm text-[#CFCFCF] leading-relaxed">
-                Sign in to run ventures through the four-stage intelligence pipeline and your decision engine.
-              </p>
-
-              {/* Feature ticks */}
-              <div className="mt-8 w-full max-w-xs space-y-3 text-left">
-                {[
-                  'Five-vertical intelligence suite',
-                  'TAM / SAM / SOM market sizing',
-                  'Conscious Orbital Score & 1/0 decision',
-                ].map((f) => (
-                  <div key={f} className="flex items-center gap-2.5">
-                    <CheckCircle2 size={15} className="shrink-0 text-[#D4AF37]" />
-                    <span className="text-sm text-[#FFFFFF]">{f}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Bottom: trust badge */}
-            <div className="relative flex items-center gap-2 rounded-xl border border-[rgba(212,175,55,0.2)] bg-[#050505] px-4 py-3">
-              <ShieldCheck size={15} className="shrink-0 text-[#D4AF37]" />
-              <span className="font-mono text-[0.7rem] text-[#CFCFCF]">
-                Enterprise-grade encryption · Sovereign security
-              </span>
-            </div>
-          </div>
-
-          {/* ===== RIGHT — DARK FORM CARD ===== */}
-          <div className="relative bg-[#0E0E0E] p-8 md:p-10 text-white">
-            {/* Mobile brand header */}
-            <div className="mb-8 flex items-center justify-between lg:hidden">
-              <div className="flex items-center gap-2">
-                <OrbitBrand size={32} />
-                <span className="font-sans text-sm font-bold text-[#FFFFFF]">Conscious Orbit</span>
-              </div>
-              <button onClick={onBack} className="text-[#CFCFCF] transition hover:text-[#D4AF37]">
-                <ArrowLeft size={18} />
-              </button>
-            </div>
-
-            {/* Mode toggle */}
-            <div className="inline-flex rounded-xl border border-[rgba(212,175,55,0.25)] bg-[#050505] p-1">
-              {[
-                { id: 'signin', label: 'Sign In' },
-                { id: 'signup', label: 'Create Account' },
-              ].map((opt) => {
-                const active = mode === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => setMode(opt.id)}
-                    className={`relative rounded-lg px-5 py-2 text-sm font-medium transition cursor-pointer ${
-                      active ? 'text-[#050505] font-bold' : 'text-[#CFCFCF] hover:text-[#FFFFFF]'
-                    }`}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="auth-tab"
-                        className="absolute inset-0 rounded-lg bg-[#D4AF37] border border-[#F4D67A] shadow-xs"
-                      />
-                    )}
-                    <span className="relative z-10">{opt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Heading */}
-            <div className="mt-6">
-              <div className="flex items-center gap-2">
-                <Crown size={16} className="text-[#D4AF37]" />
-                <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#F4D67A]">
-                  {mode === 'signin' ? 'Welcome Back' : 'Join the Orbit'}
-                </span>
-              </div>
-              <h1 className="mt-2 font-sans text-3xl font-bold text-[#FFFFFF]">
-                {mode === 'signin' ? 'Sign in to your suite' : 'Create your account'}
-              </h1>
-              <p className="mt-2 text-sm text-[#CFCFCF]">
-                {mode === 'signin'
-                  ? 'Enter your credentials to access the executive dashboard.'
-                  : 'Begin your venture intelligence journey in seconds.'}
-              </p>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-              {mode === 'signup' && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="space-y-4"
-                >
-                  <FormField label="Full Name" icon={Crown}>
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="w-full space-y-3.5 my-auto">
+                {isSignUp && (
+                  <div className="space-y-1 text-left">
+                    <label className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">
+                      Full Name
+                    </label>
                     <input
                       type="text"
                       required
-                      placeholder="Your name"
-                      className={`${fieldBase} pl-11`}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="John Doe"
+                      className="w-full rounded-xl border border-[#D4AF37]/60 bg-[#FAF4E8] px-3.5 py-2 text-xs text-[#4A0A13] placeholder-[#7A1C29]/45 focus:border-[#4A0A13] focus:outline-none transition shadow-xs"
                     />
-                  </FormField>
-                </motion.div>
-              )}
+                  </div>
+                )}
 
-              <FormField label="Email Address" icon={Mail}>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="founder@venture.io"
-                  className={`${fieldBase} pl-11`}
-                />
-              </FormField>
-
-              <FormField label="Password" icon={Lock}>
-                <div className="relative">
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">
+                    Email
+                  </label>
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type="email"
                     required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    className={`${fieldBase} pl-11 pr-11`}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    className="w-full rounded-xl border border-[#D4AF37]/60 bg-[#FAF4E8] px-3.5 py-2.5 text-xs text-[#4A0A13] placeholder-[#7A1C29]/45 focus:border-[#4A0A13] focus:outline-none transition shadow-xs"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9A9A9A] transition hover:text-[#D4AF37] cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
                 </div>
-              </FormField>
 
-              {mode === 'signin' && (
-                <div className="flex items-center justify-between text-xs">
-                  <label className="flex items-center gap-2 text-[#CFCFCF] cursor-pointer">
+                <div className="space-y-1 text-left">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">
+                      Password
+                    </label>
+                    {!isSignUp && (
+                      <a
+                        href="#forgot"
+                        onClick={(e) => e.preventDefault()}
+                        className="text-[0.65rem] font-bold text-[#800000] hover:underline"
+                      >
+                        Forgot?
+                      </a>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full rounded-xl border border-[#D4AF37]/60 bg-[#FAF4E8] px-3.5 py-2.5 pr-8 text-xs text-[#4A0A13] placeholder-[#7A1C29]/45 focus:border-[#4A0A13] focus:outline-none transition shadow-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7A1C29]/60 hover:text-[#4A0A13] transition cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+
+                {isSignUp && (
+                  <div className="flex items-center gap-2 pt-0.5 text-left">
                     <input
                       type="checkbox"
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
-                      className="rounded border-[#D4AF37] bg-[#050505] text-[#D4AF37] focus:ring-[#D4AF37]"
+                      id="terms"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="h-3 w-3 rounded border-[#D4AF37] text-[#4A0A13] focus:ring-[#4A0A13] cursor-pointer"
                     />
-                    Remember me
-                  </label>
-                  <a href="#forgot" className="font-semibold text-[#F4D67A] hover:underline">
-                    Forgot password?
-                  </a>
-                </div>
-              )}
+                    <label
+                      htmlFor="terms"
+                      className="text-[0.68rem] text-[#4A0A13] cursor-pointer font-medium"
+                    >
+                      I agree to the{" "}
+                      <a
+                        href="#terms"
+                        onClick={(e) => e.preventDefault()}
+                        className="text-[#800000] underline font-bold"
+                      >
+                        Terms & Privacy
+                      </a>
+                    </label>
+                  </div>
+                )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-royal-red flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-base font-bold disabled:opacity-70 cursor-pointer mt-4"
-              >
-                {loading ? (
+                <button
+                  type="submit"
+                  className="w-full rounded-full border border-[#D4AF37] bg-[#4A0A13] hover:bg-[#5C0F1A] active:scale-[0.98] py-3 text-xs font-bold text-[#F5D77F] shadow-md transition cursor-pointer mt-1"
+                >
+                  {isSignUp ? "Sign up & Create Account" : "Sign in"}
+                </button>
+              </form>
+
+              {/* Bottom Sign up / Sign in link */}
+              <div className="text-[0.7rem] text-[#7A1C29] font-medium pt-2">
+                {isSignUp ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" /> Authenticating…
+                    Already have an account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setIsSignUp(false)}
+                      className="font-bold text-[#800000] hover:underline cursor-pointer"
+                    >
+                      Sign in
+                    </button>
                   </>
                 ) : (
                   <>
-                    {mode === 'signin' ? 'Sign In to Executive Suite' : 'Create Account'}
-                    <ArrowRight size={17} />
+                    Need an account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setIsSignUp(true)}
+                      className="font-bold text-[#800000] hover:underline cursor-pointer"
+                    >
+                      Sign up
+                    </button>
                   </>
                 )}
-              </button>
-            </form>
+              </div>
+            </div>
+
+            {/* ============================================================ */}
+            {/* BACK FACE: ADMIN SIGN IN — CARD COLOUR = MAROON              */}
+            {/* ============================================================ */}
+            <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#4A0A13] text-[#FAF4E8] rounded-3xl border border-[#D4AF37] p-6 shadow-2xl flex flex-col justify-between items-center text-center">
+              
+              {/* Card Header */}
+              <div className="space-y-1 w-full">
+                <div className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-[#F5D77F] uppercase font-mono tracking-wider bg-[#38070E] px-2.5 py-0.5 rounded-full border border-[#D4AF37]/40">
+                  <ShieldCheck size={13} className="text-[#D4AF37]" />
+                  <span>System Governance</span>
+                </div>
+                <h2 className="font-serif italic text-2xl sm:text-3xl font-extrabold text-[#FAF4E8]">
+                  Admin Sign in
+                </h2>
+                <p className="text-[0.72rem] text-[#F5D77F]/80 font-medium">
+                  Master Control & Governance Portal
+                </p>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="w-full space-y-3 my-auto">
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[0.65rem] uppercase font-bold text-[#F5D77F] tracking-wider">
+                    Admin Email / ID
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@consciousorbital.ai"
+                    className="w-full rounded-xl border border-[#D4AF37]/50 bg-[#38070E] px-3.5 py-2 text-xs text-[#FAF4E8] placeholder-[#F5D77F]/40 focus:border-[#D4AF37] focus:outline-none transition shadow-xs font-sans"
+                  />
+                </div>
+
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[0.65rem] uppercase font-bold text-[#F5D77F] tracking-wider">
+                    Master Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full rounded-xl border border-[#D4AF37]/50 bg-[#38070E] px-3.5 py-2 pr-8 text-xs text-[#FAF4E8] placeholder-[#F5D77F]/40 focus:border-[#D4AF37] focus:outline-none transition shadow-xs font-sans"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#F5D77F]/60 hover:text-[#FAF4E8] transition cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[0.65rem] uppercase font-bold text-[#F5D77F] tracking-wider flex items-center gap-1">
+                    <Lock size={10} className="text-[#D4AF37]" />
+                    <span>Security Passcode / 2FA</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={adminSecurityKey}
+                    onChange={(e) => setAdminSecurityKey(e.target.value)}
+                    placeholder="Admin Key (Optional)"
+                    className="w-full rounded-xl border border-[#D4AF37]/40 bg-[#38070E]/80 px-3.5 py-2 text-xs text-[#FAF4E8] placeholder-[#F5D77F]/40 focus:border-[#D4AF37] focus:outline-none transition shadow-xs font-mono"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full rounded-full border border-[#F5D77F] bg-gradient-to-r from-[#D4AF37] to-[#C89B3C] hover:from-[#E6C260] hover:to-[#D4AF37] active:scale-[0.98] py-2.5 text-xs font-extrabold text-[#4A0A13] shadow-lg transition cursor-pointer mt-1"
+                >
+                  Authenticate Admin
+                </button>
+              </form>
+
+              {/* Bottom Switch Link */}
+              <div className="text-[0.7rem] text-[#F5D77F]/80 font-medium pt-2">
+                Need Executive Access?{" "}
+                <button
+                  type="button"
+                  onClick={() => setIsAdmin(false)}
+                  className="font-bold text-[#F5D77F] hover:underline cursor-pointer"
+                >
+                  Sign in
+                </button>
+              </div>
+            </div>
+
           </div>
-        </motion.div>
-      </div>
+        </div>
+
+      </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 py-2 text-center text-[0.68rem] font-mono transition-colors duration-700">
+        <span className={isAdmin ? "text-[#4A0A13]/75" : "text-[#F5D77F]/75"}>
+          © 2026 Conscious Orbital · Executive &amp; System Governance
+        </span>
+      </footer>
     </div>
   );
 }
-
-function FormField({ label, icon: Icon, children }) {
-  return (
-    <div>
-      <label className="mb-1.5 block font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#F4D67A]">
-        {label}
-      </label>
-      <div className="relative">
-        <Icon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#D4AF37]" />
-        {children}
-      </div>
-    </div>
-  );
-}
-

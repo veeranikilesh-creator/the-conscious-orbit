@@ -17,6 +17,8 @@ import VentureProcessor from './components/VentureProcessor.jsx';
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from './components/VerticalEngines.jsx';
 import Homepage from './components/Homepage.jsx';
 import Login from './components/Login.jsx';
+import Contact from './components/Contact.jsx';
+import ExecutiveDashboard from './components/ExecutiveDashboard.jsx';
 
 /* ============================================================
    THE CONSCIOUS ORBIT — Ultra-Luxury Red & Gold Executive Workspace
@@ -125,7 +127,26 @@ function App() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <Homepage onEnter={() => setPage('dashboard')} onLogin={() => setPage('login')} />
+          <Homepage
+            onEnter={() => setPage('dashboard')}
+            onLogin={() => setPage('login')}
+            onContact={() => setPage('contact')}
+          />
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+  if (page === 'contact') {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="contact"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Contact onBack={() => setPage('home')} />
         </motion.div>
       </AnimatePresence>
     );
@@ -147,140 +168,20 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-royal-mesh text-[#111827] flex flex-col w-full">
-      {/* ============ MAIN WORKSPACE ============ */}
-      <main className="flex-1 overflow-x-hidden flex flex-col w-full">
-        {/* TOPBAR — Sticky Executive Navbar */}
-        <Topbar
-          verticals={VERTICALS}
-          activeVertical={activeVerticalObj}
-          setActiveVertical={setActiveVertical}
-          goHome={() => setPage('home')}
-          onProfileClick={() => setPage('login')}
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="dashboard"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <ExecutiveDashboard
+          onLogout={() => setPage('home')}
+          onGoHome={() => setPage('home')}
         />
-
-        <div className="flex-1 mx-auto w-full max-w-7xl space-y-12 px-6 py-8 md:px-10">
-          {/* SCREEN 1: HERO CARD */}
-          <VerticalHero vertical={activeVerticalObj} onOpenGenerate={() => setIsGenModalOpen(true)} />
-
-          {/* SCREEN 2: NAVIGATION TABS */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <MainViewTabs mainView={mainView} setMainView={setMainView} />
-            <AiPulseBadge label="AI Co-Pilot Telemetry Active" />
-          </div>
-
-          {/* SCREEN 3: PRIMARY WORKSPACE (PIPELINE / INTAKE / BOARD) */}
-          <div className="space-y-10">
-            {/* ---------- PIPELINE VIEW ---------- */}
-            {mainView === 'pipeline' && <VentureProcessor />}
-
-            {/* ---------- INTAKE VIEW ---------- */}
-            {mainView === 'intake' && (
-              <>
-                {activeVertical === 'startups' && (
-                  <>
-                    <ThreeLayerEngine
-                      activeCluster={activeCluster}
-                      setActiveCluster={setActiveCluster}
-                      selectedTracks={selectedTracks}
-                      toggleTrack={toggleTrack}
-                      customPicks={customPicks}
-                      toggleCustom={toggleCustom}
-                      onGenerate={() => setIsGenModalOpen(true)}
-                    />
-                    <div className="mt-10 flex items-center gap-4">
-                      <div className="h-px flex-1 bg-[rgba(212,175,55,0.12)]" />
-                      <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">Function Engine</span>
-                      <div className="h-px flex-1 bg-[rgba(212,175,55,0.12)]" />
-                    </div>
-                    <StartupMarketEngine />
-                  </>
-                )}
-                {activeVertical === 'msmes' && <MsmeOptimizationEngine />}
-                {activeVertical === 'industries' && <IndustryAnalysisEngine />}
-                {(activeVertical === 'students' || activeVertical === 'institutions') && (
-                  <GenericVerticalPanel vertical={activeVerticalObj} />
-                )}
-              </>
-            )}
-
-            {/* ---------- BOARD VIEW ---------- */}
-            {mainView === 'board' && (
-              <KanbanBoard
-                reports={reports}
-                columns={KANBAN_COLUMNS}
-                moveReport={moveReport}
-                expandedReport={expandedReport}
-                setExpandedReport={setExpandedReport}
-                onGenerate={() => setIsGenModalOpen(true)}
-              />
-            )}
-          </div>
-
-          {/* SCREEN 4: AI INTELLIGENCE CENTER (LOWER SCROLL SECTION) */}
-          <section className="pt-8 space-y-8 border-t border-[rgba(212,175,55,0.12)]">
-            <div className="flex items-center gap-2">
-              <Sparkles size={18} className="text-[#D4AF37]" />
-              <div>
-                <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
-                  Neural Telemetry &amp; Insights
-                </span>
-                <h3 className="font-sans text-2xl font-bold text-[#F8F8F8]">AI Intelligence Center</h3>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
-              {/* Startups Neural Read */}
-              <div className="lg:col-span-7">
-                <AiInsightWidget verticalName={activeVerticalObj?.name} />
-              </div>
-
-              {/* Executive Recommendations & Risk Signals */}
-              <div className="lg:col-span-5">
-                <GlassPanel className="p-5 space-y-4 border-[rgba(212,175,55,0.12)] bg-[#151515] text-white rounded-[22px]">
-                  <div className="flex items-center gap-2">
-                    <Zap size={16} className="text-[#D4AF37]" />
-                    <h4 className="font-sans text-base font-bold text-[#F8F8F8]">Executive Recommendations</h4>
-                  </div>
-                  <p className="text-xs text-[#9A9A9A]">Opportunity signals &amp; risk detection for {activeVerticalObj?.name}.</p>
-                  <div className="space-y-2 pt-1">
-                    {[
-                      { label: 'Synthesize Market Fit', desc: 'Auto-map TAM/SAM/SOM whitespace' },
-                      { label: 'Audit Bottlenecks', desc: 'Isolate single points of operational failure' },
-                      { label: 'Generate Pitch Narrative', desc: 'Format investor-ready deck & financial ask' },
-                    ].map((act) => (
-                      <button
-                        key={act.label}
-                        onClick={() => setIsGenModalOpen(true)}
-                        className="group flex w-full items-center justify-between rounded-xl border border-[rgba(212,175,55,0.12)] bg-[#1B1B1B] p-3 text-left transition hover:border-[#D4AF37] hover:scale-[1.01] cursor-pointer"
-                      >
-                        <div>
-                          <p className="text-xs font-bold text-[#F8F8F8] group-hover:text-[#D4AF37] transition">{act.label}</p>
-                          <p className="font-mono text-[0.62rem] text-[#9A9A9A]">{act.desc}</p>
-                        </div>
-                        <ChevronRight size={14} className="text-[#D4AF37] transition group-hover:translate-x-1" />
-                      </button>
-                    ))}
-                  </div>
-                </GlassPanel>
-              </div>
-            </div>
-          </section>
-        </div>
-      </main>
-
-      {/* ============ GENERATE REPORT MODAL ============ */}
-      <AnimatePresence>
-        {isGenModalOpen && (
-          <GenerateReportModal
-            onClose={() => setIsGenModalOpen(false)}
-            onConfirm={handleGenerate}
-            loading={isGenerating}
-            vertical={activeVerticalObj}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 

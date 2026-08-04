@@ -11,18 +11,18 @@ import DarkVeil from './DarkVeil.jsx';
 // Layered Luxury Background with Subtle Gold Orbs & Black Overlay
 export function RoyalBackground({ hueShift = 0, speed = 0.25, opacity = 0.25, className = '' }) {
   return (
-    <div className={`pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#050505] ${className}`}>
-      {/* Soft Radial Gold Glow Orbs */}
-      <div className="absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full bg-[#D4AF37]/10 blur-[140px]" />
-      <div className="absolute right-0 top-1/3 h-[500px] w-[500px] rounded-full bg-[#F4D67A]/08 blur-[150px]" />
-      <div className="absolute bottom-0 left-1/3 h-[500px] w-[500px] rounded-full bg-[#C89B3C]/06 blur-[160px]" />
+    <div className={`pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#FAF4E8] ${className}`}>
+      {/* Soft Radial Gold & Burgundy Glow Orbs */}
+      <div className="absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full bg-[#D4AF37]/15 blur-[140px]" />
+      <div className="absolute right-0 top-1/3 h-[500px] w-[500px] rounded-full bg-[#F5D77F]/12 blur-[150px]" />
+      <div className="absolute bottom-0 left-1/3 h-[500px] w-[500px] rounded-full bg-[#4A0A13]/06 blur-[160px]" />
 
       {/* WebGL Shader Ambient Layer */}
-      <div className="absolute inset-0" style={{ opacity: opacity * 0.4 }}>
+      <div className="absolute inset-0" style={{ opacity: opacity * 0.25 }}>
         <DarkVeil hueShift={hueShift} speed={speed} resolutionScale={0.75} />
       </div>
-      {/* Dark Translucent Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/95 via-[#0E0E0E]/90 to-[#050505]/95" />
+      {/* Translucent Cream Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FAF4E8]/95 via-[#F5EAD4]/90 to-[#FAF4E8]/95" />
     </div>
   );
 }

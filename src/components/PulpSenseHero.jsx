@@ -1,174 +1,214 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Zap, ArrowRight, PhoneCall } from 'lucide-react';
+import { Play, ArrowRight, Sparkles, GraduationCap, School, Factory, Building2, Rocket } from 'lucide-react';
+import { OrbitBrand } from './ui.jsx';
+import { HeroParallax } from './ui/hero-parallax.jsx';
 
 /* ============================================================
-   PULPSENSE — Black & Gold Executive Hero Section
+   DOMAIN CARDS DATA & GEOMETRY PATTERNS FOR PARALLAX
    ============================================================ */
 
+const PatternStudents = () => (
+  <svg className="w-full h-full opacity-15 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <circle cx="200" cy="120" r="70" strokeWidth="1" />
+    <polygon points="200,70 240,95 200,120 160,95" strokeWidth="1" fill="rgba(212,175,55,0.03)" />
+  </svg>
+);
+
+const PatternInstitutions = () => (
+  <svg className="w-full h-full opacity-15 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <rect x="100" y="60" width="200" height="120" rx="12" strokeWidth="1" />
+    <circle cx="200" cy="120" r="24" strokeWidth="1" fill="rgba(212,175,55,0.03)" />
+  </svg>
+);
+
+const PatternMSMEs = () => (
+  <svg className="w-full h-full opacity-15 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <path d="M80 160 L160 110 L240 135 L320 80" strokeWidth="1.5" strokeLinecap="round" />
+    <circle cx="320" cy="80" r="4" fill="#D4AF37" />
+  </svg>
+);
+
+const PatternIndustries = () => (
+  <svg className="w-full h-full opacity-15 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <polygon points="200,40 300,100 300,170 200,200 100,170 100,100" strokeWidth="1" />
+  </svg>
+);
+
+const PatternStartups = () => (
+  <svg className="w-full h-full opacity-15 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <ellipse cx="200" cy="120" rx="120" ry="50" strokeWidth="1" transform="rotate(-15 200 120)" />
+    <circle cx="200" cy="120" r="18" fill="rgba(212,175,55,0.05)" strokeWidth="1" />
+  </svg>
+);
+
+const DOMAIN_CARDS_DATA = [
+  {
+    title: 'Students & Scholars',
+    icon: GraduationCap,
+    description: 'Academic counseling, research mentorship, thesis guidance, and career trajectory mapping.',
+    capabilities: ['Academic Counseling', 'Publication Mentorship'],
+    patternComponent: PatternStudents
+  },
+  {
+    title: 'Educational Institutions',
+    icon: School,
+    description: 'Curriculum optimization, organizational diagnosis, accreditation alignment, and digital transformation.',
+    capabilities: ['Curriculum Diagnosis', 'Accreditation Pipelines'],
+    patternComponent: PatternInstitutions
+  },
+  {
+    title: 'MSMEs',
+    icon: Factory,
+    description: 'Operational bottleneck diagnostics, capacity building, unit economic sizing, and market expansion.',
+    capabilities: ['Bottleneck Audit', 'Unit Payback Sizing'],
+    patternComponent: PatternMSMEs
+  },
+  {
+    title: 'Industries',
+    icon: Building2,
+    description: 'Large-scale systemic optimization, innovation pipelines, strategic partnerships, and enterprise risk.',
+    capabilities: ['Systemic Optimization', 'Regulatory Risk Matrix'],
+    patternComponent: PatternIndustries
+  },
+  {
+    title: 'Startups',
+    icon: Rocket,
+    description: 'Market validation, TAM/SAM sizing, pricing strategy, GTM readiness, and investor positioning.',
+    capabilities: ['Customer Discovery', 'Orbital Score Verdict'],
+    patternComponent: PatternStartups
+  }
+];
+
+const NAV_ITEMS = [
+  { label: 'Home', target: 'hero' },
+  { label: 'Domains', target: 'domains' },
+  { label: 'Strategic Framework', target: 'framework' },
+  { label: 'How It Works', target: 'how-it-works' },
+  { label: 'Contact', target: 'contact' },
+];
+
 export default function PulpSenseHero({ onBookCall, onViewServices }) {
-  const avatarImages = [
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
-  ];
+  const scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-  return (
-    <div className="w-full bg-[#050505] p-4 sm:p-6 md:p-10 font-sans text-[#FFFFFF] min-h-screen flex items-center justify-center">
-      {/* Outer Rounded Container with 28px radius & Gold Radial Glow */}
-      <div className="relative w-full max-w-7xl overflow-hidden rounded-[28px] border border-[rgba(212,175,55,0.25)] bg-[#0E0E0E] shadow-2xl transition-all duration-300">
-
+  const HeaderComponent = (
+    <div className="w-full" id="hero">
+      {/* ================= 1. TOP NAVIGATION HEADER ================= */}
+      <header className="relative z-20 flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto w-full pt-4 px-4 sm:px-6 md:px-12 gap-4">
         
-        {/* Soft Radial Background Glow at the bottom */}
-        <div 
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[480px] w-full opacity-40"
-          style={{
-            background: 'radial-gradient(ellipse at bottom, rgba(212, 175, 55, 0.18) 0%, rgba(200, 155, 60, 0.08) 35%, rgba(14, 14, 14, 0) 75%)'
-          }}
-        />
+        {/* Left: Brand Logo */}
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => scrollToSection('hero')}>
+          <OrbitBrand size={36} />
+          <span className="text-[#C89B3C] font-light text-base hidden sm:inline">–</span>
+          <span className="font-mono text-xs font-extrabold uppercase tracking-[0.25em] text-[#B8860B]">
+            THE CONSCIOUS ORBIT
+          </span>
+        </div>
 
-        {/* Ambient Top Glow Dots */}
-        <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-[#D4AF37]/10 blur-[90px]" />
-        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[#F4D67A]/08 blur-[90px]" />
-
-        {/* ================= FLOATING GLASS NAVBAR ================= */}
-        <nav className="relative z-20 flex items-center justify-between px-6 py-5 md:px-10 md:py-6 border-b border-[rgba(212,175,55,0.18)] bg-[#0E0E0E]/85 backdrop-blur-xl">
-          {/* Left: Logo */}
-          <div className="flex items-center gap-2.5 cursor-pointer group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-[#D4AF37] to-[#F4D67A] text-[#050505] shadow-[0_0_15px_rgba(212,175,55,0.3)] group-hover:scale-105 transition-transform border border-[#D4AF37]">
-              <Zap size={20} className="fill-[#050505] text-[#050505]" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-[#FFFFFF] font-sans">
-              Pulp<span className="text-[#D4AF37]">Sense</span>
-            </span>
-          </div>
-
-          {/* Center Navigation Links */}
-          <div className="hidden items-center gap-1 rounded-full border border-[rgba(212,175,55,0.25)] bg-[#111111]/90 px-4 py-1.5 backdrop-blur-md md:flex">
-            {['Testimonials', 'Services', 'Case Studies', 'Process', 'Contact'].map((link) => (
-              <a
-                key={link}
-                href={`#${link.toLowerCase().replace(/\s+/g, '')}`}
-                className="rounded-full px-3.5 py-1.5 text-xs font-medium text-[#CFCFCF] transition-all hover:bg-[#050505] hover:text-[#D4AF37]"
-              >
-                {link}
-              </a>
-            ))}
-          </div>
-
-          {/* Right: Gold CTA button */}
-          <button
-            onClick={onBookCall}
-            className="btn-royal-red group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-5 py-2.5 text-xs font-bold text-[#050505] shadow-[0_0_20px_rgba(212,175,55,0.3)] cursor-pointer"
-          >
-            <span>Book Your Call</span>
-            <PhoneCall size={14} className="transition-transform group-hover:rotate-12" />
-          </button>
+        {/* Center: Simple Minimal Navigation Links */}
+        <nav className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 lg:gap-10 py-1">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => scrollToSection(item.target)}
+              className="group relative text-xs sm:text-sm font-semibold text-[#4A0A13] hover:text-[#7A1C29] transition-colors cursor-pointer whitespace-nowrap py-1 tracking-wide"
+            >
+              <span>{item.label}</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#D4AF37] transition-all duration-300 group-hover:w-full" />
+            </button>
+          ))}
         </nav>
 
-        {/* ================= HERO CONTENT (CENTERED) ================= */}
-        <div className="relative z-10 flex flex-col items-center justify-center px-6 pb-20 pt-10 text-center md:px-12 md:pb-28 md:pt-14">
-          
-          {/* Small Badge — Gold Border & Black Pill with Gold Text */}
-          <motion.h6
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,175,55,0.4)] bg-[#111111] px-5 py-2 text-xs sm:text-sm font-bold text-[#F4D67A] shadow-[0_0_15px_rgba(212,175,55,0.2)] backdrop-blur-sm"
+        {/* Right: Executive Profile Button */}
+        <button
+          type="button"
+          onClick={onViewServices || onBookCall}
+          className="hidden lg:flex items-center gap-2.5 rounded-full bg-[#400A12] hover:bg-[#5C0F1A] px-4 py-2 text-xs font-bold text-[#FFFFFF] shadow-md transition-all cursor-pointer"
+        >
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FAF4E8] text-[#400A12] font-mono text-[0.65rem] font-bold">
+            EX
+          </div>
+          <span className="font-sans text-xs font-bold tracking-wide">
+            Executive Profile
+          </span>
+        </button>
+      </header>
+
+      {/* ================= 2. CENTERED HERO CONTENT ================= */}
+      <main className="relative z-10 flex flex-col items-center justify-center text-center max-w-5xl mx-auto pt-12 md:pt-16 pb-8 px-6">
+        
+        {/* Centered Pill Badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/80 bg-[#FAF4E8]/80 px-5 py-1.5 text-[0.7rem] sm:text-xs font-bold uppercase tracking-[0.22em] text-[#7A1C29] shadow-xs backdrop-blur-md mb-8"
+        >
+          <Sparkles size={14} className="text-[#D4AF37]" />
+          <span>SYSTEMIC SOVEREIGNTY & AI INTELLIGENCE</span>
+        </motion.div>
+
+        {/* Headline — Serif Italic Luxury Typography */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="font-serif italic font-medium tracking-tight text-5xl sm:text-7xl lg:text-8xl leading-[1.08] text-center"
+        >
+          <span className="block bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#E6C260] bg-clip-text text-transparent drop-shadow-[0_4px_25px_rgba(212,175,55,0.4)]">
+            Grow your business,
+          </span>
+          <span className="block text-[#4A0A13] drop-shadow-[0_4px_16px_rgba(74,10,19,0.15)] mt-1 sm:mt-3">
+            not your payroll
+          </span>
+        </motion.h1>
+
+        {/* Dual CTA Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5 w-full sm:w-auto"
+        >
+          {/* Primary Gold CTA */}
+          <button
+            type="button"
+            onClick={onViewServices || onBookCall}
+            className="group flex w-full sm:w-auto items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#C89B3C] to-[#B8860B] hover:from-[#E6C260] hover:to-[#C89B3C] px-8 py-3.5 text-sm font-bold text-[#4A0A13] shadow-[0_6px_25px_rgba(200,155,60,0.35)] transition-all cursor-pointer"
           >
-            <span className="text-[#D4AF37] font-black">⚡</span>
-            <span className="font-bold uppercase tracking-wider">AI Automation Engine</span>
-          </motion.h6>
+            <Play size={14} className="fill-[#4A0A13] text-[#4A0A13]" />
+            <span>Start your journey</span>
+            <span className="text-xs font-black">›</span>
+          </button>
 
-          {/* Large Minimal & Elegant Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mt-6 max-w-4xl font-sans text-4xl font-extrabold tracking-tight text-[#FFFFFF] sm:text-6xl lg:text-7xl leading-[1.12]"
+          {/* Secondary White/Gold Bordered CTA */}
+          <button
+            type="button"
+            onClick={onViewServices || onBookCall}
+            className="flex w-full sm:w-auto items-center justify-center gap-2.5 rounded-full border border-[#D4AF37] bg-[#FAF4E8] hover:bg-[#F5EAD4] px-8 py-3.5 text-sm font-bold text-[#4A0A13] shadow-xs transition-all cursor-pointer"
           >
-            Grow your business, <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-[#FFFFFF] via-[#F4D67A] to-[#D4AF37] bg-clip-text text-transparent font-bold">
-              not your payroll
-            </span>
-          </motion.h1>
+            <span>Sign In Executive Profile</span>
+            <ArrowRight size={14} className="text-[#4A0A13]" />
+          </button>
+        </motion.div>
 
-          {/* Subheading Tagline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="mt-5 max-w-2xl text-sm font-medium text-[#CFCFCF] sm:text-base md:text-lg leading-relaxed"
-          >
-            Put your client acquisition, operations, and{' '}
-            <span className="relative inline-block font-semibold text-[#FFFFFF]">
-              the daily grind on autopilot
-              {/* Gold gradient underline */}
-              <span className="absolute -bottom-1 left-0 h-[2px] w-full rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F4D67A] to-[#10B981]" />
-            </span>
-          </motion.p>
+      </main>
+    </div>
+  );
 
-          {/* Dual Action Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-            className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
-          >
-            {/* Primary Button */}
-            <button
-              onClick={onBookCall}
-              className="btn-royal-red group flex w-full items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold text-[#050505] shadow-md cursor-pointer sm:w-auto"
-            >
-              <span>Book Your Call</span>
-              <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-            </button>
+  return (
+    <div className="relative w-full bg-[#FAF4E8] text-[#4A0E17] font-sans overflow-hidden selection:bg-[#D4AF37] selection:text-[#FAF4E8]">
+      {/* Background Soft Lighting Radial Glow */}
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_20%,rgba(245,215,127,0.3)_0%,rgba(250,244,232,0)_65%)]" />
 
-            {/* Secondary Button */}
-            <button
-              onClick={onViewServices}
-              className="btn-royal-gold-outline flex w-full items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold cursor-pointer sm:w-auto"
-            >
-              <span>View Services</span>
-            </button>
-          </motion.div>
-
-          {/* Overlapping Profile Avatars & Social Proof */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.45 }}
-            className="mt-12 flex items-center justify-center gap-3"
-          >
-            {/* Avatar stack */}
-            <div className="flex -space-x-3 overflow-hidden">
-              {avatarImages.map((src, idx) => (
-                <img
-                  key={idx}
-                  src={src}
-                  alt={`Client avatar ${idx + 1}`}
-                  className="inline-block h-9 w-9 rounded-full ring-2 ring-[#D4AF37]/50 object-cover"
-                />
-              ))}
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#111111] font-mono text-[0.68rem] font-bold text-[#D4AF37] ring-2 ring-[#D4AF37]/50">
-                +499
-              </div>
-            </div>
-
-            {/* Caption */}
-            <div className="text-left text-xs text-[#9A9A9A]">
-              <span className="font-semibold text-[#FFFFFF]">Trusted by 100+ businesses</span>
-              <br />
-              <span>scaling on autopilot</span>
-            </div>
-          </motion.div>
-
-        </div>
-      </div>
+      {/* Hero Parallax with 5 Main Domain Cards */}
+      <HeroParallax products={DOMAIN_CARDS_DATA} headerComponent={HeaderComponent} />
     </div>
   );
 }
-
-
