@@ -52,34 +52,28 @@ So identical frontend calls produce a real analysis against `server/` and a rand
 
 React 19 + Vite 8, JavaScript only (`.jsx`, no TypeScript). Tailwind CSS v4 via the `@tailwindcss/vite` plugin — there is **no `tailwind.config.js`**; Tailwind is pulled in with `@import "tailwindcss"` at the top of `src/index.css` and all customization lives in that file as plain CSS. Default breakpoints only, so **there is no `xs:`** — writing one silently yields a permanently-hidden element. `framer-motion` for animation, `lenis` for smooth scrolling, `lucide-react` for icons, `ogl` for the WebGL shader background. Lint config is `.oxlintrc.json` (oxlint with the `react` and `oxc` plugins; only `react/rules-of-hooks` and `react/only-export-components` are configured).
 
-Data fetching lives entirely in `src/api.js`; nothing else in `src/` calls `fetch()`.
-
-**The API is optional by design.** `App.jsx` probes health on mount and sets `apiStatus` to `'online'` or `'offline'`. When offline — no `VITE_API_URL`, server down, CORS refused — Generate falls back to the original local simulation and the board moves cards in local state. This is what keeps the static Netlify build working with no backend attached, so don't remove the fallback paths when adding API calls.
+**The current UI does not call the API.** In 2026-08 the entire frontend was replaced wholesale with the redesigned UI from `github.com/Nehal-1826/Conscious-orbit` (deployed preview: ui-conscious.vercel.app), imported deliberately as a verbatim copy with no functional changes. That UI is self-contained: every dashboard holds its own seed data and simulates actions with `setTimeout`. `src/api.js` — the previous, fully tested integration layer (endpoint wrappers, `buildModuleInputs()`, `generateReportViaApi()`, dual-backend health/error normalisation) — **was kept but nothing imports it**. Wiring the new UI to a backend means importing from `src/api.js`, not writing new fetch code; its `checkHealth()` already handles both backends' payload shapes.
 
 ### Routing and auth
 
-No router. A single `page` string in `App.jsx` state (`'home' | 'login' | 'dashboard'`), switched by early `return`s wrapped in `AnimatePresence`. Navigation happens by passing callbacks down (`onEnter`, `onLogin`, `onBack`, `goHome`). Adding a URL-driven route means restructuring this state machine.
-
-Login is still a `setTimeout` simulation with **no real authentication**. It does carry a `portalRole` (`'user' | 'admin'`) out through `onLogin(role)`, which sets `userRole` and picks the landing view — `'intake'` for users, `'pipeline'` for admins. `userRole` then gates UI affordances throughout the dashboard. Nothing server-side enforces any of it; every backend endpoint is open.
+No router. A single `page` string in `App.jsx` state (`'home' | 'contact' | 'login' | 'admin-dashboard' | 'dashboard'`), switched by early `return`s wrapped in `AnimatePresence`. Login is a UI simulation (**no real authentication**): an Executive/Admin flip-card toggle calls `onLogin('admin' | 'executive')`, which routes to `AdminDashboard` or `ExecutiveDashboard`. The admin card asks for a "security key" but nothing validates it.
 
 ### Dashboard structure
 
-Two orthogonal selectors drive everything:
+The two dashboards are **self-contained monoliths** — they take only `onLogout`/`onGoHome` props and own all their state internally:
 
-- `activeVertical` — one of the five `VERTICALS` (students, institutions, msmes, industries, startups), chosen from the scroll-velocity marquee in `Topbar`.
-- `mainView` — `'pipeline' | 'intake' | 'board'`, chosen from `MainViewTabs`.
+- `src/components/ExecutiveDashboard.jsx` (~1400 lines) — the user portal: projects, query desk, intelligence modules, tracking; seed data at the top (`INITIAL_MY_PROJECTS`, `INITIAL_QUERIES`, `INITIAL_INTELLIGENCE_MODULES`), submission/analysis flows simulated with staged `setTimeout`s.
+- `src/components/AdminDashboard.jsx` (~1200 lines) — the admin console: the ten modules, client profiles, project registrations, reports, tickets, each with its own filter state and seed constants.
 
-`mainView` picks the panel; inside the intake panel `activeVertical` picks the engine (`StartupMarketEngine`, `MsmeOptimizationEngine`, `IndustryAnalysisEngine`, or `GenericVerticalPanel`). Adding a vertical means touching both `VERTICALS` in `src/constants.js` and the conditional dispatch in `App.jsx`.
-
-Intake forms are **controlled from `App.jsx`** (`profile` / `clusters` state plus `setProfileField` / `setClusterField`), so values survive cluster-tab switches and are read by `handleGenerate` to compose the new report. Don't reintroduce local form state inside the engine components.
+`App.jsx` (~1000 lines) still carries the older dashboard shell (VERTICALS marquee, cluster tabs, Kanban, `SEED_REPORTS`) below its routing — most of it unreachable now that login routes to the two dashboard components. Treat that residue as theirs; confirm before pruning it.
 
 ### Frontend files
 
-- `src/constants.js` — `VERTICALS` and `REPORT_STATUSES`, shared by `App.jsx` and `Homepage.jsx`.
-- `src/App.jsx` (~1300 lines) — page routing, dashboard shell, plus inline components: `Topbar`, `ScrollVelocityRow`, `DomainScrollRow`, `MainViewTabs`, `VerticalHero`, `ThreeLayerEngine`, `GenericVerticalPanel`, `KanbanBoard`, `GenerateReportModal`. Domain constants (`CLUSTER_TABS`, `FLAGSHIP_TRACKS`, `KANBAN_COLUMNS`, `INDUSTRY_SECTORS`, `SEED_REPORTS`) sit at the top.
-- `src/components/ui.jsx` — design-system primitives every other file imports: `GlassPanel`, `RoyalButton`, `GhostButton`, `Field`/`Input`/`Textarea`/`Select` (sharing the exported `fieldBase` class string), `StatusBadge`/`StatusDot`, `OrbitBrand`, `RoyalBackground`. Compose these rather than re-inventing panel/button markup.
-- `src/components/VerticalEngines.jsx` — the three per-vertical calculators; the TAM/SAM/SOM derivation (`useMemo` in `StartupMarketEngine`) is the only real logic on the frontend. Channel-mix coverage is deliberately capped at 100% so SOM cannot exceed SAM.
-- `src/components/DarkVeil.jsx` — OGL/WebGL CPPN shader, mounted through `RoyalBackground`. Heavy; DPR is capped at 1 below 768px, and it releases the GL context on unmount.
+- `src/components/ui.jsx` — design-system primitives (`GlassPanel`, `RoyalButton`, `Field`/`Input`/`Select`, `StatusBadge`, `OrbitBrand`…). Compose these rather than re-inventing panel/button markup. Note `src/components/ui/` (lowercase dir) is a *different thing* — shadcn-style pieces (`badge`, `card-carousel`, `hero-parallax`, `sticky-scroll-reveal`) using `class-variance-authority` and `swiper`.
+- `src/components/Homepage.jsx`, `Contact.jsx` — public pages.
+- `src/components/VerticalEngines.jsx` — the three per-vertical calculators; the TAM/SAM/SOM derivation is the only real logic on the frontend.
+- `src/components/DarkVeil.jsx` / `LiquidEther.jsx` — OGL/WebGL background shaders (heavy; DarkVeil releases the GL context on unmount).
+- `src/api.js` — the orphaned API client described above.
 
 ### Styling conventions
 

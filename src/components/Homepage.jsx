@@ -1,221 +1,238 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  Crown, ArrowRight, ShieldCheck, Play,
+  GraduationCap, School, Factory, Building2, Rocket, Crown,
+  ArrowRight, Sparkles, ShieldCheck, Search,
+  Play, BarChart2, Cpu, GitMerge, Gauge, Binary,
+  TrendingUp, Target, Calculator, Lightbulb,
 } from 'lucide-react';
 import {
   RoyalButton, GhostButton, OrbitBrand, RoyalBackground,
 } from './ui.jsx';
-import { VERTICALS } from '../constants.js';
+import { Carousel, Card } from './AppleCardsCarousel.jsx';
+import { CardCarousel } from './ui/card-carousel.jsx';
+import PulpSenseHero from './PulpSenseHero.jsx';
 
 /* ============================================================
-   BLACK & GOLD EXECUTIVE MINIMALIST HOME EXPERIENCE
+   ABSTRACT SVG GEOMETRY ARTWORK COMPONENTS FOR DOMAIN CARDS
    ============================================================ */
 
+const PatternStudents = () => (
+  <svg className="w-full h-full opacity-35 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <circle cx="200" cy="120" r="80" strokeWidth="1" strokeDasharray="4 4" />
+    <path d="M120 120 L280 120 M200 40 L200 200" strokeWidth="1" opacity="0.6" />
+    <polygon points="200,60 250,90 200,120 150,90" strokeWidth="1.5" fill="rgba(212,175,55,0.05)" />
+    <circle cx="150" cy="90" r="4" fill="#F4D67A" />
+    <circle cx="250" cy="90" r="4" fill="#F4D67A" />
+    <circle cx="200" cy="60" r="4" fill="#F4D67A" />
+  </svg>
+);
+
+const PatternInstitutions = () => (
+  <svg className="w-full h-full opacity-35 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <rect x="80" y="50" width="240" height="140" rx="16" strokeWidth="1" strokeDasharray="6 6" />
+    <path d="M110 90 L290 90 M110 130 L290 130 M110 170 L290 170" strokeWidth="1" opacity="0.5" />
+    <path d="M150 50 L150 190 M250 50 L250 190" strokeWidth="1.5" />
+    <circle cx="200" cy="110" r="28" strokeWidth="1.5" fill="rgba(212,175,55,0.08)" />
+  </svg>
+);
+
+const PatternMSMEs = () => (
+  <svg className="w-full h-full opacity-35 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <path d="M60 180 L140 120 L220 150 L340 70" strokeWidth="2" strokeLinecap="round" />
+    <circle cx="140" cy="120" r="5" fill="#D4AF37" />
+    <circle cx="220" cy="150" r="5" fill="#D4AF37" />
+    <circle cx="340" cy="70" r="6" fill="#F4D67A" />
+    <rect x="100" y="80" width="80" height="80" rx="12" strokeWidth="1" strokeDasharray="4 4" />
+    <rect x="220" y="60" width="100" height="100" rx="16" strokeWidth="1" opacity="0.6" />
+  </svg>
+);
+
+const PatternIndustries = () => (
+  <svg className="w-full h-full opacity-35 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <polygon points="200,30 320,100 320,180 200,210 80,180 80,100" strokeWidth="1.5" />
+    <polygon points="200,70 270,115 270,165 200,185 130,165 130,115" strokeWidth="1" strokeDasharray="3 3" />
+    <path d="M200 30 L200 210 M80 100 L320 180 M80 180 L320 100" strokeWidth="1" opacity="0.4" />
+  </svg>
+);
+
+const PatternStartups = () => (
+  <svg className="w-full h-full opacity-35 stroke-[#D4AF37]" viewBox="0 0 400 240" fill="none">
+    <ellipse cx="200" cy="120" rx="140" ry="60" strokeWidth="1.5" transform="rotate(-15 200 120)" />
+    <ellipse cx="200" cy="120" rx="140" ry="60" strokeWidth="1" strokeDasharray="6 6" transform="rotate(30 200 120)" />
+    <circle cx="200" cy="120" r="24" fill="rgba(212,175,55,0.12)" strokeWidth="2" />
+    <circle cx="310" cy="90" r="5" fill="#F4D67A" />
+  </svg>
+);
+
+const DOMAIN_CARDS_DATA = [
+  {
+    title: 'Students & Scholars',
+    icon: GraduationCap,
+    description: 'Academic counseling, research mentorship, thesis guidance, and career trajectory mapping.',
+    capabilities: [
+      'Personalized Academic Counseling',
+      'Research & Publication Mentorship',
+      'Thesis & Capstone Strategy',
+      'Global Scholarship Pathing'
+    ],
+    patternComponent: PatternStudents
+  },
+  {
+    title: 'Educational Institutions',
+    icon: School,
+    description: 'Curriculum optimization, organizational diagnosis, accreditation alignment, and digital transformation.',
+    capabilities: [
+      'Curriculum Benchmarking & Diagnosis',
+      'Accreditation Compliance Pipelines',
+      'Faculty Workflow Optimization',
+      'Institutional Governance Analytics'
+    ],
+    patternComponent: PatternInstitutions
+  },
+  {
+    title: 'MSMEs',
+    icon: Factory,
+    description: 'Operational bottleneck diagnostics, capacity building, unit economic sizing, and market expansion.',
+    capabilities: [
+      'Operational Bottleneck Audit',
+      'Gross Margin & Cash Payback Sizing',
+      'Supply-Chain Logistics Efficiency',
+      'Local-to-Regional Scalability Engine'
+    ],
+    patternComponent: PatternMSMEs
+  },
+  {
+    title: 'Industries',
+    icon: Building2,
+    description: 'Large-scale systemic optimization, innovation pipelines, strategic partnerships, and enterprise risk.',
+    capabilities: [
+      'Enterprise Systemic Optimization',
+      'Cross-Sector Innovation Architecture',
+      'Regulatory Risk Mitigation Matrix',
+      'Strategic M&A & Joint Venture Readiness'
+    ],
+    patternComponent: PatternIndustries
+  },
+  {
+    title: 'Startups',
+    icon: Rocket,
+    description: 'Market validation, TAM/SAM sizing, pricing strategy, GTM readiness, and investor positioning.',
+    capabilities: [
+      'Market Signal & Customer Discovery',
+      'TAM / SAM Volume Sizing',
+      '0-100 Orbital Index Score',
+      'Binary 1 / 0 Investor Deck Verdict'
+    ],
+    patternComponent: PatternStartups
+  }
+];
+
 const PIPELINE_STEPS = [
-  { n: '01', title: 'Customer Discovery', desc: 'Raw idea statements & volume signals' },
-  { n: '02', title: 'Profiling & TAM/SAM', desc: 'Sector profiling & market volume sizing' },
-  { n: '03', title: 'Unit Viability',     desc: 'Gross margin & payback calculations' },
-  { n: '04', title: 'Orbital Decision',   desc: '0-100 Score & binary 1/0 GO verdict' },
+  {
+    n: '01',
+    title: 'Raw Ideas',
+    desc: 'Capture unstructured opportunities, founder insights, customer pain points, and emerging market signals. Every idea is documented, filtered, and prepared for strategic evaluation before entering the validation pipeline.',
+    icon: TrendingUp,
+  },
+  {
+    n: '02',
+    title: 'Market Sizing',
+    desc: 'Assess the total addressable market, competitive landscape, customer demand, growth potential, and positioning to determine whether the opportunity has meaningful commercial viability.',
+    icon: Target,
+  },
+  {
+    n: '03',
+    title: 'Financials',
+    desc: 'Model unit economics, pricing strategy, revenue projections, capital requirements, operational costs, and expected returns to validate long-term sustainability.',
+    icon: Calculator,
+  },
+  {
+    n: '04',
+    title: 'Final GO / NO-GO',
+    desc: 'Combine strategic, financial, operational, and market intelligence into a single executive verdict, providing a confident recommendation for investment, execution, or rejection.',
+    icon: Lightbulb,
+  },
 ];
 
 const STATS = [
-  { value: '5', label: 'Vertical Engines' },
-  { value: '4', label: 'Pipeline Stages' },
-  { value: '0–100', label: 'Orbital Index' },
-  { value: '1 / 0', label: 'Binary Verdict' },
+  { value: '5', label: 'Vertical Engines', icon: Cpu },
+  { value: '4', label: 'Pipeline Stages', icon: GitMerge },
+  { value: '0–100', label: 'Orbital Index', icon: Gauge },
+  { value: '1 / 0', label: 'Binary Verdict', icon: Binary },
 ];
 
-export default function Homepage({ onEnter, onLogin }) {
+export default function Homepage({ onEnter, onLogin, onContact }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050505] text-[#FFFFFF] font-sans selection:bg-[#D4AF37] selection:text-[#050505]">
+    <div className="relative min-h-screen overflow-hidden bg-[#FAF4E8] text-[#4A0A13] font-sans selection:bg-[#D4AF37] selection:text-[#FAF4E8]">
       {/* Background canvas */}
       <RoyalBackground />
 
-      {/* ===== TOP NAVBAR (BRANDING LEFT, USER PROFILE RIGHT) ===== */}
-      <div className="relative z-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-12 pt-8 flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <OrbitBrand size={32} className="shrink-0" />
-          <span className="hidden sm:inline text-[#D4AF37]/60 font-thin text-base">–</span>
-          <span className="font-sans text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[#FFFFFF]">
-            the conscious orbit
-          </span>
+      {/* ===== TOP HERO SECTION (PULPSENSE CREAM/GOLD HERO INTEGRATION WITH DOMAIN CARDS) ===== */}
+      <PulpSenseHero onBookCall={onEnter} onViewServices={onLogin} />
+
+      {/* ===== HOW CONSCIOUS OPERATES — WIDE PREMIUM EDITORIAL TIMELINE ===== */}
+      <section id="how-it-works" className="relative z-10 mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <div className="text-center mb-16 md:mb-24">
+          <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#B8860B] font-bold block mb-2">Operational Methodology</span>
+          <h2 className="font-sans text-3xl md:text-5xl font-extrabold text-[#4A0A13]">How Conscious Operates</h2>
         </div>
 
-        {/* User Profile Avatar Trigger */}
-        <button
-          onClick={onLogin}
-          className="group flex shrink-0 items-center gap-2.5 rounded-full border border-[rgba(212,175,55,0.3)] bg-[#0E0E0E]/80 px-3.5 py-1.5 backdrop-blur-md hover:border-[#D4AF37] transition cursor-pointer"
-        >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-[#D4AF37] to-[#F4D67A] text-[#050505] font-mono text-xs font-bold shadow-xs">
-            EX
-          </div>
-          <span className="hidden sm:inline font-mono text-xs font-semibold text-[#CFCFCF] group-hover:text-[#FFFFFF]">
-            Executive Profile
-          </span>
-        </button>
-      </div>
+        <div className="space-y-16 md:space-y-24 max-w-6xl mx-auto px-4 md:px-8">
+          {PIPELINE_STEPS.map((step, idx) => {
+            const Icon = step.icon;
+            // Step 1 & 3: Icon on LEFT, Content on RIGHT
+            // Step 2 & 4: Icon on RIGHT, Content on LEFT
+            const isIconLeft = idx % 2 === 0;
 
-      {/* ===== HERO SECTION — SPLIT SCREEN LAYOUT ===== */}
-      <header className="relative z-10 mx-auto min-h-[80vh] lg:min-h-[85vh] max-w-7xl px-4 sm:px-6 lg:px-12 flex items-center pt-8 pb-10 lg:pt-2">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 items-center gap-8 sm:gap-12 lg:gap-8">
+            const iconBlock = (
+              <div className="relative flex items-center justify-center shrink-0">
+                <div className="relative flex h-28 w-28 sm:h-32 sm:w-32 shrink-0 items-center justify-center rounded-full border-2 sm:border-[2.5px] border-[#D4AF37] bg-[#42181C] text-[#FFFFFF] shadow-2xl transition-transform duration-300 hover:scale-105">
+                  {/* Top Gold Pip Dot */}
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 h-4 w-4 rounded-full bg-[#E2B755] border-2 border-[#FAF4E8] shadow-sm" />
+                  <Icon size={44} className="text-[#FFFFFF] stroke-[1.8]" />
+                </div>
+              </div>
+            );
 
-          {/* LEFT SIDE (45% / 5 Cols on Desktop) */}
-          <div className="lg:col-span-6 xl:col-span-5 text-left flex flex-col items-start space-y-5 z-20 lg:-mt-10">
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-[2.1rem] sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.12] text-left"
-            >
-              <span className="font-serif italic font-normal tracking-tight text-[#FFFFFF] block">Systemic Sovereignty.</span>
-              <span className="font-serif italic font-normal bg-gradient-to-r from-[#FFFFFF] via-[#F4D67A] to-[#D4AF37] bg-clip-text text-transparent block mt-2">
-                Strategy Platform.
-              </span>
-            </motion.h1>
+            const contentBlock = (
+              <div className="space-y-3 max-w-[38rem] lg:max-w-[42rem] text-left">
+                {/* Gold Outlined Pill Badge */}
+                <div className="inline-flex items-center rounded-full border border-[#D4AF37] px-3.5 py-1 bg-[#FAF4E8] shadow-xs">
+                  <span className="font-mono text-[0.65rem] font-bold text-[#B8860B] uppercase tracking-[0.18em]">
+                    STEP {step.n}
+                  </span>
+                </div>
+                {/* Prominent Bold Matte Maroon Heading */}
+                <h3 className="font-sans text-2xl sm:text-3xl lg:text-[2.2rem] font-extrabold text-[#4A0A13] tracking-tight leading-snug">
+                  {step.title}
+                </h3>
+                {/* Wide Text Block (550–650px) for Comfortable Wrapping */}
+                <p className="text-base sm:text-lg lg:text-[1.125rem] text-[#7A1C29] leading-[1.75] font-normal pt-0.5">
+                  {step.desc}
+                </p>
+              </div>
+            );
 
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="max-w-xl font-sans text-base sm:text-lg text-[#CFCFCF] leading-relaxed text-left"
-            >
-              Synthesize raw business ideas into authoritative, sovereign decisions — mapping TAM/SAM opportunity, unit economics, and risk into a single <span className="font-mono font-bold text-[#D4AF37]">Conscious Orbital Score</span>.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4 w-full sm:w-auto"
-            >
-              <RoyalButton onClick={onEnter} className="px-6 sm:px-9 py-3.5 sm:py-4 text-sm font-bold shadow-xl justify-center">
-                <Play size={16} /> Launch Strategy Engine
-              </RoyalButton>
-              <GhostButton onClick={onLogin} className="px-6 sm:px-8 py-3.5 sm:py-4 text-sm font-semibold justify-center">
-                Sign In <ArrowRight size={15} />
-              </GhostButton>
-            </motion.div>
-          </div>
-
-          {/* RIGHT SIDE — EXACT HIGH-CONTRAST GOLD CHEVRON ARTWORK (REDUCED THICKNESS, NO FADING) */}
-          <div className="lg:col-span-6 xl:col-span-7 relative hidden sm:flex items-center justify-end z-10 overflow-hidden lg:overflow-visible pointer-events-none opacity-30 lg:opacity-100 h-full">
-            <div className="relative w-full lg:w-[130%] xl:w-[145%] lg:-mr-32 xl:-mr-48 flex items-center justify-end h-full">
-              <svg
-                viewBox="0 0 1000 800"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-full h-auto min-h-[34vh] sm:min-h-[45vh] lg:min-h-[90vh] object-cover"
-                preserveAspectRatio="xMaxYMid slice"
-              >
-                <defs>
-                  {/* Solid Vibrant Gold Metallic Gradient — 100% Opacity (No Fading) */}
-                  <linearGradient id="goldMetallicSolid" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#F5D77F" />
-                    <stop offset="35%" stopColor="#D4AF37" />
-                    <stop offset="75%" stopColor="#C89B3C" />
-                    <stop offset="100%" stopColor="#8A6A18" />
-                  </linearGradient>
-
-                  <linearGradient id="goldLineSolid" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#F5D77F" />
-                    <stop offset="100%" stopColor="#D4AF37" />
-                  </linearGradient>
-                </defs>
-
-                {/* 1. Thin Left Tip Gold Line Chevron */}
-                <path
-                  d="M 80 400 L 530 20 M 80 400 L 530 780"
-                  stroke="url(#goldLineSolid)"
-                  strokeWidth="2.5"
-                  strokeLinecap="square"
-                />
-
-                {/* 2. Thinner Width Solid Gold Metallic Chevron Band (100% Opaque) */}
-                <path
-                  d="M 230 400 L 650 0 L 840 0 L 420 400 L 840 800 L 650 800 Z"
-                  fill="url(#goldMetallicSolid)"
-                />
-
-                {/* 3. Outer Right Accent Gold Line Chevron */}
-                <path
-                  d="M 480 400 L 900 0 M 480 400 L 900 800"
-                  stroke="url(#goldLineSolid)"
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
-          </div>
-
-        </div>
-      </header>
-
-      {/* ===== SLEEK MINIMALIST DIVIDER WITH TELEMETRY METRICS ===== */}
-      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(212,175,55,0.4)] to-transparent" />
-        <div className="py-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {STATS.map((s) => (
-            <div key={s.label} className="space-y-1">
-              <span className="font-sans text-2xl sm:text-3xl font-extrabold text-[#FFFFFF] tracking-tight block">{s.value}</span>
-              <span className="font-mono text-[0.68rem] uppercase tracking-widest text-[#F4D67A] block">{s.label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(212,175,55,0.4)] to-transparent" />
-      </div>
-
-      {/* ===== TARGET VERTICALS — 3D LUXURY FLIP CARDS ===== */}
-      <section className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-12">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Crown size={15} className="shrink-0 text-[#D4AF37]" />
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#F4D67A] font-bold">Target Verticals</span>
-            </div>
-            <h2 className="font-sans text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#FFFFFF]">Five Core Domains of Strategy</h2>
-          </div>
-          <button
-            onClick={onEnter}
-            className="mt-4 md:mt-0 font-mono text-xs font-bold text-[#F4D67A] hover:text-[#FFFFFF] transition flex items-center gap-1.5 cursor-pointer"
-          >
-            Explore Suite <ArrowRight size={14} />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 justify-items-center">
-          {VERTICALS.map((v, i) => {
-            const Icon = v.icon;
             return (
               <motion.div
-                key={v.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                onClick={onEnter}
-                className="flip-card cursor-pointer"
+                key={step.n}
+                initial={{ opacity: 0, x: isIconLeft ? -50 : 50, y: 15 }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
+                viewport={{ margin: "-10% 0px -15% 0px", once: false }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className={`flex flex-col sm:flex-row items-center gap-7 sm:gap-9 md:gap-11 w-full max-w-4xl mx-auto ${
+                  isIconLeft ? 'sm:flex-row' : 'sm:flex-row-reverse'
+                }`}
               >
-                <div className="flip-card-inner">
-                  {/* FRONT */}
-                  <div className="flip-card-front">
-                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[rgba(212,175,55,0.35)] bg-[#0E0E0E] text-[#D4AF37]">
-                      <Icon size={26} />
-                    </div>
-                    <h3 className="flip-card-title">{v.short}</h3>
-                    <p className="flip-card-subtitle font-mono text-xs text-[#9A9A9A] uppercase tracking-wider">
-                      Domain 0{i + 1} · Hover to Inspect
-                    </p>
-                  </div>
+                {/* Icon Container */}
+                <div className="flex items-center justify-center shrink-0">
+                  {iconBlock}
+                </div>
 
-                  {/* BACK */}
-                  <div className="flip-card-back">
-                    <h3 className="flip-card-title text-xl">{v.name}</h3>
-                    <p className="flip-card-subtitle">{v.desc}</p>
-                    <div className="mt-6 flex items-center gap-2 font-mono text-xs font-bold text-[#D4AF37] border border-[rgba(212,175,55,0.3)] bg-[#050505] px-4 py-2 rounded-xl">
-                      <span>Launch Module</span>
-                      <ArrowRight size={14} />
-                    </div>
-                  </div>
+                {/* Content Container */}
+                <div className="flex-1 flex items-center justify-start">
+                  {contentBlock}
                 </div>
               </motion.div>
             );
@@ -223,100 +240,318 @@ export default function Homepage({ onEnter, onLogin }) {
         </div>
       </section>
 
-      {/* ===== FOUR-STAGE PIPELINE — HORIZONTAL TIMELINE ===== */}
-      <section className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-12 sm:py-16">
-        <div className="text-center mb-10 sm:mb-16">
-          <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#F4D67A] font-bold block mb-2">Processing Flow</span>
-          <h2 className="font-sans text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#FFFFFF]">Stage-Gated Strategy Architecture</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8 relative">
-          {PIPELINE_STEPS.map((step, idx) => (
-            <motion.div
-              key={step.n}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: idx * 0.1 }}
-              className="relative space-y-3 text-left border-l-2 md:border-l-0 md:border-t-2 border-[#D4AF37]/40 pl-5 md:pl-0 md:pt-5"
-            >
-              <span className="font-mono text-2xl font-extrabold text-[#D4AF37] block">{step.n}</span>
-              <h4 className="font-sans text-base font-bold text-[#FFFFFF]">{step.title}</h4>
-              <p className="text-xs text-[#9A9A9A] leading-relaxed">{step.desc}</p>
-            </motion.div>
-          ))}
-        </div>
+      {/* ===== EXECUTIVE BUSINESS CAPABILITIES CAROUSEL ===== */}
+      <section id="framework" className="relative z-10 mx-auto max-w-7xl px-6 py-12">
+        <CardCarousel />
       </section>
 
-      {/* ===== ORBITAL GAUGE SHOWCASE SECTION ===== */}
-      <section className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-14 sm:py-20">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-10 md:gap-12 rounded-3xl border border-[rgba(212,175,55,0.2)] bg-[#0E0E0E] p-6 sm:p-8 md:p-12 shadow-2xl">
-          <div className="space-y-4 max-w-xl text-left">
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[rgba(212,175,55,0.3)] bg-[#050505] px-4 py-1.5">
-              <ShieldCheck size={14} className="shrink-0 text-[#D4AF37]" />
-              <span className="font-mono text-xs text-[#F4D67A] font-bold uppercase tracking-wider">Orbital Metric Engine</span>
-            </div>
-            <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-[#FFFFFF]">The Sovereign 1 / 0 Decision Verdict</h3>
-            <p className="text-sm text-[#CFCFCF] leading-relaxed">
-              Every venture strategy is distilled down to unit feasibility, pricing power, and execution risk — resolving into a clear binary GO / PIVOT verdict.
+      {/* ===== JOIN OUR MISSION CALLOUT SECTION (OUTSIDE FOOTER) ===== */}
+      <section className="relative z-10 mx-auto max-w-7xl px-6 py-12">
+        <div className="flex flex-col items-center justify-center text-center space-y-6">
+          <div className="space-y-3 text-center flex flex-col items-center">
+            <h4 className="font-serif italic font-bold tracking-tight text-3xl sm:text-4xl md:text-5xl text-[#8B6508] drop-shadow-xs">
+              Want to Join Our Mission?
+            </h4>
+            <p className="font-serif italic text-base md:text-lg text-[#78520A] max-w-2xl leading-relaxed font-semibold">
+              We're always looking for talented people who believe in making business intelligence accessible to all.
             </p>
-            <div className="pt-2">
-              <RoyalButton onClick={onEnter}>Test Your Idea</RoyalButton>
-            </div>
           </div>
-
-          <div className="flex flex-col items-center shrink-0">
-            <ScoreRing value={88} />
-          </div>
+          <button
+            onClick={onContact || onEnter}
+            className="inline-flex items-center justify-center gap-2.5 rounded-full border border-[#8B6508] bg-gradient-to-r from-[#B8860B] via-[#996515] to-[#78520A] px-8 py-3.5 text-sm font-bold text-[#FAF4E8] hover:shadow-[0_8px_25px_rgba(139,101,8,0.4)] transition-all cursor-pointer"
+          >
+            <span>Get in Touch</span>
+            <ArrowRight size={15} />
+          </button>
         </div>
       </section>
 
-      {/* ===== MINIMAL FOOTER ===== */}
-      <footer className="relative z-10 border-t border-[rgba(212,175,55,0.18)] bg-[#050505] px-4 sm:px-6 py-10">
-        <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <div className="flex items-center gap-3">
-            <OrbitBrand size={30} className="shrink-0" />
-            <span className="font-sans text-sm font-bold text-[#FFFFFF]">The Conscious Orbit</span>
+      {/* ===== LUXURY EXECUTIVE FOOTER WITH DEEP MAROON BG ===== */}
+      <footer id="contact" className="relative z-10 bg-[#4A0A13] text-[#FAF4E8] border-t-2 border-[#D4AF37]/50 pt-12 pb-10 px-6 overflow-hidden">
+        {/* Subtle Background Radial Glow */}
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.12)_0%,transparent_70%)]" />
+        <div className="pointer-events-none absolute left-1/2 -top-24 h-48 w-96 -translate-x-1/2 rounded-full bg-[#F5D77F]/10 blur-[90px]" />
+
+        <div className="mx-auto max-w-7xl space-y-10">
+          {/* Main Footer Links Columns */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-8 border-b border-[#D4AF37]/25">
+            {/* Brand Column */}
+            <div className="md:col-span-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <OrbitBrand size={36} />
+                <h5 className="font-sans text-xl font-extrabold text-[#FAF4E8] tracking-tight">
+                  Conscious Orbital
+                </h5>
+              </div>
+              <p className="text-sm text-[#EAD5D8] leading-relaxed max-w-sm">
+                AI-powered business intelligence platform.
+              </p>
+            </div>
+
+            {/* Platform Column */}
+            <div className="md:col-span-3 space-y-3">
+              <h5 className="font-mono text-xs uppercase tracking-[0.2em] text-[#F5D77F] font-bold">
+                Platform
+              </h5>
+              <ul className="space-y-2 text-sm text-[#EAD5D8]">
+                <li><button onClick={onEnter} className="hover:text-[#F5D77F] transition cursor-pointer">Dashboard</button></li>
+                <li><button onClick={onEnter} className="hover:text-[#F5D77F] transition cursor-pointer">Projects</button></li>
+                <li><button onClick={onLogin} className="hover:text-[#F5D77F] transition cursor-pointer">Login</button></li>
+              </ul>
+            </div>
+
+            {/* Company Column */}
+            <div className="md:col-span-3 space-y-3">
+              <h5 className="font-mono text-xs uppercase tracking-[0.2em] text-[#F5D77F] font-bold">
+                Company
+              </h5>
+              <ul className="space-y-2 text-sm text-[#EAD5D8]">
+                <li><button onClick={onEnter} className="hover:text-[#F5D77F] transition cursor-pointer">About Us</button></li>
+                <li><button onClick={onContact || onEnter} className="hover:text-[#F5D77F] transition cursor-pointer">Contact</button></li>
+                <li><button onClick={onEnter} className="hover:text-[#F5D77F] transition cursor-pointer">Privacy</button></li>
+              </ul>
+            </div>
+
+            {/* Connect Column */}
+            <div className="md:col-span-2 space-y-3">
+              <h5 className="font-mono text-xs uppercase tracking-[0.2em] text-[#F5D77F] font-bold">
+                Connect
+              </h5>
+              <ul className="space-y-2 text-sm text-[#EAD5D8]">
+                <li><a href="#" className="hover:text-[#F5D77F] transition">Twitter</a></li>
+                <li><a href="#" className="hover:text-[#F5D77F] transition">LinkedIn</a></li>
+                <li><a href="#" className="hover:text-[#F5D77F] transition">GitHub</a></li>
+              </ul>
+            </div>
           </div>
-          <p className="font-mono text-xs text-[#9A9A9A]">
-            © 2026 The Conscious Orbit · Executive Platform
-          </p>
+
+          {/* Bottom Copyright */}
+          <div className="pt-2 text-center md:text-left">
+            <p className="font-mono text-xs text-[#EAD5D8]">
+              © 2026 Conscious Orbital. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
   );
 }
 
-function ScoreRing({ value = 88 }) {
-  const R = 68;
+function CountUpValue({ value, isVisible }) {
+  const [displayValue, setDisplayValue] = React.useState(value);
+
+  React.useEffect(() => {
+    if (!isVisible) return;
+    
+    // Check if value has numbers to animate
+    const numericMatches = value.match(/\d+/g);
+    if (!numericMatches) {
+      setDisplayValue(value);
+      return;
+    }
+
+    const targetNum = parseInt(numericMatches[0], 10);
+    const duration = 1200; // ms
+    const startTime = performance.now();
+
+    const animate = (currentTime) => {
+      const elapsedTime = currentTime - startTime;
+      const progress = Math.min(elapsedTime / duration, 1);
+      // Ease out cubic
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const currentNum = Math.floor(easedProgress * targetNum);
+
+      setDisplayValue(value.replace(/\d+/, currentNum.toString()));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setDisplayValue(value);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [isVisible, value]);
+
+  return <span>{displayValue}</span>;
+}
+
+function TelemetryStats({ stats }) {
+  // Duplicate stats list to create seamless infinite loop
+  const tickerItems = [...stats, ...stats, ...stats];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: false, margin: '-50px' }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      className="relative z-10 mx-auto max-w-7xl px-4 my-6"
+    >
+      {/* Animated Top Gold Separator Line that expands from center */}
+      <motion.div
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        className="h-px w-full bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent origin-center"
+      />
+
+      {/* Main Live Status Ribbon Strip */}
+      <div className="relative overflow-hidden py-8 bg-[#070707]/90 rounded-xl my-1 border border-white/[0.03]">
+        {/* Background 1: Faint animated flowing gold gradient */}
+        <div className="pointer-events-none absolute inset-0 animate-bg-flow bg-gradient-to-r from-[#D4AF37]/[0.02] via-[#F4D67A]/[0.05] to-[#D4AF37]/[0.02] opacity-80" />
+
+        {/* Background 2: Tiny subtle floating gold particles */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
+          <div className="absolute top-1/4 left-1/5 w-1 h-1 rounded-full bg-[#F4D67A] animate-pulse" />
+          <div className="absolute top-2/3 left-1/2 w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-ping" />
+          <div className="absolute top-1/3 left-3/4 w-1 h-1 rounded-full bg-[#F4D67A] animate-pulse" />
+          <div className="absolute top-3/4 left-4/5 w-1 h-1 rounded-full bg-[#D4AF37]" />
+        </div>
+
+        {/* Background 3: Scanning light sweep every 6-8 seconds */}
+        <div className="pointer-events-none absolute inset-0 -translate-x-full animate-shimmer-sweep bg-gradient-to-r from-transparent via-[#F4D67A]/15 to-transparent w-1/3 z-10" />
+
+        {/* Left & Right Edge Vignette Fades for seamless ticker entry */}
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#050505] to-transparent z-20" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[#050505] to-transparent z-20" />
+
+        {/* Continuously Moving Horizontal Ticker Container */}
+        <div className="animate-ticker items-center">
+          {tickerItems.map((s, idx) => {
+            const Icon = s.icon;
+            return (
+              <motion.div
+                key={`${s.label}-${idx}`}
+                whileHover={{ scale: 1.08 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="group relative flex flex-col items-center justify-center space-y-2 cursor-pointer px-12 md:px-16 py-3 min-w-[240px] text-center"
+              >
+                {/* Subtle Hover Ambient Glow */}
+                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[#D4AF37]/0 group-hover:bg-[#D4AF37]/[0.08] group-hover:blur-md transition-all duration-300" />
+
+                {/* Icon & Label Header */}
+                <div className="flex items-center gap-2 text-[#F4D67A] group-hover:text-[#FFFFFF] transition-colors duration-300">
+                  {Icon && (
+                    <motion.div
+                      whileHover={{ rotate: 12 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                    >
+                      <Icon size={15} className="text-[#D4AF37] group-hover:text-[#FFFFFF] transition-colors" />
+                    </motion.div>
+                  )}
+                  <span className="font-mono text-[0.7rem] uppercase tracking-[0.18em] font-bold">
+                    {s.label}
+                  </span>
+                </div>
+
+                {/* Metric Value */}
+                <div className="font-sans text-3xl md:text-4xl font-extrabold text-[#FFFFFF] group-hover:text-[#FFF8DC] tracking-tight block transition-colors duration-300 group-hover:drop-shadow-[0_0_16px_rgba(244,214,122,0.5)]">
+                  <CountUpValue value={s.value} isVisible={true} />
+                </div>
+
+                {/* Animated Gold Underline */}
+                <div className="h-[2px] w-12 bg-gradient-to-r from-[#D4AF37] to-[#F4D67A] rounded-full group-hover:w-20 group-hover:from-[#FFFFFF] group-hover:to-[#F4D67A] transition-all duration-300 opacity-70 group-hover:opacity-100 group-hover:shadow-[0_0_8px_#F4D67A]" />
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bottom Gold Separator Line */}
+      <motion.div
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        className="h-px w-full bg-gradient-to-r from-transparent via-[#D4AF37]/60 to-transparent origin-center"
+      />
+    </motion.div>
+  );
+}
+
+function ExecutiveOrbitalGauge({ value = 88 }) {
+  const R = 76;
   const C = 2 * Math.PI * R;
   const strokeDashoffset = C - (value / 100) * C;
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative flex items-center justify-center">
-        <svg width="170" height="170" className="-rotate-90">
-          <circle cx="85" cy="85" r={R} fill="none" stroke="#111111" strokeWidth="8" />
+    <div className="flex flex-col items-center justify-center space-y-8 w-full max-w-md">
+      {/* Premium Multi-Orbit Satellite Gauge Container */}
+      <div className="relative flex items-center justify-center h-64 w-64">
+        {/* Outer Orbit Ring 1 - Counter Clockwise Slow Rotation */}
+        <div className="absolute inset-0 rounded-full border border-dashed border-[#D4AF37]/35 animate-spin-reverse-slow" />
+
+        {/* Outer Orbit Ring 2 - Clockwise Slow Rotation with Satellite Dot */}
+        <div className="absolute inset-2 rounded-full border border-[#D4AF37]/45 animate-spin-slow">
+          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-3 w-3 rounded-full bg-[#F5D77F] shadow-[0_0_12px_#F5D77F]" />
+        </div>
+
+        {/* Inner SVG Progress Arc */}
+        <svg width="210" height="210" className="-rotate-90">
+          <circle cx="105" cy="105" r={R} fill="none" stroke="#FAF4E8" strokeWidth="6" />
           <motion.circle
-            cx="85" cy="85" r={R} fill="none"
-            stroke="#D4AF37"
-            strokeWidth="8"
+            cx="105"
+            cy="105"
+            r={R}
+            fill="none"
+            stroke="url(#goldRingGradient)"
+            strokeWidth="7"
             strokeLinecap="round"
             strokeDasharray={C}
             initial={{ strokeDashoffset: C }}
             whileInView={{ strokeDashoffset }}
             viewport={{ once: true }}
-            transition={{ duration: 1.4, ease: 'easeOut' }}
+            transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
           />
+          <defs>
+            <linearGradient id="goldRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#F5D77F" />
+              <stop offset="50%" stopColor="#D4AF37" />
+              <stop offset="100%" stopColor="#B8860B" />
+            </linearGradient>
+          </defs>
         </svg>
-        <div className="absolute text-center">
-          <span className="font-sans text-4xl font-extrabold text-[#FFFFFF] block">{value}</span>
-          <span className="font-mono text-[0.62rem] uppercase tracking-widest text-[#9A9A9A] block mt-0.5">Orbital Index</span>
+
+        {/* Centered Large Orbital Score */}
+        <div className="absolute flex flex-col items-center justify-center text-center space-y-0.5">
+          <span className="font-sans text-5xl font-extrabold text-[#4A0A13] tracking-tight drop-shadow-sm">
+            <CountUpValue value={value.toString()} isVisible={true} />
+          </span>
+          <span className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#B8860B] font-bold">
+            Orbital Index
+          </span>
         </div>
       </div>
-      <div className="mt-4 rounded-full border border-[#D4AF37] bg-[#D4AF37] px-4 py-1.5 text-[#050505] font-extrabold font-mono text-xs shadow-md">
-        VERDICT: GO (1)
-      </div>
+
+      {/* Executive Status Details Breakdown Matrix */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="w-full rounded-2xl border border-[#D4AF37]/40 bg-[#4A0A13] text-[#FFFFFF] p-5 shadow-xl space-y-3"
+      >
+        <div className="flex items-center justify-between text-xs font-mono border-b border-[#D4AF37]/25 pb-2.5">
+          <span className="text-[#EAD5D8] uppercase tracking-wider">Orbital Index</span>
+          <span className="font-bold text-[#F5D77F]">88 / 100</span>
+        </div>
+        <div className="flex items-center justify-between text-xs font-mono border-b border-[#D4AF37]/25 pb-2.5">
+          <span className="text-[#EAD5D8] uppercase tracking-wider">Decision</span>
+          <span className="font-extrabold text-[#4A0A13] bg-[#D4AF37] px-2.5 py-0.5 rounded-full text-[0.7rem] tracking-widest shadow-sm">
+            GO (1)
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-xs font-mono border-b border-[#D4AF37]/25 pb-2.5">
+          <span className="text-[#EAD5D8] uppercase tracking-wider">Confidence</span>
+          <span className="font-bold text-[#F5D77F]">High</span>
+        </div>
+        <div className="flex items-center justify-between text-xs font-mono">
+          <span className="text-[#EAD5D8] uppercase tracking-wider">Execution Ready</span>
+          <span className="font-bold text-[#FFFFFF]">YES</span>
+        </div>
+      </motion.div>
     </div>
   );
 }

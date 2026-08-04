@@ -11,18 +11,18 @@ import DarkVeil from './DarkVeil.jsx';
 // Layered Luxury Background with Subtle Gold Orbs & Black Overlay
 export function RoyalBackground({ hueShift = 0, speed = 0.25, opacity = 0.25, className = '' }) {
   return (
-    <div className={`pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#050505] ${className}`}>
-      {/* Soft Radial Gold Glow Orbs */}
-      <div className="absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full bg-[#D4AF37]/10 blur-[140px]" />
-      <div className="absolute right-0 top-1/3 h-[500px] w-[500px] rounded-full bg-[#F4D67A]/08 blur-[150px]" />
-      <div className="absolute bottom-0 left-1/3 h-[500px] w-[500px] rounded-full bg-[#C89B3C]/06 blur-[160px]" />
+    <div className={`pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#FAF4E8] ${className}`}>
+      {/* Soft Radial Gold & Burgundy Glow Orbs */}
+      <div className="absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full bg-[#D4AF37]/15 blur-[140px]" />
+      <div className="absolute right-0 top-1/3 h-[500px] w-[500px] rounded-full bg-[#F5D77F]/12 blur-[150px]" />
+      <div className="absolute bottom-0 left-1/3 h-[500px] w-[500px] rounded-full bg-[#4A0A13]/06 blur-[160px]" />
 
       {/* WebGL Shader Ambient Layer */}
-      <div className="absolute inset-0" style={{ opacity: opacity * 0.4 }}>
+      <div className="absolute inset-0" style={{ opacity: opacity * 0.25 }}>
         <DarkVeil hueShift={hueShift} speed={speed} resolutionScale={0.75} />
       </div>
-      {/* Dark Translucent Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/95 via-[#0E0E0E]/90 to-[#050505]/95" />
+      {/* Translucent Cream Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FAF4E8]/95 via-[#F5EAD4]/90 to-[#FAF4E8]/95" />
     </div>
   );
 }
@@ -101,13 +101,10 @@ export function AiInsightWidget({ verticalName = 'Venture' }) {
       </div>
 
       <div className="space-y-2.5 pt-1">
-        {/* `pct` is the bar fill and is kept separate from the display value —
-            deriving width by parsing `val` produced invalid CSS for non-numeric
-            labels like "Low (1.2%)". */}
         {[
-          { label: 'Neural Confidence', val: '96%', pct: 96, color: 'bg-[#D4AF37]' },
-          { label: 'Data Processing Speed', val: '14ms', pct: 85, color: 'bg-[#F4D67A]' },
-          { label: 'Risk Factor Detection', val: 'Low (1.2%)', pct: 12, color: 'bg-[#10B981]' },
+          { label: 'Neural Confidence', val: '96%', color: 'bg-[#D4AF37]' },
+          { label: 'Data Processing Speed', val: '14ms', color: 'bg-[#F4D67A]' },
+          { label: 'Risk Factor Detection', val: 'Low (1.2%)', color: 'bg-[#10B981]' },
         ].map((item) => (
           <div key={item.label} className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-2.5">
             <div className="flex items-center justify-between text-[0.68rem]">
@@ -115,7 +112,7 @@ export function AiInsightWidget({ verticalName = 'Venture' }) {
               <span className="font-mono font-bold text-[#FFFFFF]">{item.val}</span>
             </div>
             <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#050505]">
-              <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.pct}%` }} />
+              <div className={`h-full rounded-full ${item.color}`} style={{ width: item.val.includes('%') ? item.val : '85%' }} />
             </div>
           </div>
         ))}
