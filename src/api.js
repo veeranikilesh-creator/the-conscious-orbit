@@ -64,17 +64,23 @@ async function request(path, { method = 'GET', body, signal } = {}) {
   }
 
   if (!res.ok) {
-    /* The envelope is flat — { error, message, issues?, details? } — see
-       server/src/middleware/errorHandler.js. Zod failures put the offending
-       field paths in `issues`, which is the only useful part when a module
-       input doesn't match its schema. */
-    const detail = payload?.issues?.length
-      ? `${payload.message}: ${payload.issues.map((i) => `${i.path} ${i.message}`).join('; ')}`
-      : payload?.message;
+    /* Two backends, two envelopes. Express is flat —
+       { error, message, issues?, details? } — with zod field paths in
+       `issues` (see server/src/middleware/errorHandler.js). FastAPI uses
+       { detail } , where detail is either a string or a list of validation
+       objects. Handle both so errors stay readable either way. */
+    let detail;
+    if (payload?.issues?.length) {
+      detail = `${payload.message}: ${payload.issues.map((i) => `${i.path} ${i.message}`).join('; ')}`;
+    } else if (Array.isArray(payload?.detail)) {
+      detail = payload.detail.map((d) => `${(d.loc || []).join('.')} ${d.msg}`).join('; ');
+    } else {
+      detail = payload?.message || (typeof payload?.detail === 'string' ? payload.detail : undefined);
+    }
     throw new ApiError(
       detail || `Request failed (${res.status})`,
       res.status,
-      payload?.issues || payload?.details
+      payload?.issues || payload?.details || payload?.detail
     );
   }
 
@@ -92,6 +98,33 @@ export const advanceReport  = (id)     => request(`/reports/${id}/advance`, { me
 export const revertReport   = (id)     => request(`/reports/${id}/revert`, { method: 'POST' });
 export const runModule      = (id, key, input) =>
   request(`/reports/${id}/modules/${key}`, { method: 'POST', body: input });
+
+/**
+ * Health, normalised across both backends.
+ *
+ * Express answers `{ ok: true, db: 'connected' | 'disconnected' }`. FastAPI
+ * answers `{ status: 'ok', db: 'PostgreSQL' | 'SQLite (Local Fallback)' }` —
+ * no `ok` key at all, and `db` names the driver rather than the connection
+ * state. Checking for `db === 'connected'` therefore rejected FastAPI outright
+ * and silently dropped the whole app into offline mode.
+ *
+ * The reason for testing the DB at all is Express-specific: when Mongo is down
+ * the API still answers /health, but every real query then blocks for the full
+ * 10s Mongoose buffer timeout. Only 'disconnected' means that; any other value
+ * is a live database.
+ *
+ * @returns {Promise<{ ready: boolean, db: string, backend: string }>}
+ */
+export async function checkHealth(signal) {
+  const payload = await getHealth(signal);
+  const ok = payload?.ok === true || payload?.status === 'ok';
+  const db = payload?.db ?? '';
+  return {
+    ready: ok && Boolean(db) && db !== 'disconnected',
+    db,
+    backend: payload?.service || 'Express + MongoDB',
+  };
+}
 
 /* ---------- intake → module input mapping ---------- */
 
