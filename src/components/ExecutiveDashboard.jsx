@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { checkHealth, listReports, generateReportViaApi } from "../api.js";
 import {
   Search,
   Bell,
@@ -163,6 +164,46 @@ const INITIAL_INTELLIGENCE_MODULES = [
 /* ============================================================
    INITIAL CLIENT PROJECTS SEED DATA
    ============================================================ */
+/* ---- Backend bridge ------------------------------------------------------
+   The server's report shape ({ id, name, vertical, tags, status, score,
+   decision, completedModules, clusters }) maps onto this dashboard's project
+   cards. When no API is reachable the seeds below stay and every action keeps
+   its original simulation, so the UI is unchanged offline. */
+
+/** Server module keys in MOD-01…MOD-10 order, for scoring the module cards. */
+const MODULE_KEY_ORDER = [
+  "customerDiscovery", "profiling", "marketSize", "feasibility", "pricing",
+  "marketResearch", "industryReport", "businessModelValidation", "gtm", "okr",
+];
+
+/** This form's stage labels → the Client model's STAGES enum. */
+const STAGE_TO_SERVER = {
+  "Idea & Problem Validation": "Idea",
+  "Early Stage / Seed": "Seed",
+  "Early Traction / Series A": "Series A",
+  "Growth & Expansion": "Growth",
+};
+
+function projectFromReport(r) {
+  const score = r.score ?? 0;
+  const verdict =
+    r.decision === 0 ? `PIVOT (${score}%)`
+    : r.decision === 1 ? `GO (${score}%)`
+    : score > 0 ? `CONDITIONAL (${score}%)`
+    : "IN PIPELINE";
+  return {
+    id: r.id,
+    title: r.name,
+    industry: r.tags?.[0] || r.vertical,
+    verdict,
+    status: r.status === "PUBLISHED" ? "ACTIVE" : "UNDER_REVIEW",
+    modulesProcessed: `${(r.completedModules || []).length}/10`,
+    date: (r.createdAt || new Date().toISOString()).split("T")[0],
+    description: r.clusters?.market?.problem || "Venture evaluated through the intelligence pipeline.",
+    fromApi: true,
+  };
+}
+
 const INITIAL_MY_PROJECTS = [
   {
     id: "p1",
@@ -276,6 +317,28 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStatusText, setAnalysisStatusText] = useState("Initializing orbital synthesis engine...");
 
+  /* 'checking' until the health probe answers; 'offline' keeps every flow on
+     its original simulation. */
+  const [apiStatus, setApiStatus] = useState("checking");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const health = await checkHealth(controller.signal);
+        if (!health.ready) { setApiStatus("offline"); return; }
+        const data = await listReports(controller.signal);
+        setApiStatus("online");
+        const rows = (data?.reports || []).map(projectFromReport);
+        // An empty database shouldn't blank the portal on first run.
+        if (rows.length) setProjectsList(rows);
+      } catch (err) {
+        if (err.name !== "AbortError") setApiStatus("offline");
+      }
+    })();
+    return () => controller.abort();
+  }, []);
+
   const notifications = [
     { id: 1, title: "Module 10 Evaluation Ready", time: "10m ago", read: false },
     { id: 2, title: "EcoFly Medical Drones achieved 89% score", time: "1h ago", read: false },
@@ -312,10 +375,63 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
     }, 1400);
   };
 
-  // "Do Analysis" Handler for New Project
-  const handleDoAnalysis = (e) => {
+  // "Do Analysis" Handler for New Project — drives the real pipeline when the
+  // API is up, otherwise falls through to the original simulation below.
+  const handleDoAnalysis = async (e) => {
     e.preventDefault();
     if (!newProjectForm.startupName.trim()) return;
+
+    if (apiStatus === "online") {
+      setIsAnalyzing(true);
+      try {
+        const result = await generateReportViaApi(
+          {
+            name: newProjectForm.startupName,
+            vertical: "startups",
+            tags: [newProjectForm.sector],
+            tracks: [],
+            customModules: [],
+            profile: {
+              company: newProjectForm.startupName,
+              industry: newProjectForm.sector,
+              stage: STAGE_TO_SERVER[newProjectForm.stage] || "Seed",
+              geography: "",
+              model: "B2B Enterprise",
+              contact: "",
+            },
+            clusters: {
+              market: { problem: newProjectForm.description, pain: "", wtp: "", icp: "" },
+              viability: { revenue: "", margin: "", costs: "", breakeven: "" },
+              launch: { geography: "", gtm: "", milestones: "", ask: "" },
+            },
+          },
+          (label, done, total) => setAnalysisStatusText(`${label} (${done}/${total})…`)
+        );
+
+        setProjectsList((prev) => [projectFromReport(result.report), ...prev]);
+        // Real per-module scores where the server returned them.
+        const results = result.moduleResults || {};
+        setModulesList((prev) =>
+          prev.map((mod, i) => {
+            const run = results[MODULE_KEY_ORDER[i]];
+            return run
+              ? { ...mod, project: newProjectForm.startupName, status: "COMPLETED", score: Math.round(run.score ?? mod.score), lastUpdated: "Just now" }
+              : mod;
+          })
+        );
+        setIsAnalyzing(false);
+        setIsNewProjectModalOpen(false);
+        setNewProjectForm({ startupName: "", sector: "Healthcare & Logistics", stage: "Early Stage / Seed", description: "" });
+        setNavbarSection("modules");
+        return;
+      } catch (err) {
+        // Server refused or dropped mid-run — finish with the simulation so
+        // the user still gets a project card, and stop trusting the API.
+        setApiStatus("offline");
+        setAnalysisStatusText(`Backend unavailable (${err.message}) — completing locally…`);
+      }
+    }
+
     setIsAnalyzing(true);
     setAnalysisStatusText(`Auditing ${newProjectForm.startupName} across 10 intelligence modules...`);
 

@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { checkHealth, listReports, advanceReport, revertReport } from "../api.js";
 import {
   ShieldCheck,
   Layers,
@@ -298,6 +299,32 @@ const INITIAL_PROJECT_REGISTRATIONS = [
   }
 ];
 
+/* ---- Backend bridge ------------------------------------------------------
+   Maps the server's four-status pipeline onto this console's report rows.
+   Seeds below remain when no API is reachable. */
+const SERVER_STATUS_TO_ADMIN = {
+  RECEIVED: "PENDING",
+  PENDING: "IN_PROGRESS",
+  PROCESSED: "PROCESSED",
+  PUBLISHED: "COMPLETED",
+};
+
+function adminReportFromServer(r) {
+  const done = (r.completedModules || []).length;
+  return {
+    id: r.id,
+    reportName: r.name,
+    domain: (r.vertical || "startups").replace(/^./, (c) => c.toUpperCase()),
+    tags: (r.tags || []).slice(0, 2),
+    status: SERVER_STATUS_TO_ADMIN[r.status] || r.status,
+    progressPct: Math.round((done / 10) * 100),
+    score: r.score ?? 0,
+    auditor: "Pipeline Engine",
+    fromApi: true,
+    serverStatus: r.status,
+  };
+}
+
 const INITIAL_REPORTS = [
   {
     id: "rep-001",
@@ -390,6 +417,24 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
   const [clientProfiles, setClientProfiles] = useState(INITIAL_CLIENT_PROFILES);
   const [registrations, setRegistrations] = useState(INITIAL_PROJECT_REGISTRATIONS);
   const [reports, setReports] = useState(INITIAL_REPORTS);
+  const [apiStatus, setApiStatus] = useState("checking");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const health = await checkHealth(controller.signal);
+        if (!health.ready) { setApiStatus("offline"); return; }
+        const data = await listReports(controller.signal);
+        setApiStatus("online");
+        const rows = (data?.reports || []).map(adminReportFromServer);
+        if (rows.length) setReports(rows);
+      } catch (err) {
+        if (err.name !== "AbortError") setApiStatus("offline");
+      }
+    })();
+    return () => controller.abort();
+  }, []);
   const [tickets, setTickets] = useState(INITIAL_TICKETS);
 
   // Filters
@@ -419,7 +464,39 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
     setRegistrations((prev) => prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)));
   };
 
-  const handleUpdateReportProgress = (id, delta) => {
+  const handleUpdateReportProgress = async (id, delta) => {
+    const target = reports.find((r) => r.id === id);
+
+    /* API-backed rows move through the server's state machine instead of a
+       local percentage — advance is gated there, so a 409 names the modules
+       still missing rather than letting the row lie about its progress. */
+    if (target?.fromApi && apiStatus === "online") {
+      try {
+        const data = delta > 0 ? await advanceReport(id) : await revertReport(id);
+        // Express answers { report }, FastAPI answers { status }.
+        const serverStatus = data?.report?.status || data?.status;
+        if (serverStatus) {
+          setReports((prev) =>
+            prev.map((rep) =>
+              rep.id === id
+                ? {
+                    ...rep,
+                    serverStatus,
+                    status: SERVER_STATUS_TO_ADMIN[serverStatus] || serverStatus,
+                    progressPct: data?.report
+                      ? Math.round(((data.report.completedModules || []).length / 10) * 100)
+                      : rep.progressPct,
+                  }
+                : rep
+            )
+          );
+        }
+      } catch (err) {
+        alert(err.message || "The pipeline refused that transition.");
+      }
+      return;
+    }
+
     setReports((prev) =>
       prev.map((rep) => {
         if (rep.id !== id) return rep;
