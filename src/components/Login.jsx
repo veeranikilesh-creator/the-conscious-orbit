@@ -1,319 +1,295 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Crown,
-  Sparkles, ShieldCheck, Loader2, CheckCircle2,
-} from 'lucide-react';
-import { OrbitBrand, RoyalBackground } from './ui.jsx';
-import { fieldBase } from './ui.jsx';
-
-/* ============================================================
-   LOGIN PAGE — royal split layout
-   Brand showcase panel + glassmorphism auth form
-   ============================================================ */
+import React, { useState } from "react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 export default function Login({ onLogin, onBack }) {
-  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+  // isChecked = false -> Log in
+  // isChecked = true  -> Sign up
+  const [isChecked, setIsChecked] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(true);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // Form states
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    // Simulate auth then enter dashboard
-    setTimeout(() => {
-      setLoading(false);
-      onLogin();
-    }, 1400);
+    if (isChecked && !agreedToTerms) {
+      alert("Please agree to the Terms & Privacy Policy to proceed.");
+      return;
+    }
+    if (onLogin) onLogin();
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Animated WebGL royal background (amber-tinted DarkVeil) */}
-      <RoyalBackground />
-      {/* Ambient glows */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-32 top-0 h-96 w-96 rounded-full bg-amber-950/30 blur-[128px]" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-rose-950/45 blur-[128px]" />
-      </div>
+    <div className="relative min-h-screen h-screen w-full bg-[#4A0A13] text-[#FAF4E8] flex flex-col justify-between items-center p-4 sm:p-6 overflow-hidden selection:bg-[#D4AF37] selection:text-[#4A0A13]">
+      
+      {/* Soft Ambient Background Glow */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.12)_0%,transparent_65%)]" />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center justify-center px-5 py-8 md:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="grid w-full overflow-hidden rounded-3xl border border-amber-500/20 shadow-[0_24px_80px_rgba(0,0,0,0.6)] lg:grid-cols-2"
+      {/* Top Navigation Header */}
+      <header className="relative z-10 w-full max-w-4xl flex items-center justify-between">
+        <button
+          onClick={onBack}
+          type="button"
+          className="group flex items-center gap-1.5 text-xs font-bold text-[#F5D77F] hover:text-[#FAF4E8] transition cursor-pointer bg-[#38070E] hover:bg-[#38070E]/80 px-3.5 py-1.5 rounded-full border border-[#D4AF37]/30 shadow-xs"
         >
-          {/* ===== LEFT — ROYAL BRAND PANEL ===== */}
-          <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-red-950/60 via-black/40 to-amber-900/20 p-10 lg:flex">
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute right-0 top-1/4 h-64 w-64 rounded-full bg-amber-500/15 blur-3xl" />
-              <div className="absolute bottom-10 left-10 h-48 w-48 rounded-full bg-rose-950/30 blur-3xl" />
-            </div>
+          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition" />
+          <span>Home</span>
+        </button>
 
-            {/* Top: back + brand */}
-            <div className="relative flex items-center justify-between">
-              <button
-                onClick={onBack}
-                className="inline-flex items-center gap-1.5 text-sm text-stone-500 transition hover:text-stone-200"
-              >
-                <ArrowLeft size={15} /> Home
-              </button>
-              <div className="flex items-center gap-2">
-                <OrbitBrand size={30} />
-                <span className="font-serif text-sm font-bold text-shimmer-gold">Conscious Orbit</span>
+        <div className="cursor-pointer" onClick={onBack}>
+          <span className="font-mono text-xs font-extrabold uppercase tracking-[0.2em] text-[#F5D77F]">
+            Conscious Orbital
+          </span>
+        </div>
+      </header>
+
+      {/* Centered Main Form Container */}
+      <main className="relative z-10 w-full max-w-[360px] my-auto flex flex-col items-center justify-center">
+        
+        {/* Compact Toggle Switcher */}
+        <div className="relative mb-5 flex items-center justify-center gap-6 select-none bg-[#38070E]/80 border border-[#D4AF37]/40 px-4 py-1.5 rounded-full shadow-md">
+          <span
+            onClick={() => setIsChecked(false)}
+            className={`text-xs font-bold cursor-pointer transition-colors ${
+              !isChecked ? "text-[#F5D77F]" : "text-[#FAF4E8]/60 hover:text-[#FAF4E8]"
+            }`}
+          >
+            Log in
+          </span>
+
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={(e) => setIsChecked(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-[#4A0A13] border border-[#D4AF37]/60 rounded-full peer transition-colors relative">
+              <div
+                className={`absolute top-[1px] left-[1px] w-3.5 h-3.5 bg-[#F5D77F] rounded-full transition-transform duration-300 ${
+                  isChecked ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </div>
+          </label>
+
+          <span
+            onClick={() => setIsChecked(true)}
+            className={`text-xs font-bold cursor-pointer transition-colors ${
+              isChecked ? "text-[#F5D77F]" : "text-[#FAF4E8]/60 hover:text-[#FAF4E8]"
+            }`}
+          >
+            Sign up
+          </span>
+        </div>
+
+        {/* 3D FLIP CARD */}
+        <div className="w-full h-[390px] [perspective:1000px]">
+          <div
+            className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${
+              isChecked ? "[transform:rotateY(180deg)]" : ""
+            }`}
+          >
+            
+            {/* ========================================= */}
+            {/* FRONT FACE: LOG IN CARD                    */}
+            {/* ========================================= */}
+            <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-[#FAF4E8] text-[#4A0A13] rounded-3xl border border-[#D4AF37] p-6 shadow-2xl flex flex-col justify-between items-center text-center">
+              
+              <div className="space-y-1 w-full">
+                <h2 className="font-serif italic text-2xl sm:text-3xl font-extrabold text-[#4A0A13]">
+                  Log in
+                </h2>
+                <p className="text-[0.72rem] text-[#7A1C29] font-medium">
+                  Welcome back to Conscious Orbital
+                </p>
               </div>
-            </div>
 
-            {/* Center: showcase */}
-            <div className="relative my-10 flex flex-col items-center text-center">
-              <OrbitBrand size={88} />
-              <h2 className="mt-8 font-serif text-3xl font-bold leading-tight text-stone-100">
-                Strategy with <span className="text-shimmer-gold">Sovereignty</span>
-              </h2>
-              <p className="mt-3 max-w-xs text-sm text-stone-400">
-                Sign in to run ventures through the four-stage intelligence pipeline and your
-                royal decision engine.
-              </p>
+              <form onSubmit={handleSubmit} className="w-full space-y-3.5 my-auto">
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    className="w-full rounded-xl border border-[#D4AF37]/60 bg-[#FAF4E8] px-3.5 py-2.5 text-xs text-[#4A0A13] placeholder-[#7A1C29]/45 focus:border-[#4A0A13] focus:outline-none transition shadow-xs"
+                  />
+                </div>
 
-              {/* Feature ticks */}
-              <div className="mt-8 w-full max-w-xs space-y-3 text-left">
-                {[
-                  'Five-vertical intelligence suite',
-                  'TAM / SAM / SOM market sizing',
-                  'Conscious Orbital Score & 1/0 decision',
-                ].map((f) => (
-                  <div key={f} className="flex items-center gap-2.5">
-                    <CheckCircle2 size={15} className="shrink-0 text-amber-400" />
-                    <span className="text-sm text-stone-200/75">{f}</span>
+                <div className="space-y-1 text-left">
+                  <div className="flex items-center justify-between">
+                    <label className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">
+                      Password
+                    </label>
+                    <a
+                      href="#forgot"
+                      onClick={(e) => e.preventDefault()}
+                      className="text-[0.65rem] font-bold text-[#800000] hover:underline"
+                    >
+                      Forgot?
+                    </a>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Bottom: trust badge */}
-            <div className="relative flex items-center gap-2 rounded-xl border border-amber-500/15 bg-black/30 px-4 py-3">
-              <ShieldCheck size={15} className="shrink-0 text-amber-400" />
-              <span className="text-[0.72rem] text-stone-400">
-                Royal-tier encryption · Enterprise-grade security
-              </span>
-            </div>
-          </div>
-
-          {/* ===== RIGHT — AUTH FORM ===== */}
-          <div className="relative bg-black/50 p-8 backdrop-blur-xl md:p-10">
-            {/* Mobile brand header */}
-            <div className="mb-8 flex items-center justify-between lg:hidden">
-              <div className="flex items-center gap-2">
-                <OrbitBrand size={32} />
-                <span className="font-serif text-sm font-bold text-shimmer-gold">Conscious Orbit</span>
-              </div>
-              <button onClick={onBack} className="text-stone-500 transition hover:text-stone-200">
-                <ArrowLeft size={18} />
-              </button>
-            </div>
-
-            {/* Mode toggle */}
-            <div className="inline-flex rounded-xl border border-amber-500/20 bg-black/40 p-1">
-              {[
-                { id: 'signin', label: 'Sign In' },
-                { id: 'signup', label: 'Create Account' },
-              ].map((opt) => {
-                const active = mode === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => setMode(opt.id)}
-                    className={`relative rounded-lg px-5 py-2 text-sm font-medium transition ${
-                      active ? 'text-amber-900' : 'text-stone-400 hover:text-stone-100'
-                    }`}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="auth-tab"
-                        className="absolute inset-0 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 shadow-[0_0_18px_rgba(245,158,11,0.4)]"
-                      />
-                    )}
-                    <span className="relative">{opt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Heading */}
-            <div className="mt-6">
-              <div className="flex items-center gap-2">
-                <Crown size={16} className="text-amber-400" />
-                <span className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-amber-300/70">
-                  {mode === 'signin' ? 'Welcome Back' : 'Join the Orbit'}
-                </span>
-              </div>
-              <h1 className="mt-2 font-serif text-3xl font-bold text-stone-100">
-                {mode === 'signin' ? 'Sign in to your suite' : 'Create your royal account'}
-              </h1>
-              <p className="mt-2 text-sm text-stone-400">
-                {mode === 'signin'
-                  ? 'Enter your credentials to access the dashboard.'
-                  : 'Begin your venture intelligence journey in seconds.'}
-              </p>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-              {mode === 'signup' && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="space-y-4"
-                >
-                  <FormField label="Full Name" icon={Crown}>
+                  <div className="relative">
                     <input
-                      type="text"
+                      type={showPassword ? "text" : "password"}
                       required
-                      placeholder="Your royal name"
-                      className={`${fieldBase} pl-11`}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full rounded-xl border border-[#D4AF37]/60 bg-[#FAF4E8] px-3.5 py-2.5 pr-8 text-xs text-[#4A0A13] placeholder-[#7A1C29]/45 focus:border-[#4A0A13] focus:outline-none transition shadow-xs"
                     />
-                  </FormField>
-                </motion.div>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7A1C29]/60 hover:text-[#4A0A13] transition cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
 
-              <FormField label="Email Address" icon={Mail}>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@venture.io"
-                  className={`${fieldBase} pl-11`}
-                />
-              </FormField>
+                <button
+                  type="submit"
+                  className="w-full rounded-full border border-[#D4AF37] bg-[#4A0A13] hover:bg-[#5C0F1A] active:scale-[0.98] py-3 text-xs font-bold text-[#F5D77F] shadow-md transition cursor-pointer mt-2"
+                >
+                  Let's go!
+                </button>
+              </form>
 
-              <FormField label="Password" icon={Lock}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className={`${fieldBase} pl-11 pr-11`}
-                />
+              <div className="text-[0.7rem] text-[#7A1C29] font-medium">
+                Need an account?{" "}
                 <button
                   type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-600 transition hover:text-stone-300"
-                  tabIndex={-1}
+                  onClick={() => setIsChecked(true)}
+                  className="font-bold text-[#800000] hover:underline cursor-pointer"
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  Sign up
                 </button>
-              </FormField>
+              </div>
+            </div>
 
-              {/* Remember + forgot (signin only) */}
-              {mode === 'signin' && (
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex cursor-pointer items-center gap-2 text-stone-400">
-                    <input
-                      type="checkbox"
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
-                      className="h-4 w-4 rounded border-amber-500/30 bg-black/40 accent-amber-500"
-                    />
-                    Remember me
+            {/* ========================================= */}
+            {/* BACK FACE: SIGN UP CARD                    */}
+            {/* ========================================= */}
+            <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#FAF4E8] text-[#4A0A13] rounded-3xl border border-[#D4AF37] p-6 shadow-2xl flex flex-col justify-between items-center text-center">
+              
+              <div className="space-y-1 w-full">
+                <h2 className="font-serif italic text-2xl sm:text-3xl font-extrabold text-[#4A0A13]">
+                  Sign up
+                </h2>
+                <p className="text-[0.72rem] text-[#7A1C29] font-medium">
+                  Start your intelligence journey
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="w-full space-y-2.5 my-auto">
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">
+                    Full Name
                   </label>
-                  <button type="button" className="font-medium text-amber-300 transition hover:text-stone-300">
-                    Forgot password?
-                  </button>
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full rounded-xl border border-[#D4AF37]/60 bg-[#FAF4E8] px-3.5 py-2 text-xs text-[#4A0A13] placeholder-[#7A1C29]/45 focus:border-[#4A0A13] focus:outline-none transition shadow-xs"
+                  />
                 </div>
-              )}
 
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-royal flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-base font-bold disabled:opacity-70"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    {mode === 'signin' ? 'Signing in…' : 'Creating account…'}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={17} />
-                    {mode === 'signin' ? 'Enter the Suite' : 'Create Account'}
-                    <ArrowRight size={16} />
-                  </>
-                )}
-              </button>
-            </form>
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    className="w-full rounded-xl border border-[#D4AF37]/60 bg-[#FAF4E8] px-3.5 py-2 text-xs text-[#4A0A13] placeholder-[#7A1C29]/45 focus:border-[#4A0A13] focus:outline-none transition shadow-xs"
+                  />
+                </div>
 
-            {/* Divider */}
-            <div className="my-6 flex items-center gap-3">
-              <div className="h-px flex-1 bg-amber-500/15" />
-              <span className="text-[0.68rem] uppercase tracking-wider text-stone-600">or continue with</span>
-              <div className="h-px flex-1 bg-amber-500/15" />
-            </div>
+                <div className="space-y-1 text-left">
+                  <label className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full rounded-xl border border-[#D4AF37]/60 bg-[#FAF4E8] px-3.5 py-2 pr-8 text-xs text-[#4A0A13] placeholder-[#7A1C29]/45 focus:border-[#4A0A13] focus:outline-none transition shadow-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7A1C29]/60 hover:text-[#4A0A13] transition cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
 
-            {/* Social auth */}
-            <div className="grid grid-cols-2 gap-3">
-              {['Google', 'GitHub'].map((p) => (
+                <div className="flex items-center gap-2 pt-0.5 text-left">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="h-3 w-3 rounded border-[#D4AF37] text-[#4A0A13] focus:ring-[#4A0A13] cursor-pointer"
+                  />
+                  <label htmlFor="terms" className="text-[0.68rem] text-[#4A0A13] cursor-pointer font-medium">
+                    I agree to the{" "}
+                    <a
+                      href="#terms"
+                      onClick={(e) => e.preventDefault()}
+                      className="text-[#800000] underline font-bold"
+                    >
+                      Terms & Privacy
+                    </a>
+                  </label>
+                </div>
+
                 <button
-                  key={p}
-                  onClick={onLogin}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-white/[0.02] py-2.5 text-sm font-medium text-stone-300 transition hover:border-amber-400/40 hover:bg-amber-500/10 hover:text-stone-100"
+                  type="submit"
+                  className="w-full rounded-full border border-[#D4AF37] bg-[#4A0A13] hover:bg-[#5C0F1A] active:scale-[0.98] py-2.5 text-xs font-bold text-[#F5D77F] shadow-md transition cursor-pointer mt-1"
                 >
-                  <SocialIcon name={p} />
-                  {p}
+                  Confirm!
                 </button>
-              ))}
+              </form>
+
+              <div className="text-[0.7rem] text-[#7A1C29] font-medium">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => setIsChecked(false)}
+                  className="font-bold text-[#800000] hover:underline cursor-pointer"
+                >
+                  Log in
+                </button>
+              </div>
             </div>
 
-            {/* Switch mode */}
-            <p className="mt-6 text-center text-sm text-stone-400">
-              {mode === 'signin' ? "Don't have an account? " : 'Already part of the orbit? '}
-              <button
-                onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-                className="font-semibold text-amber-300 transition hover:text-stone-300"
-              >
-                {mode === 'signin' ? 'Create one' : 'Sign in'}
-              </button>
-            </p>
           </div>
-        </motion.div>
-      </div>
+        </div>
+
+      </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 py-2 text-center text-[0.68rem] font-mono text-[#F5D77F]/75">
+        © 2026 Conscious Orbital · Executive Security
+      </footer>
     </div>
-  );
-}
-
-/* ---------- Form field with leading icon ---------- */
-function FormField({ label, icon: Icon, children }) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-[0.7rem] font-semibold uppercase tracking-wider text-stone-400">
-        {label}
-      </span>
-      <div className="relative">
-        <Icon size={16} className="absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-amber-300/50" />
-        {children}
-      </div>
-    </label>
-  );
-}
-
-/* ---------- Inline social glyphs (no extra deps) ---------- */
-function SocialIcon({ name }) {
-  if (name === 'Google') {
-    return (
-      <svg width="15" height="15" viewBox="0 0 24 24" className="shrink-0">
-        <path fill="#f59e0b" d="M21.35 11.1H12v3.8h5.35c-.5 2.4-2.6 3.8-5.35 3.8A6.7 6.7 0 0 1 5.3 12 6.7 6.7 0 0 1 12 5.3c1.7 0 3.2.6 4.4 1.7l2.4-2.4A9.9 9.9 0 0 0 12 2a10 10 0 1 0 0 20c5.2 0 9.7-3.8 9.7-10 0-.6-.05-1.2-.35-1.9z"/>
-      </svg>
-    );
-  }
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" className="shrink-0 fill-amber-200/80">
-      <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.1-1.47-1.1-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.9.83.1-.65.35-1.08.63-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/>
-    </svg>
   );
 }
