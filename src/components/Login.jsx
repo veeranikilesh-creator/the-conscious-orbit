@@ -239,7 +239,7 @@ export default function Login({ onLogin, onBack }) {
                   animate={{ opacity: 1, height: 'auto' }}
                   className="space-y-4"
                 >
-                  <FormField label="Full Name" icon={Crown}>
+                  <FormField label="Full Name" icon={User}>
                     <input
                       type="text"
                       required
@@ -330,7 +330,11 @@ export default function Login({ onLogin, onBack }) {
                   </>
                 ) : (
                   <>
-                    {mode === 'signin' ? 'Sign In to Executive Suite' : 'Create Account'}
+                    {mode === 'signin'
+                      ? portalRole === 'admin'
+                        ? 'Sign In to Executive Admin'
+                        : 'Sign In to User Client Portal'
+                      : 'Create User Client Account'}
                     <ArrowRight size={17} className="shrink-0" />
                   </>
                 )}
