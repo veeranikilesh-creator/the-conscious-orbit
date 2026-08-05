@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkHealth, listReports, generateReportViaApi, getReport } from "../api.js";
 import ReportOverview from "./ReportOverview.jsx";
+import { estimateOfflineVerdict, offlineModuleScore } from "../localScoring.js";
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from "./VerticalEngines.jsx";
 import IntakeEngine from "./IntakeEngine.jsx";
 import {
@@ -242,12 +243,12 @@ const EMPTY_PROJECT_FORM = {
   tam: "",
   samPercent: "",
   conversionRate: "",
-  // Feasibility self-rating (MOD-04)
-  technical: 70,
-  operational: 70,
-  financial: 70,
-  regulatory: 70,
-  teamCapability: 70,
+  // Feasibility self-rating (MOD-04) — starts neutral; the user earns higher.
+  technical: 50,
+  operational: 50,
+  financial: 50,
+  regulatory: 50,
+  teamCapability: 50,
   // Pricing & investment (MOD-05 / MOD-08 / MOD-09)
   ourPrice: "",
   competitorLowPrice: "",
@@ -640,13 +641,43 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
     }, 1800);
 
     setTimeout(() => {
-      const calculatedScore = Math.floor(Math.random() * 10) + 86; // 86-95%
+      /* Honest offline estimate — computed from the answers, not invented.
+         A thin or weak intake lands in PIVOT here, same as the real pipeline. */
+      const est = estimateOfflineVerdict({
+        profile: {
+          company: newProjectForm.startupName,
+          industry: newProjectForm.sector,
+          geography: newProjectForm.geography,
+          contact: newProjectForm.contact,
+        },
+        clusters: {
+          market: {
+            problem: newProjectForm.description,
+            pain: newProjectForm.painPoint,
+            wtp: newProjectForm.wtpText,
+            icp: newProjectForm.icp,
+          },
+          viability: {
+            revenue: newProjectForm.revenueModel,
+            margin: newProjectForm.grossMargin,
+            costs: newProjectForm.costDrivers,
+            breakeven: newProjectForm.monthsToBreakEven,
+          },
+          launch: {
+            gtm: newProjectForm.gtmStrategy,
+            milestones: newProjectForm.milestones,
+            ask: newProjectForm.capitalRequired,
+          },
+        },
+        requirements: newProjectForm,
+      });
+      const calculatedScore = est.score;
       const newProj = {
         id: `p-${Date.now()}`,
         title: newProjectForm.startupName,
         industry: newProjectForm.sector,
-        verdict: `GO (${calculatedScore}%)`,
-        status: "ACTIVE",
+        verdict: est.verdictLabel,
+        status: est.decision === 1 ? "ACTIVE" : "UNDER_REVIEW",
         modulesProcessed: "10/10",
         date: new Date().toISOString().split("T")[0],
         description: newProjectForm.description || "Newly evaluated startup project."
@@ -659,7 +690,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
           vertical: "startups",
           status: "PUBLISHED",
           score: calculatedScore,
-          decision: 1,
+          decision: est.decision,
           clusters: { market: { problem: newProjectForm.description } },
           client: {
             company: newProjectForm.startupName,
@@ -673,13 +704,13 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
         moduleResults: {},
       });
 
-      // Update all 10 module scores to reflect analysis for this new startup
+      // Per-module estimates spread deterministically around the overall score.
       setModulesList((prev) =>
-        prev.map((mod) => ({
+        prev.map((mod, i) => ({
           ...mod,
           project: newProjectForm.startupName,
           status: "COMPLETED",
-          score: Math.floor(Math.random() * 14) + 82, // 82-95%
+          score: offlineModuleScore(calculatedScore, i),
           lastUpdated: "Just now"
         }))
       );

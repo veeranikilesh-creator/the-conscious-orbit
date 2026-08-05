@@ -207,9 +207,12 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
       problemStatement: problem,
       // If the form asked, use the honest answer — "no" legitimately scores 0.
       consumerCommunication: req.consumerCommunication ?? true,
-      reachableConsumers: Math.round(answered(req.reachableConsumers, isConsumer ? 50_000 : 2_500)),
-      interviewsCompleted: Math.round(answered(req.interviewsCompleted, 12)),
-      weeklyInteractions: Math.round(answered(req.weeklyInteractions, 40)),
+      /* Unanswered fields get CONSERVATIVE defaults, not flattering ones —
+         a score must be earned by real answers, so a blank intake lands in
+         pivot territory instead of coasting past the GO threshold. */
+      reachableConsumers: Math.round(answered(req.reachableConsumers, isConsumer ? 5_000 : 500)),
+      interviewsCompleted: Math.round(answered(req.interviewsCompleted, 5)),
+      weeklyInteractions: Math.round(answered(req.weeklyInteractions, 10)),
       channels: isConsumer ? ['social', 'community', 'email'] : ['outbound', 'events', 'referral'],
     },
 
@@ -219,24 +222,24 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
       targetDemographics: isConsumer ? icp : undefined,
       idealCompanyProfile: isConsumer ? undefined : icp,
       employeeCountRange: isConsumer ? undefined : '50-500',
-      dataCompleteness: 70,
+      dataCompleteness: 50,
     },
 
     marketSize: {
       tam: Math.max(1, answered(req.tam, 500_000_000)),
       currency: 'USD',
-      samPercent: pct(req.samPercent, 18),
+      samPercent: pct(req.samPercent, 12),
       channelMix: { direct: 30, partner: 20, online: 25 },
-      conversionRate: pct(req.conversionRate, isConsumer ? 3 : 12),
+      conversionRate: pct(req.conversionRate, isConsumer ? 2 : 8),
       averageContractValue: wtp * (isConsumer ? 12 : 12),
     },
 
     feasibility: {
-      technical: pct(req.technical, 72),
-      operational: pct(req.operational, 68),
-      financial: pct(req.financial, 65),
-      regulatory: pct(req.regulatory, 70),
-      teamCapability: pct(req.teamCapability, 75),
+      technical: pct(req.technical, 55),
+      operational: pct(req.operational, 52),
+      financial: pct(req.financial, 50),
+      regulatory: pct(req.regulatory, 55),
+      teamCapability: pct(req.teamCapability, 58),
       b2b: isConsumer ? undefined : {
         averageContractValue: wtp * 12,
         customerAcquisitionCost: wtp * 3,
@@ -271,8 +274,8 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
 
     businessModelValidation: {
       primary: {
-        formSubmissions: 45,
-        surveyReach: 500,
+        formSubmissions: 10,
+        surveyReach: 100,
         notes: clusters.market.pain?.trim() || undefined,
       },
       secondary: { useExistingModules: true, modules: [] },
@@ -280,7 +283,7 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
         capitalRequired: capital,
         monthsToBreakEven: Math.max(1, breakevenMonths),
         founderMonthsCommitted: 24,
-        expectedAnnualReturn: answered(req.expectedAnnualReturn, capital * 0.4),
+        expectedAnnualReturn: answered(req.expectedAnnualReturn, capital * 0.25),
       },
       currency: 'USD',
     },
@@ -295,7 +298,7 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
         geography,
       },
       advertising: {
-        monthlyBudget: answered(req.monthlyMarketingBudget, Math.max(3000, Math.round(capital / 100))),
+        monthlyBudget: answered(req.monthlyMarketingBudget, Math.max(1000, Math.round(capital / 200))),
         currentChannels: [],
       },
       commands: customModules,

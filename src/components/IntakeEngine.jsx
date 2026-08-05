@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Plus, Play, Target, TrendingUp, DollarSign, CheckCircle2, Layers } from "lucide-react";
 import { generateReportViaApi } from "../api.js";
+import { estimateOfflineVerdict } from "../localScoring.js";
 
 /* ============================================================
    THREE-LAYER DYNAMIC INTAKE ENGINE
@@ -194,16 +195,16 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
       }
     }
 
-    // Offline: the original simulation, so the workspace stays usable.
+    // Offline: an honest estimate from the intake itself — no invented GO.
     setProgressText("Auditing across 10 intelligence modules…");
     setTimeout(() => {
-      const score = Math.floor(Math.random() * 10) + 86;
+      const est = estimateOfflineVerdict({ profile, clusters, requirements: {} });
       const project = {
         id: `p-${Date.now()}`,
         title: profile.company.trim(),
         industry: profile.industry.trim() || "Venture",
-        verdict: `GO (${score}%)`,
-        status: "ACTIVE",
+        verdict: est.verdictLabel,
+        status: est.decision === 1 ? "ACTIVE" : "UNDER_REVIEW",
         modulesProcessed: "10/10",
         date: new Date().toISOString().split("T")[0],
         description: clusters.market.problem || "Venture evaluated through the intake engine.",
@@ -212,13 +213,16 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
         name: project.title,
         vertical: "startups",
         status: "PUBLISHED",
-        score,
-        decision: 1,
+        score: est.score,
+        decision: est.decision,
         clusters,
         client: { company: profile.company, industry: profile.industry, stage: profile.stage, businessModel: profile.model, geography: profile.geography, contact: profile.contact },
       };
       setPhase("done");
-      setDoneNote(`${project.title} evaluated locally at ${score}% (no backend). Review the overview; download the .doc from there.`);
+      setDoneNote(
+        `${project.title} estimated locally at ${est.score}% — ${est.decision === 1 ? "GO" : "PIVOT"} ` +
+        `(no backend; run against the live pipeline for the full ten-module verdict).`
+      );
       onSimulated?.(project, localReport);
     }, 1900);
   };
