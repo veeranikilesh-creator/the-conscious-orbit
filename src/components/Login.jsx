@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { ArrowLeft, Eye, EyeOff, ShieldCheck, UserCheck, Lock, Sparkles } from "lucide-react";
 
+/* Demo credential store — client-side only (no real authentication backend).
+   Executive portal: founder@venture.io / password123
+   Admin portal:     admin@consciousorbit.com / admin123 */
+const CREDENTIALS = {
+  executive: { email: "founder@venture.io", password: "password123" },
+  admin: { email: "admin@consciousorbit.com", password: "admin123" },
+};
+
 export default function Login({ onLogin, onBack }) {
   // isAdmin: false -> Executive Sign in, true -> Admin Sign in (Triggers 3D Card Flip)
   const [isAdmin, setIsAdmin] = useState(false);
@@ -16,6 +24,7 @@ export default function Login({ onLogin, onBack }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [adminSecurityKey, setAdminSecurityKey] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -23,6 +32,23 @@ export default function Login({ onLogin, onBack }) {
       alert("Please agree to the Terms & Privacy Policy to proceed.");
       return;
     }
+
+    // Sign-up stays a demo flow; signing IN checks the stored credentials.
+    if (!isSignUp) {
+      const expected = isAdmin ? CREDENTIALS.admin : CREDENTIALS.executive;
+      const emailOk = email.trim().toLowerCase() === expected.email;
+      const passwordOk = password === expected.password;
+      if (!emailOk || !passwordOk) {
+        setError(
+          isAdmin
+            ? "Invalid admin credentials. Check the admin email and passcode."
+            : "Invalid credentials. Check your executive email and password."
+        );
+        return;
+      }
+    }
+
+    setError("");
     if (onLogin) onLogin(isAdmin ? "admin" : "executive");
   };
 
@@ -79,7 +105,7 @@ export default function Login({ onLogin, onBack }) {
           }`}
         >
           <span
-            onClick={() => setIsAdmin(false)}
+            onClick={() => { setIsAdmin(false); setError(""); }}
             className={`text-xs font-bold cursor-pointer transition-colors ${
               !isAdmin
                 ? "text-[#F5D77F]"
@@ -93,7 +119,7 @@ export default function Login({ onLogin, onBack }) {
             <input
               type="checkbox"
               checked={isAdmin}
-              onChange={(e) => setIsAdmin(e.target.checked)}
+              onChange={(e) => { setIsAdmin(e.target.checked); setError(""); }}
               className="sr-only peer"
             />
             <div
@@ -114,7 +140,7 @@ export default function Login({ onLogin, onBack }) {
           </label>
 
           <span
-            onClick={() => setIsAdmin(true)}
+            onClick={() => { setIsAdmin(true); setError(""); }}
             className={`text-xs font-bold cursor-pointer transition-colors ${
               isAdmin
                 ? "text-[#4A0A13]"
@@ -245,6 +271,12 @@ export default function Login({ onLogin, onBack }) {
                   </div>
                 )}
 
+                {error && !isAdmin && (
+                  <p className="text-[0.7rem] font-bold text-[#B3261E] bg-[#FDECEA] border border-[#B3261E]/30 rounded-xl px-3 py-2">
+                    {error}
+                  </p>
+                )}
+
                 <button
                   type="submit"
                   className="w-full rounded-full border border-[#D4AF37] bg-[#4A0A13] hover:bg-[#5C0F1A] active:scale-[0.98] py-3 text-xs font-bold text-[#F5D77F] shadow-md transition cursor-pointer mt-1"
@@ -260,7 +292,7 @@ export default function Login({ onLogin, onBack }) {
                     Already have an account?{" "}
                     <button
                       type="button"
-                      onClick={() => setIsSignUp(false)}
+                      onClick={() => { setIsSignUp(false); setError(""); }}
                       className="font-bold text-[#800000] hover:underline cursor-pointer"
                     >
                       Sign in
@@ -271,7 +303,7 @@ export default function Login({ onLogin, onBack }) {
                     Need an account?{" "}
                     <button
                       type="button"
-                      onClick={() => setIsSignUp(true)}
+                      onClick={() => { setIsSignUp(true); setError(""); }}
                       className="font-bold text-[#800000] hover:underline cursor-pointer"
                     >
                       Sign up
@@ -353,6 +385,12 @@ export default function Login({ onLogin, onBack }) {
                   />
                 </div>
 
+                {error && isAdmin && (
+                  <p className="text-[0.7rem] font-bold text-[#FFB4A9] bg-[#5C0F1A] border border-[#FFB4A9]/40 rounded-xl px-3 py-2">
+                    {error}
+                  </p>
+                )}
+
                 <button
                   type="submit"
                   className="w-full rounded-full border border-[#F5D77F] bg-gradient-to-r from-[#D4AF37] to-[#C89B3C] hover:from-[#E6C260] hover:to-[#D4AF37] active:scale-[0.98] py-2.5 text-xs font-extrabold text-[#4A0A13] shadow-lg transition cursor-pointer mt-1"
@@ -366,7 +404,7 @@ export default function Login({ onLogin, onBack }) {
                 Need Executive Access?{" "}
                 <button
                   type="button"
-                  onClick={() => setIsAdmin(false)}
+                  onClick={() => { setIsAdmin(false); setError(""); }}
                   className="font-bold text-[#F5D77F] hover:underline cursor-pointer"
                 >
                   Sign in
