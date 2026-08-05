@@ -3,11 +3,34 @@ import {
   TrendingUp, Factory, Building2,
   Clock, PiggyBank, ChevronRight,
 } from 'lucide-react';
-import { GlassPanel, Field, Input, Select } from './ui.jsx';
 
 /* ============================================================
-   VERTICAL ENGINES — Executive Black & Gold Function Modules
+   VERTICAL ENGINES — per-vertical what-if calculators, styled
+   to the site's cream & gold design system. The derivations
+   (TAM/SAM/SOM, savings/payback, defect/sigma) are unchanged.
    ============================================================ */
+
+const labelCls = 'font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider';
+const fieldCls =
+  'w-full rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-2.5 text-xs text-[#4A0A13] placeholder-[#8C6D58]/60 focus:border-[#400A12] focus:outline-none shadow-xs';
+
+function Panel({ children, className = '' }) {
+  return (
+    <div className={`bg-white/90 border border-[#D4AF37]/40 rounded-2xl p-5 shadow-xs ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function EngineField({ label, hint, children }) {
+  return (
+    <div className="space-y-1">
+      <label className={labelCls}>{label}</label>
+      {children}
+      {hint && <p className="text-[0.65rem] text-[#8C6D58]">{hint}</p>}
+    </div>
+  );
+}
 
 /* ---------------- A. STARTUP — MARKET SIZING ENGINE ---------------- */
 export function StartupMarketEngine() {
@@ -35,55 +58,57 @@ export function StartupMarketEngine() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
         {/* Inputs */}
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
-          <Field label="Total Addressable Market (TAM) — USD">
-            <Input type="number" value={tam} onChange={(e) => setTam(parseInt(e.target.value) || 0)} />
-          </Field>
-          <Field label={`Serviceable % of TAM — ${samPct}%`} hint="Share of TAM your model can actually reach">
-            <input type="range" min={1} max={100} value={samPct} onChange={(e) => setSamPct(parseInt(e.target.value))} className="w-full accent-[#D4AF37]" />
-          </Field>
+        <Panel className="space-y-4">
+          <EngineField label="Total Addressable Market (TAM) — USD">
+            <input type="number" className={fieldCls} value={tam} onChange={(e) => setTam(parseInt(e.target.value) || 0)} />
+          </EngineField>
+          <EngineField label={`Serviceable % of TAM — ${samPct}%`} hint="Share of TAM your model can actually reach">
+            <input type="range" min={1} max={100} value={samPct} onChange={(e) => setSamPct(parseInt(e.target.value))} className="w-full accent-[#400A12] cursor-pointer" />
+          </EngineField>
 
           <div className="space-y-2 pt-2">
-            <span className="font-mono text-[0.68rem] font-semibold uppercase tracking-wider text-[#F4D67A]">Channel Mix Split</span>
+            <span className={labelCls}>Channel Mix Split</span>
             <div className="grid grid-cols-3 gap-2">
-              <Field label="Direct">
-                <Input type="number" value={channels.direct} onChange={(e) => setChannels({ ...channels, direct: parseInt(e.target.value) || 0 })} />
-              </Field>
-              <Field label="Partner">
-                <Input type="number" value={channels.partner} onChange={(e) => setChannels({ ...channels, partner: parseInt(e.target.value) || 0 })} />
-              </Field>
-              <Field label="Online">
-                <Input type="number" value={channels.online} onChange={(e) => setChannels({ ...channels, online: parseInt(e.target.value) || 0 })} />
-              </Field>
+              <EngineField label="Direct">
+                <input type="number" className={fieldCls} value={channels.direct} onChange={(e) => setChannels({ ...channels, direct: parseInt(e.target.value) || 0 })} />
+              </EngineField>
+              <EngineField label="Partner">
+                <input type="number" className={fieldCls} value={channels.partner} onChange={(e) => setChannels({ ...channels, partner: parseInt(e.target.value) || 0 })} />
+              </EngineField>
+              <EngineField label="Online">
+                <input type="number" className={fieldCls} value={channels.online} onChange={(e) => setChannels({ ...channels, online: parseInt(e.target.value) || 0 })} />
+              </EngineField>
             </div>
           </div>
 
-          <Field label={`Conversion Rate — ${conversion}%`} hint="Leads to closed customers">
-            <input type="range" min={1} max={30} value={conversion} onChange={(e) => setConversion(parseInt(e.target.value))} className="w-full accent-[#D4AF37]" />
-          </Field>
-        </GlassPanel>
+          <EngineField label={`Conversion Rate — ${conversion}%`} hint="Leads to closed customers">
+            <input type="range" min={1} max={30} value={conversion} onChange={(e) => setConversion(parseInt(e.target.value))} className="w-full accent-[#400A12] cursor-pointer" />
+          </EngineField>
+        </Panel>
 
         {/* Output metrics */}
-        <GlassPanel className="space-y-5 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
-          <h4 className="font-sans text-base font-bold text-[#FFFFFF]">Converted Market Sizing</h4>
+        <Panel className="space-y-5">
+          <h4 className="font-serif text-base font-bold text-[#400A12]">Converted Market Sizing</h4>
 
           <div className="space-y-3">
-            <MetricBar label="TAM (Total Addressable)" val={`$${tam.toLocaleString()}`} pct={100} color="bg-[#F4D67A]" />
-            <MetricBar label="SAM (Serviceable)" val={`$${sam.toLocaleString()}`} pct={samPct} color="bg-[#D4AF37]" />
-            <MetricBar label="SOM (Obtainable)" val={`$${som.toLocaleString()}`} pct={Math.max(3, Math.round((som / Math.max(tam, 1)) * 100))} color="bg-[#10B981]" />
+            <MetricBar label="TAM (Total Addressable)" val={`$${tam.toLocaleString()}`} pct={100} color="bg-[#D4AF37]" />
+            <MetricBar label="SAM (Serviceable)" val={`$${sam.toLocaleString()}`} pct={samPct} color="bg-[#B8860B]" />
+            <MetricBar label="SOM (Obtainable)" val={`$${som.toLocaleString()}`} pct={Math.max(3, Math.round((som / Math.max(tam, 1)) * 100))} color="bg-emerald-500" />
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-3">
-            <div className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3 text-center">
-              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Market Feasibility</span>
-              <p className="font-sans text-2xl font-bold text-[#F4D67A]">{feasibility}<span className="text-xs text-[#9A9A9A]">/100</span></p>
+            <div className="rounded-xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-3 text-center">
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#8C6D58]">Market Feasibility</span>
+              <p className="font-serif text-2xl font-bold text-[#B8860B]">{feasibility}<span className="text-xs text-[#8C6D58]">/100</span></p>
             </div>
-            <div className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3 text-center">
-              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Recommendation</span>
-              <p className="font-mono text-xs font-bold text-[#10B981] mt-1">{feasibility >= 60 ? '1 · Proceed' : '0 · Pivot'}</p>
+            <div className="rounded-xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-3 text-center">
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#8C6D58]">Recommendation</span>
+              <p className={`font-mono text-xs font-bold mt-1 ${feasibility >= 60 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {feasibility >= 60 ? '1 · Proceed' : '0 · Pivot'}
+              </p>
             </div>
           </div>
-        </GlassPanel>
+        </Panel>
       </div>
     </div>
   );
@@ -108,37 +133,37 @@ export function MsmeOptimizationEngine() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
-          <Field label="Primary Operational Bottleneck">
-            <Select value={bottleneck} onChange={(e) => setBottleneck(e.target.value)}>
+        <Panel className="space-y-4">
+          <EngineField label="Primary Operational Bottleneck">
+            <select value={bottleneck} onChange={(e) => setBottleneck(e.target.value)} className={`${fieldCls} cursor-pointer`}>
               <option value="inventory">Inventory Holding & Stockout Delays</option>
               <option value="logistics">Last-Mile Freight & Logistics Spikes</option>
               <option value="manual">Manual Data Entry & Invoice Reconciliation</option>
               <option value="quality">Quality Rejection Rate in Production</option>
-            </Select>
-          </Field>
-          <Field label={`Average Delay per Cycle — ${delayDays} Days`}>
-            <input type="range" min={1} max={60} value={delayDays} onChange={(e) => setDelayDays(parseInt(e.target.value))} className="w-full accent-[#D4AF37]" />
-          </Field>
-          <Field label="Monthly Operational Spend (USD)">
-            <Input type="number" value={monthlySpend} onChange={(e) => setMonthlySpend(parseInt(e.target.value) || 0)} />
-          </Field>
-        </GlassPanel>
+            </select>
+          </EngineField>
+          <EngineField label={`Average Delay per Cycle — ${delayDays} Days`}>
+            <input type="range" min={1} max={60} value={delayDays} onChange={(e) => setDelayDays(parseInt(e.target.value))} className="w-full accent-[#400A12] cursor-pointer" />
+          </EngineField>
+          <EngineField label="Monthly Operational Spend (USD)">
+            <input type="number" className={fieldCls} value={monthlySpend} onChange={(e) => setMonthlySpend(parseInt(e.target.value) || 0)} />
+          </EngineField>
+        </Panel>
 
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
-          <h4 className="font-sans text-base font-bold text-[#FFFFFF]">Diagnostic Findings</h4>
+        <Panel className="space-y-4">
+          <h4 className="font-serif text-base font-bold text-[#400A12]">Diagnostic Findings</h4>
 
           <div className="grid grid-cols-2 gap-3">
             <SavingsCard icon={PiggyBank} label="Potential Savings / Mo" value={`$${potentialSavings.toLocaleString()}`} />
-            <SavingsCard icon={Clock} label="Estimated Payback" value={`${paybackMonths} Mo`} tone="rose" />
+            <SavingsCard icon={Clock} label="Estimated Payback" value={`${paybackMonths} Mo`} />
           </div>
 
           <div className="space-y-2.5 pt-2">
-            <span className="font-mono text-[0.65rem] font-bold uppercase tracking-wider text-[#F4D67A]">Recommended Actions</span>
+            <span className={labelCls}>Recommended Actions</span>
             <RoadmapPhase phase="Phase 1: Zero-Waste Audit" desc="Audit current inventory hold times to eliminate redundant buffer stock." />
             <RoadmapPhase phase="Phase 2: Digital Dispatch" desc="Automate invoice & order dispatch via lightweight webhook integrations." />
           </div>
-        </GlassPanel>
+        </Panel>
       </div>
     </div>
   );
@@ -162,29 +187,29 @@ export function IndustryAnalysisEngine() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111]">
-          <Field label="Annual Output Volume (Units)">
-            <Input type="number" value={outputVolume} onChange={(e) => setOutputVolume(parseInt(e.target.value) || 0)} />
-          </Field>
-          <Field label={`Current Defect Rate — ${defectRate}%`}>
-            <input type="range" min={0.1} max={15} step={0.1} value={defectRate} onChange={(e) => setDefectRate(parseFloat(e.target.value))} className="w-full accent-[#D4AF37]" />
-          </Field>
-        </GlassPanel>
+        <Panel className="space-y-4">
+          <EngineField label="Annual Output Volume (Units)">
+            <input type="number" className={fieldCls} value={outputVolume} onChange={(e) => setOutputVolume(parseInt(e.target.value) || 0)} />
+          </EngineField>
+          <EngineField label={`Current Defect Rate — ${defectRate}%`}>
+            <input type="range" min={0.1} max={15} step={0.1} value={defectRate} onChange={(e) => setDefectRate(parseFloat(e.target.value))} className="w-full accent-[#400A12] cursor-pointer" />
+          </EngineField>
+        </Panel>
 
-        <GlassPanel className="space-y-4 p-6 border-[rgba(212,175,55,0.25)] bg-[#111111] text-white">
-          <h4 className="font-sans text-base font-bold text-[#FFFFFF]">Systemic Quality Index</h4>
+        <Panel className="space-y-4">
+          <h4 className="font-serif text-base font-bold text-[#400A12]">Systemic Quality Index</h4>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3 text-center">
-              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Defect Units / Year</span>
-              <p className="font-sans text-xl font-bold text-[#F4D67A]">{defectUnits.toLocaleString()}</p>
+            <div className="rounded-xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-3 text-center">
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#8C6D58]">Defect Units / Year</span>
+              <p className="font-serif text-xl font-bold text-[#B8860B]">{defectUnits.toLocaleString()}</p>
             </div>
-            <div className="rounded-xl border border-[rgba(212,175,55,0.18)] bg-[#0E0E0E] p-3 text-center">
-              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#9A9A9A]">Estimated Sigma Level</span>
-              <p className="font-sans text-xl font-bold text-[#F4D67A]">{sigmaLevel} σ</p>
+            <div className="rounded-xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-3 text-center">
+              <span className="font-mono text-[0.6rem] font-bold uppercase tracking-wider text-[#8C6D58]">Estimated Sigma Level</span>
+              <p className="font-serif text-xl font-bold text-[#B8860B]">{sigmaLevel} σ</p>
             </div>
           </div>
-        </GlassPanel>
+        </Panel>
       </div>
     </div>
   );
@@ -195,36 +220,35 @@ function EngineHead({ icon: Icon, kicker, title, desc }) {
   return (
     <div>
       <div className="flex items-center gap-2">
-        <Icon size={16} className="text-[#D4AF37]" />
-        <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#F4D67A]">{kicker}</span>
+        <Icon size={16} className="text-[#B8860B]" />
+        <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#B8860B]">{kicker}</span>
       </div>
-      <h3 className="mt-1 font-sans text-2xl font-bold text-[#FFFFFF]">{title}</h3>
-      <p className="mt-1 max-w-2xl text-sm text-[#CFCFCF]">{desc}</p>
+      <h3 className="mt-1 font-serif text-2xl font-bold text-[#400A12]">{title}</h3>
+      <p className="mt-1 max-w-2xl text-sm text-[#7A1C29]">{desc}</p>
     </div>
   );
 }
 
-function MetricBar({ label, val, pct, color = 'bg-[#F4D67A]' }) {
+function MetricBar({ label, val, pct, color = 'bg-[#D4AF37]' }) {
   return (
     <div>
-      <div className="flex justify-between font-mono text-xs text-[#CFCFCF]">
+      <div className="flex justify-between font-mono text-xs text-[#8C6D58]">
         <span>{label}</span>
-        <span className="font-bold text-[#FFFFFF]">{val}</span>
+        <span className="font-bold text-[#400A12]">{val}</span>
       </div>
-      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[#0E0E0E]">
+      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[#4A0A13]/10">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(2, pct)}%` }} />
       </div>
     </div>
   );
 }
 
-function SavingsCard({ icon: Icon, label, value, tone = 'gold' }) {
-  const toneCls = tone === 'rose' ? 'text-[#F4D67A] border-[rgba(212,175,55,0.2)] bg-[#111111]' : 'text-[#FFFFFF] border-[rgba(212,175,55,0.18)] bg-[#0E0E0E]';
+function SavingsCard({ icon: Icon, label, value }) {
   return (
-    <div className={`rounded-xl border p-3 ${toneCls}`}>
-      <Icon size={13} />
-      <span className="mt-1 block font-mono text-[0.62rem] uppercase text-[#9A9A9A]">{label}</span>
-      <span className="font-sans text-sm font-bold text-[#FFFFFF]">{value}</span>
+    <div className="rounded-xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-3">
+      <Icon size={13} className="text-[#B8860B]" />
+      <span className="mt-1 block font-mono text-[0.62rem] uppercase text-[#8C6D58]">{label}</span>
+      <span className="font-serif text-sm font-bold text-[#400A12]">{value}</span>
     </div>
   );
 }
@@ -232,12 +256,12 @@ function SavingsCard({ icon: Icon, label, value, tone = 'gold' }) {
 function RoadmapPhase({ phase, desc }) {
   return (
     <div className="flex gap-3">
-      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#D4AF37] bg-[#050505]">
-        <ChevronRight size={12} className="text-[#D4AF37]" />
+      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#D4AF37] bg-[#F5EAD4]">
+        <ChevronRight size={12} className="text-[#B8860B]" />
       </div>
       <div>
-        <p className="text-xs font-bold text-[#FFFFFF]">{phase}</p>
-        <p className="text-[0.7rem] text-[#CFCFCF]">{desc}</p>
+        <p className="text-xs font-bold text-[#400A12]">{phase}</p>
+        <p className="text-[0.7rem] text-[#7A1C29]">{desc}</p>
       </div>
     </div>
   );

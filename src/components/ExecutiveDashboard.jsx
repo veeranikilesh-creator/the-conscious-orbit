@@ -1484,9 +1484,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
               ))}
             </div>
 
-            {/* The engines are the originals from the previous site, verbatim —
-                they carry their own executive black & gold styling. */}
-            <div className="rounded-3xl border border-[#D4AF37]/40 bg-[#050505] p-4 sm:p-6">
+            <div>
               {engineTab === "startup" && <StartupMarketEngine />}
               {engineTab === "msme" && <MsmeOptimizationEngine />}
               {engineTab === "industry" && <IndustryAnalysisEngine />}
