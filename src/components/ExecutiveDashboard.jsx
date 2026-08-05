@@ -744,7 +744,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
          1. EXECUTIVE TOP NAVBAR (HEADER)
          ============================================================ */}
       <header className="sticky top-0 z-30 w-full bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#D4AF37]/20 px-4 sm:px-8 py-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4">
           
           {/* Left Title & Breadcrumbs */}
           <div className="flex flex-col text-center md:text-left w-full md:w-auto">
@@ -868,7 +868,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
       {/* ============================================================
          2. MAIN HERO WORKSPACE BANNER (WITH 3 WELCOME CARD BUTTONS)
          ============================================================ */}
-      <main className="max-w-7xl mx-auto w-full px-4 sm:px-8 pt-6 sm:pt-8 space-y-8 flex-1">
+      <main className="w-full px-4 sm:px-8 pt-6 sm:pt-8 space-y-8 flex-1">
         
         {/* Banner Card */}
         <div className="relative w-full bg-[#400A12] border border-[#D4AF37]/30 rounded-2xl p-5 sm:p-7 text-[#FAF4E8] shadow-xl">

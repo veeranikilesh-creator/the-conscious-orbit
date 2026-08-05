@@ -637,7 +637,7 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
       {/* ELEGANT UNIFIED HEADER & NAVBAR                              */}
       {/* ============================================================ */}
       <header className="relative z-30 w-full border-b border-[#D4AF37]/30 bg-[#FAF4E8] px-6 py-4 shadow-xs">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4">
           
           {/* Brand & Admin Title */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={onGoHome}>
@@ -683,7 +683,7 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
         </div>
 
         {/* Navbar Tabs */}
-        <div className="max-w-7xl mx-auto mt-4 pt-3 border-t border-[#D4AF37]/20 flex items-center justify-start overflow-x-auto gap-2 no-scrollbar">
+        <div className="w-full mt-4 pt-3 border-t border-[#D4AF37]/20 flex items-center justify-start overflow-x-auto gap-2 no-scrollbar">
           {[
             { id: "all-modules", label: "1. All 10 Modules", count: 10, icon: Layers },
             { id: "client-forms", label: "2. Client Forms & Profiles", count: clientProfiles.length, icon: UserCheck },
@@ -719,7 +719,7 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
       {/* ============================================================ */}
       {/* MAIN ELEGANT WORKSPACE CONTENT                               */}
       {/* ============================================================ */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 space-y-6">
+      <main className="relative z-10 flex-1 w-full p-4 md:p-8 space-y-6">
 
         {/* ============================================================ */}
         {/* WELCOME ADMIN CARD BANNER (LIKE CLIENT WORKSPACE)            */}
