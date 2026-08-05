@@ -204,6 +204,94 @@ function projectFromReport(r) {
   };
 }
 
+/* ---- New Project requirements wizard ------------------------------------
+   Five steps that collect the actual inputs the ten calculators score on.
+   Every field except the name is optional — blanks fall back to the
+   documented defaults inside buildModuleInputs(), so a quick submission
+   still runs; the more that is answered, the more the score is the user's
+   own business rather than the placeholders'. */
+
+const EMPTY_PROJECT_FORM = {
+  startupName: "",
+  sector: "Healthcare & Logistics",
+  stage: "Early Stage / Seed",
+  businessModel: "B2B Enterprise",
+  description: "",
+  // Customer reach (MOD-01)
+  consumerCommunication: true,
+  reachableConsumers: "",
+  interviewsCompleted: "",
+  weeklyInteractions: "",
+  // Market size (MOD-03)
+  tam: "",
+  samPercent: "",
+  conversionRate: "",
+  // Feasibility self-rating (MOD-04)
+  technical: 70,
+  operational: 70,
+  financial: 70,
+  regulatory: 70,
+  teamCapability: 70,
+  // Pricing & investment (MOD-05 / MOD-08 / MOD-09)
+  ourPrice: "",
+  competitorLowPrice: "",
+  competitorHighPrice: "",
+  capitalRequired: "",
+  monthsToBreakEven: "",
+  expectedAnnualReturn: "",
+  monthlyMarketingBudget: "",
+};
+
+const WIZARD_STEPS = [
+  "Venture Basics",
+  "Customer Reach",
+  "Market Size",
+  "Feasibility",
+  "Pricing & Investment",
+];
+
+const fieldCls =
+  "w-full rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-2.5 text-xs text-[#4A0A13] placeholder-[#8C6D58]/60 focus:border-[#400A12] focus:outline-none shadow-xs";
+const labelCls =
+  "font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider";
+
+function ReqNumber({ label, value, onChange, placeholder, hint }) {
+  return (
+    <div className="space-y-1">
+      <label className={labelCls}>{label}</label>
+      <input
+        type="number"
+        min="0"
+        step="any"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={fieldCls}
+      />
+      {hint && <p className="text-[0.65rem] text-[#8C6D58]">{hint}</p>}
+    </div>
+  );
+}
+
+function ReqSlider({ label, value, onChange }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <label className={labelCls}>{label}</label>
+        <span className="font-mono text-xs font-bold text-[#400A12]">{value}/100</span>
+      </div>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full accent-[#400A12] cursor-pointer"
+      />
+    </div>
+  );
+}
+
 const INITIAL_MY_PROJECTS = [
   {
     id: "p1",
@@ -308,12 +396,8 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
   const [questionSuccess, setQuestionSuccess] = useState(false);
 
   // New Project Form & Analysis State
-  const [newProjectForm, setNewProjectForm] = useState({
-    startupName: "",
-    sector: "Healthcare & Logistics",
-    stage: "Early Stage / Seed",
-    description: ""
-  });
+  const [newProjectForm, setNewProjectForm] = useState(EMPTY_PROJECT_FORM);
+  const [wizardStep, setWizardStep] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStatusText, setAnalysisStatusText] = useState("Initializing orbital synthesis engine...");
 
@@ -381,6 +465,12 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
     e.preventDefault();
     if (!newProjectForm.startupName.trim()) return;
 
+    // Enter / "Next" advances the wizard; only the last step submits.
+    if (wizardStep < WIZARD_STEPS.length - 1) {
+      setWizardStep((s) => s + 1);
+      return;
+    }
+
     if (apiStatus === "online") {
       setIsAnalyzing(true);
       try {
@@ -396,13 +486,34 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
               industry: newProjectForm.sector,
               stage: STAGE_TO_SERVER[newProjectForm.stage] || "Seed",
               geography: "",
-              model: "B2B Enterprise",
+              model: newProjectForm.businessModel,
               contact: "",
             },
             clusters: {
               market: { problem: newProjectForm.description, pain: "", wtp: "", icp: "" },
               viability: { revenue: "", margin: "", costs: "", breakeven: "" },
               launch: { geography: "", gtm: "", milestones: "", ask: "" },
+            },
+            requirements: {
+              consumerCommunication: newProjectForm.consumerCommunication,
+              reachableConsumers: newProjectForm.reachableConsumers,
+              interviewsCompleted: newProjectForm.interviewsCompleted,
+              weeklyInteractions: newProjectForm.weeklyInteractions,
+              tam: newProjectForm.tam,
+              samPercent: newProjectForm.samPercent,
+              conversionRate: newProjectForm.conversionRate,
+              technical: newProjectForm.technical,
+              operational: newProjectForm.operational,
+              financial: newProjectForm.financial,
+              regulatory: newProjectForm.regulatory,
+              teamCapability: newProjectForm.teamCapability,
+              ourPrice: newProjectForm.ourPrice,
+              competitorLowPrice: newProjectForm.competitorLowPrice,
+              competitorHighPrice: newProjectForm.competitorHighPrice,
+              capitalRequired: newProjectForm.capitalRequired,
+              monthsToBreakEven: newProjectForm.monthsToBreakEven,
+              expectedAnnualReturn: newProjectForm.expectedAnnualReturn,
+              monthlyMarketingBudget: newProjectForm.monthlyMarketingBudget,
             },
           },
           (label, done, total) => setAnalysisStatusText(`${label} (${done}/${total})…`)
@@ -421,7 +532,8 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
         );
         setIsAnalyzing(false);
         setIsNewProjectModalOpen(false);
-        setNewProjectForm({ startupName: "", sector: "Healthcare & Logistics", stage: "Early Stage / Seed", description: "" });
+        setNewProjectForm(EMPTY_PROJECT_FORM);
+        setWizardStep(0);
         setNavbarSection("modules");
         return;
       } catch (err) {
@@ -474,7 +586,8 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
 
       setIsAnalyzing(false);
       setIsNewProjectModalOpen(false);
-      setNewProjectForm({ startupName: "", sector: "Healthcare & Logistics", stage: "Early Stage / Seed", description: "" });
+      setNewProjectForm(EMPTY_PROJECT_FORM);
+        setWizardStep(0);
       setNavbarSection("modules"); // Switch navbar to Module Wise Score to highlight results!
     }, 2400);
   };
@@ -1408,7 +1521,10 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
             >
               {/* Close Button */}
               <button
-                onClick={() => setIsNewProjectModalOpen(false)}
+                onClick={() => {
+                  setIsNewProjectModalOpen(false);
+                  setWizardStep(0);
+                }}
                 className="absolute top-5 right-5 p-1.5 rounded-full hover:bg-[#F5EAD4] text-[#8C6D58] hover:text-[#4A0A13] transition cursor-pointer"
               >
                 <X size={18} />
@@ -1424,8 +1540,29 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                   New Project Analysis
                 </h3>
                 <p className="text-xs text-[#7A1C29]">
-                  Enter startup details to initiate full automated scoring across all 10 intelligence modules.
+                  Answer the requirements below — the 10 intelligence modules score exactly what you enter.
+                  Blank fields fall back to standard assumptions.
                 </p>
+                {!isAnalyzing && (
+                  <div className="flex items-center gap-1.5 pt-2">
+                    {WIZARD_STEPS.map((title, i) => (
+                      <button
+                        key={title}
+                        type="button"
+                        onClick={() => newProjectForm.startupName.trim() && setWizardStep(i)}
+                        title={title}
+                        className={`h-1.5 flex-1 rounded-full transition cursor-pointer ${
+                          i <= wizardStep ? "bg-[#400A12]" : "bg-[#D4AF37]/30"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+                {!isAnalyzing && (
+                  <p className="font-mono text-[0.65rem] uppercase tracking-wider text-[#8C6D58] pt-1">
+                    Step {wizardStep + 1} of {WIZARD_STEPS.length} — {WIZARD_STEPS[wizardStep]}
+                  </p>
+                )}
               </div>
 
               {isAnalyzing ? (
@@ -1443,89 +1580,277 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                 </div>
               ) : (
                 <form onSubmit={handleDoAnalysis} className="space-y-4">
-                  {/* Startup Name Field */}
-                  <div className="space-y-1">
-                    <label className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">
-                      Startup / Project Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={newProjectForm.startupName}
-                      onChange={(e) => setNewProjectForm({ ...newProjectForm, startupName: e.target.value })}
-                      placeholder="e.g. AeroPulse Cold-Chain AI"
-                      className="w-full rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-2.5 text-xs text-[#4A0A13] placeholder-[#8C6D58]/60 focus:border-[#400A12] focus:outline-none shadow-xs"
-                    />
-                  </div>
+                  {/* STEP 1 — Venture Basics */}
+                  {wizardStep === 0 && (
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className={labelCls}>Startup / Project Name *</label>
+                        <input
+                          type="text"
+                          required
+                          value={newProjectForm.startupName}
+                          onChange={(e) => setNewProjectForm({ ...newProjectForm, startupName: e.target.value })}
+                          placeholder="e.g. AeroPulse Cold-Chain AI"
+                          className={fieldCls}
+                        />
+                      </div>
 
-                  {/* Sector / Industry Field */}
-                  <div className="space-y-1">
-                    <label className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">
-                      Sector / Industry Vertical
-                    </label>
-                    <select
-                      value={newProjectForm.sector}
-                      onChange={(e) => setNewProjectForm({ ...newProjectForm, sector: e.target.value })}
-                      className="w-full rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-2.5 text-xs text-[#4A0A13] focus:border-[#400A12] focus:outline-none shadow-xs cursor-pointer"
-                    >
-                      <option value="Healthcare & Logistics">Healthcare & Logistics</option>
-                      <option value="HR Tech & Enterprise SaaS">HR Tech & Enterprise SaaS</option>
-                      <option value="Fintech & Insurtech">Fintech & Insurtech</option>
-                      <option value="AgriTech & Climate">AgriTech & Climate</option>
-                      <option value="Retail & E-commerce">Retail & E-commerce</option>
-                      <option value="DeepTech & AI">DeepTech & AI Infrastructure</option>
-                    </select>
-                  </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className={labelCls}>Sector / Industry Vertical</label>
+                          <select
+                            value={newProjectForm.sector}
+                            onChange={(e) => setNewProjectForm({ ...newProjectForm, sector: e.target.value })}
+                            className={`${fieldCls} cursor-pointer`}
+                          >
+                            <option value="Healthcare & Logistics">Healthcare & Logistics</option>
+                            <option value="HR Tech & Enterprise SaaS">HR Tech & Enterprise SaaS</option>
+                            <option value="Fintech & Insurtech">Fintech & Insurtech</option>
+                            <option value="AgriTech & Climate">AgriTech & Climate</option>
+                            <option value="Retail & E-commerce">Retail & E-commerce</option>
+                            <option value="DeepTech & AI">DeepTech & AI Infrastructure</option>
+                          </select>
+                        </div>
 
-                  {/* Stage Field */}
-                  <div className="space-y-1">
-                    <label className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">
-                      Venture Stage
-                    </label>
-                    <select
-                      value={newProjectForm.stage}
-                      onChange={(e) => setNewProjectForm({ ...newProjectForm, stage: e.target.value })}
-                      className="w-full rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-2.5 text-xs text-[#4A0A13] focus:border-[#400A12] focus:outline-none shadow-xs cursor-pointer"
-                    >
-                      <option value="Idea & Problem Validation">Idea & Problem Validation</option>
-                      <option value="Early Stage / Seed">Early Stage / Seed (Pre-Revenue)</option>
-                      <option value="Early Traction / Series A">Early Traction / Series A</option>
-                      <option value="Growth & Expansion">Growth & Expansion</option>
-                    </select>
-                  </div>
+                        <div className="space-y-1">
+                          <label className={labelCls}>Venture Stage</label>
+                          <select
+                            value={newProjectForm.stage}
+                            onChange={(e) => setNewProjectForm({ ...newProjectForm, stage: e.target.value })}
+                            className={`${fieldCls} cursor-pointer`}
+                          >
+                            <option value="Idea & Problem Validation">Idea & Problem Validation</option>
+                            <option value="Early Stage / Seed">Early Stage / Seed (Pre-Revenue)</option>
+                            <option value="Early Traction / Series A">Early Traction / Series A</option>
+                            <option value="Growth & Expansion">Growth & Expansion</option>
+                          </select>
+                        </div>
+                      </div>
 
-                  {/* Necessary Details Field */}
-                  <div className="space-y-1">
-                    <label className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">
-                      Target Market & Key Innovation Details
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={newProjectForm.description}
-                      onChange={(e) => setNewProjectForm({ ...newProjectForm, description: e.target.value })}
-                      placeholder="Briefly describe target customer segment, unit economics target, or core technical moat..."
-                      className="w-full rounded-2xl border border-[#D4AF37]/60 bg-white p-3.5 text-xs text-[#4A0A13] placeholder-[#8C6D58]/60 focus:border-[#400A12] focus:outline-none shadow-xs resize-none"
-                    />
-                  </div>
+                      <div className="space-y-1">
+                        <label className={labelCls}>Business Model</label>
+                        <select
+                          value={newProjectForm.businessModel}
+                          onChange={(e) => setNewProjectForm({ ...newProjectForm, businessModel: e.target.value })}
+                          className={`${fieldCls} cursor-pointer`}
+                        >
+                          <option value="B2B Enterprise">B2B — selling to businesses</option>
+                          <option value="B2C Consumer">B2C — selling to consumers</option>
+                          <option value="B2B2C">B2B2C — through businesses to consumers</option>
+                          <option value="Marketplace">Marketplace / platform</option>
+                        </select>
+                        <p className="text-[0.65rem] text-[#8C6D58]">
+                          Drives sector routing, pricing norms and channel strategy across the modules.
+                        </p>
+                      </div>
 
-                  {/* Modal Footer Buttons with DO ANALYSIS BUTTON */}
-                  <div className="pt-3 flex items-center justify-end gap-3">
+                      <div className="space-y-1">
+                        <label className={labelCls}>Problem & Key Innovation Details</label>
+                        <textarea
+                          rows={3}
+                          value={newProjectForm.description}
+                          onChange={(e) => setNewProjectForm({ ...newProjectForm, description: e.target.value })}
+                          placeholder="What problem do you solve, for whom, and what makes your approach different..."
+                          className={`${fieldCls} rounded-2xl resize-none`}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 2 — Customer Reach (MOD-01) */}
+                  {wizardStep === 1 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-3">
+                        <div>
+                          <p className="text-xs font-bold text-[#4A0A13]">Can you directly reach your customers today?</p>
+                          <p className="text-[0.65rem] text-[#8C6D58]">
+                            Honest answer — "No" scores customer discovery at 0 and the verdict will say so.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setNewProjectForm({ ...newProjectForm, consumerCommunication: !newProjectForm.consumerCommunication })}
+                          className={`px-4 py-1.5 rounded-full text-xs font-extrabold transition cursor-pointer ${
+                            newProjectForm.consumerCommunication
+                              ? "bg-[#400A12] text-[#F5D77F]"
+                              : "bg-[#F5EAD4] text-[#7A1C29]"
+                          }`}
+                        >
+                          {newProjectForm.consumerCommunication ? "YES" : "NO"}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <ReqNumber
+                          label="Reachable customers"
+                          value={newProjectForm.reachableConsumers}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, reachableConsumers: v })}
+                          placeholder="e.g. 2500"
+                          hint="How many you can contact through your current channels."
+                        />
+                        <ReqNumber
+                          label="Discovery interviews done"
+                          value={newProjectForm.interviewsCompleted}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, interviewsCompleted: v })}
+                          placeholder="e.g. 12"
+                          hint="Conversations held to validate the problem."
+                        />
+                      </div>
+                      <ReqNumber
+                        label="Customer interactions per week"
+                        value={newProjectForm.weeklyInteractions}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, weeklyInteractions: v })}
+                        placeholder="e.g. 40"
+                        hint="Calls, demos, support chats — any direct contact."
+                      />
+                    </div>
+                  )}
+
+                  {/* STEP 3 — Market Size (MOD-03) */}
+                  {wizardStep === 2 && (
+                    <div className="space-y-4">
+                      <ReqNumber
+                        label="Total addressable market (TAM, USD)"
+                        value={newProjectForm.tam}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, tam: v })}
+                        placeholder="e.g. 500000000"
+                        hint="Annual value if every possible customer bought."
+                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <ReqNumber
+                          label="Serviceable share (SAM, %)"
+                          value={newProjectForm.samPercent}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, samPercent: v })}
+                          placeholder="e.g. 18"
+                          hint="% of TAM your model can actually serve."
+                        />
+                        <ReqNumber
+                          label="Lead-to-customer conversion (%)"
+                          value={newProjectForm.conversionRate}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, conversionRate: v })}
+                          placeholder="e.g. 12"
+                          hint="Share of qualified leads that become paying customers."
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 4 — Feasibility self-rating (MOD-04) */}
+                  {wizardStep === 3 && (
+                    <div className="space-y-4">
+                      <p className="text-[0.7rem] text-[#7A1C29]">
+                        Rate each dimension 0–100 as honestly as you can — these weight directly into the feasibility score.
+                      </p>
+                      <ReqSlider label="Technical feasibility" value={newProjectForm.technical}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, technical: v })} />
+                      <ReqSlider label="Operational readiness" value={newProjectForm.operational}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, operational: v })} />
+                      <ReqSlider label="Financial runway" value={newProjectForm.financial}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, financial: v })} />
+                      <ReqSlider label="Regulatory clearance" value={newProjectForm.regulatory}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, regulatory: v })} />
+                      <ReqSlider label="Team capability" value={newProjectForm.teamCapability}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, teamCapability: v })} />
+                    </div>
+                  )}
+
+                  {/* STEP 5 — Pricing & Investment (MOD-05 / MOD-08 / MOD-09) */}
+                  {wizardStep === 4 && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <ReqNumber
+                          label="Your monthly price (USD)"
+                          value={newProjectForm.ourPrice}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, ourPrice: v })}
+                          placeholder="e.g. 2500"
+                        />
+                        <ReqNumber
+                          label="Cheapest competitor"
+                          value={newProjectForm.competitorLowPrice}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, competitorLowPrice: v })}
+                          placeholder="e.g. 1800"
+                        />
+                        <ReqNumber
+                          label="Priciest competitor"
+                          value={newProjectForm.competitorHighPrice}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, competitorHighPrice: v })}
+                          placeholder="e.g. 4000"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <ReqNumber
+                          label="Capital required (USD)"
+                          value={newProjectForm.capitalRequired}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, capitalRequired: v })}
+                          placeholder="e.g. 1200000"
+                          hint="Total investment you're asking for."
+                        />
+                        <ReqNumber
+                          label="Months to break even"
+                          value={newProjectForm.monthsToBreakEven}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, monthsToBreakEven: v })}
+                          placeholder="e.g. 18"
+                          hint="Over 24 months is flagged as hard to justify."
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <ReqNumber
+                          label="Expected annual return (USD)"
+                          value={newProjectForm.expectedAnnualReturn}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, expectedAnnualReturn: v })}
+                          placeholder="e.g. 480000"
+                        />
+                        <ReqNumber
+                          label="Monthly marketing budget (USD)"
+                          value={newProjectForm.monthlyMarketingBudget}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, monthlyMarketingBudget: v })}
+                          placeholder="e.g. 12000"
+                          hint="Determines which go-to-market channels are affordable."
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer: Back / Next / Do Analysis */}
+                  <div className="pt-3 flex items-center justify-between gap-3">
                     <button
                       type="button"
-                      onClick={() => setIsNewProjectModalOpen(false)}
+                      onClick={() => {
+                        setIsNewProjectModalOpen(false);
+                        setWizardStep(0);
+                      }}
                       className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#7A1C29] hover:bg-[#F5EAD4] transition cursor-pointer"
                     >
                       Cancel
                     </button>
 
-                    {/* DO ANALYSIS BUTTON */}
-                    <button
-                      type="submit"
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#400A12] hover:bg-[#5C0F1A] text-[#F5D77F] font-extrabold text-xs shadow-lg transition cursor-pointer border border-[#D4AF37]/40"
-                    >
-                      <Play size={14} className="fill-[#F5D77F]" />
-                      <span>Do Analysis</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {wizardStep > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setWizardStep((s) => s - 1)}
+                          className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#400A12] border border-[#D4AF37]/60 hover:bg-[#F5EAD4] transition cursor-pointer"
+                        >
+                          Back
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#400A12] hover:bg-[#5C0F1A] text-[#F5D77F] font-extrabold text-xs shadow-lg transition cursor-pointer border border-[#D4AF37]/40"
+                      >
+                        {wizardStep < WIZARD_STEPS.length - 1 ? (
+                          <>
+                            <span>Next</span>
+                            <ChevronRight size={14} />
+                          </>
+                        ) : (
+                          <>
+                            <Play size={14} className="fill-[#F5D77F]" />
+                            <span>Do Analysis</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </form>
               )}

@@ -157,13 +157,30 @@ function parseAmount(text, fallback = 0) {
   return n * mult;
 }
 
+/** A requirements number if the user answered it, else the fallback.
+ *  Form fields arrive as strings; '' / null / non-numeric mean unanswered. */
+function answered(value, fallback) {
+  if (value === '' || value === null || value === undefined) return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+const pct = (value, fallback) => Math.min(100, Math.max(0, answered(value, fallback)));
+
 /**
- * Derive inputs for all ten modules from the Layer 1 profile and Layer 2
- * clusters. The intake form does not collect every field the calculators
- * accept — TAM, competitor prices, feasibility ratings — so unanswered ones
- * get documented defaults rather than blocking the run.
+ * Derive inputs for all ten modules from the Layer 1 profile, Layer 2
+ * clusters, and the requirements the intake form collected. Every
+ * requirement is optional — unanswered fields keep the documented defaults
+ * rather than blocking the run, so a minimal submission still scores.
+ *
+ * `requirements` (all optional): consumerCommunication, reachableConsumers,
+ * interviewsCompleted, weeklyInteractions, tam, samPercent, conversionRate,
+ * technical, operational, financial, regulatory, teamCapability, ourPrice,
+ * competitorLowPrice, competitorHighPrice, capitalRequired,
+ * monthsToBreakEven, expectedAnnualReturn, monthlyMarketingBudget.
  */
-export function buildModuleInputs({ profile, clusters, vertical, tracks = [], customModules = [] }) {
+export function buildModuleInputs({ profile, clusters, vertical, tracks = [], customModules = [], requirements = {} }) {
+  const req = requirements || {};
   const industry = profile.industry?.trim() || vertical || 'Technology';
   const company = profile.company?.trim() || 'New Strategic Venture';
   const businessModel = toServerBusinessModel(profile.model);
@@ -176,20 +193,23 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
   const geography = clusters.launch.geography?.trim() || profile.geography?.trim() || 'Global';
 
   const idea = `${company} — ${industry}. ${problem}`;
-  const wtp = parseAmount(clusters.market.wtp, isConsumer ? 49 : 2500);
-  const capital = parseAmount(clusters.launch.ask, 1_200_000);
-  const breakevenMonths = parseAmount(clusters.viability.breakeven, 18) || 18;
+  const wtp = answered(req.ourPrice, parseAmount(clusters.market.wtp, isConsumer ? 49 : 2500));
+  const capital = answered(req.capitalRequired, parseAmount(clusters.launch.ask, 1_200_000));
+  const breakevenMonths = answered(req.monthsToBreakEven, parseAmount(clusters.viability.breakeven, 18) || 18);
+
+  const competitorLow = answered(req.competitorLowPrice, wtp * 0.8);
+  const competitorHigh = answered(req.competitorHighPrice, wtp * 1.4);
+  const competitorMid = (competitorLow + competitorHigh) / 2;
 
   return {
     customerDiscovery: {
       businessIdea: idea,
       problemStatement: problem,
-      // Intake does not ask whether the consumer is reachable; assume yes,
-      // otherwise the module scores 0 and gates the whole pipeline shut.
-      consumerCommunication: true,
-      reachableConsumers: isConsumer ? 50_000 : 2_500,
-      interviewsCompleted: 12,
-      weeklyInteractions: 40,
+      // If the form asked, use the honest answer — "no" legitimately scores 0.
+      consumerCommunication: req.consumerCommunication ?? true,
+      reachableConsumers: Math.round(answered(req.reachableConsumers, isConsumer ? 50_000 : 2_500)),
+      interviewsCompleted: Math.round(answered(req.interviewsCompleted, 12)),
+      weeklyInteractions: Math.round(answered(req.weeklyInteractions, 40)),
       channels: isConsumer ? ['social', 'community', 'email'] : ['outbound', 'events', 'referral'],
     },
 
@@ -203,20 +223,20 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
     },
 
     marketSize: {
-      tam: 500_000_000,
+      tam: Math.max(1, answered(req.tam, 500_000_000)),
       currency: 'USD',
-      samPercent: 18,
+      samPercent: pct(req.samPercent, 18),
       channelMix: { direct: 30, partner: 20, online: 25 },
-      conversionRate: isConsumer ? 3 : 12,
+      conversionRate: pct(req.conversionRate, isConsumer ? 3 : 12),
       averageContractValue: wtp * (isConsumer ? 12 : 12),
     },
 
     feasibility: {
-      technical: 72,
-      operational: 68,
-      financial: 65,
-      regulatory: 70,
-      teamCapability: 75,
+      technical: pct(req.technical, 72),
+      operational: pct(req.operational, 68),
+      financial: pct(req.financial, 65),
+      regulatory: pct(req.regulatory, 70),
+      teamCapability: pct(req.teamCapability, 75),
       b2b: isConsumer ? undefined : {
         averageContractValue: wtp * 12,
         customerAcquisitionCost: wtp * 3,
@@ -231,12 +251,12 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
       ourModel: isConsumer ? 'subscription' : 'tiered',
       ourFeatures: customModules,
       currency: 'USD',
-      // The intake form has no competitor table; bracket our own price so the
-      // comparison is at least directionally meaningful.
+      // User-supplied competitor bracket when given; otherwise bracket our own
+      // price so the comparison is at least directionally meaningful.
       competitors: [
-        { name: 'Incumbent A', price: wtp * 1.4, model: 'subscription', billingPeriod: 'monthly' },
-        { name: 'Incumbent B', price: wtp * 0.8, model: 'subscription', billingPeriod: 'monthly' },
-        { name: 'Incumbent C', price: wtp * 1.1, model: 'tiered', billingPeriod: 'monthly' },
+        { name: 'Incumbent A', price: competitorHigh, model: 'subscription', billingPeriod: 'monthly' },
+        { name: 'Incumbent B', price: competitorLow, model: 'subscription', billingPeriod: 'monthly' },
+        { name: 'Incumbent C', price: competitorMid, model: 'tiered', billingPeriod: 'monthly' },
       ],
     },
 
@@ -258,9 +278,9 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
       secondary: { useExistingModules: true, modules: [] },
       investment: {
         capitalRequired: capital,
-        monthsToBreakEven: breakevenMonths,
+        monthsToBreakEven: Math.max(1, breakevenMonths),
         founderMonthsCommitted: 24,
-        expectedAnnualReturn: capital * 0.4,
+        expectedAnnualReturn: answered(req.expectedAnnualReturn, capital * 0.4),
       },
       currency: 'USD',
     },
@@ -275,7 +295,7 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
         geography,
       },
       advertising: {
-        monthlyBudget: Math.max(3000, Math.round(capital / 100)),
+        monthlyBudget: answered(req.monthlyMarketingBudget, Math.max(3000, Math.round(capital / 100))),
         currentChannels: [],
       },
       commands: customModules,
@@ -331,10 +351,10 @@ const STAGE_MODULES = [
  * where it is — this takes seconds, not the 1.9s the old simulation faked.
  */
 export async function generateReportViaApi(
-  { name, vertical, tags, tracks, customModules, profile, clusters },
+  { name, vertical, tags, tracks, customModules, profile, clusters, requirements },
   onProgress = () => {}
 ) {
-  const inputs = buildModuleInputs({ profile, clusters, vertical, tracks, customModules });
+  const inputs = buildModuleInputs({ profile, clusters, vertical, tracks, customModules, requirements });
   // create + every gating module + one advance per stage + consolidate + fetch
   const totalSteps = 1 + STAGE_MODULES.flat().length + STAGE_MODULES.length + 2;
   let done = 0;
