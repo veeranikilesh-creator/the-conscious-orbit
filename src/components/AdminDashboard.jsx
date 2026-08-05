@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkHealth, listReports, advanceReport, revertReport, getReport, deleteReport } from "../api.js";
+import { downloadReportDoc } from "../reportDoc.js";
 import {
   ShieldCheck,
   Layers,
@@ -1321,12 +1322,24 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                 <h2 className="text-lg font-semibold text-[#4A0A13]">{reportDetail.row.reportName}</h2>
                 <p className="text-[#7A1C29]">Auditor: {reportDetail.row.auditor}</p>
               </div>
-              <button
-                onClick={() => setReportDetail(null)}
-                className="p-1.5 rounded-full hover:bg-[#F5EAD4] text-[#8C6D58] cursor-pointer"
-              >
-                <X size={16} />
-              </button>
+              <div className="flex items-center gap-2">
+                {reportDetail.detail && (
+                  <button
+                    onClick={() => downloadReportDoc(reportDetail.detail.report, reportDetail.detail.moduleResults || {})}
+                    title="Download strategy report (.doc)"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#D4AF37]/50 text-[0.68rem] font-bold text-[#4A0A13] hover:bg-[#F5EAD4] cursor-pointer"
+                  >
+                    <Download size={12} />
+                    <span>.doc</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setReportDetail(null)}
+                  className="p-1.5 rounded-full hover:bg-[#F5EAD4] text-[#8C6D58] cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
             {reportDetail.loading && (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { checkHealth, listReports, generateReportViaApi } from "../api.js";
+import { checkHealth, listReports, generateReportViaApi, getReport } from "../api.js";
+import { downloadReportDoc } from "../reportDoc.js";
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from "./VerticalEngines.jsx";
 import {
   Search,
@@ -33,7 +34,8 @@ import {
   Clock,
   BarChart3,
   Zap,
-  RotateCcw
+  RotateCcw,
+  Download
 } from "lucide-react";
 
 /* ============================================================
@@ -217,7 +219,20 @@ const EMPTY_PROJECT_FORM = {
   sector: "Healthcare & Logistics",
   stage: "Early Stage / Seed",
   businessModel: "B2B Enterprise",
+  geography: "",
+  contact: "",
   description: "",
+  // Market problem (report section 2)
+  painPoint: "",
+  icp: "",
+  wtpText: "",
+  // Business economics (report section 3)
+  revenueModel: "",
+  grossMargin: "",
+  costDrivers: "",
+  // Launch & GTM (report section 4)
+  gtmStrategy: "",
+  milestones: "",
   // Customer reach (MOD-01)
   consumerCommunication: true,
   reachableConsumers: "",
@@ -245,11 +260,39 @@ const EMPTY_PROJECT_FORM = {
 
 const WIZARD_STEPS = [
   "Venture Basics",
+  "Market Problem",
   "Customer Reach",
   "Market Size",
   "Feasibility",
-  "Pricing & Investment",
+  "Pricing & Economics",
+  "Investment & Launch",
 ];
+
+function ReqText({ label, value, onChange, placeholder, hint, rows }) {
+  return (
+    <div className="space-y-1">
+      <label className={labelCls}>{label}</label>
+      {rows ? (
+        <textarea
+          rows={rows}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`${fieldCls} rounded-2xl resize-none`}
+        />
+      ) : (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={fieldCls}
+        />
+      )}
+      {hint && <p className="text-[0.65rem] text-[#8C6D58]">{hint}</p>}
+    </div>
+  );
+}
 
 const fieldCls =
   "w-full rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-2.5 text-xs text-[#4A0A13] placeholder-[#8C6D58]/60 focus:border-[#400A12] focus:outline-none shadow-xs";
@@ -487,14 +530,34 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
               company: newProjectForm.startupName,
               industry: newProjectForm.sector,
               stage: STAGE_TO_SERVER[newProjectForm.stage] || "Seed",
-              geography: "",
+              geography: newProjectForm.geography,
               model: newProjectForm.businessModel,
-              contact: "",
+              contact: newProjectForm.contact,
             },
+            /* The clusters carry the narrative sections of the exported
+               strategy report verbatim, and feed the calculators' text
+               fallbacks (wtp, breakeven, ask). */
             clusters: {
-              market: { problem: newProjectForm.description, pain: "", wtp: "", icp: "" },
-              viability: { revenue: "", margin: "", costs: "", breakeven: "" },
-              launch: { geography: "", gtm: "", milestones: "", ask: "" },
+              market: {
+                problem: newProjectForm.description,
+                pain: newProjectForm.painPoint,
+                wtp: newProjectForm.wtpText,
+                icp: newProjectForm.icp,
+              },
+              viability: {
+                revenue: newProjectForm.revenueModel,
+                margin: newProjectForm.grossMargin,
+                costs: newProjectForm.costDrivers,
+                breakeven: newProjectForm.monthsToBreakEven ? `${newProjectForm.monthsToBreakEven} months` : "",
+              },
+              launch: {
+                geography: newProjectForm.geography,
+                gtm: newProjectForm.gtmStrategy,
+                milestones: newProjectForm.milestones,
+                ask: newProjectForm.capitalRequired
+                  ? `USD ${Number(newProjectForm.capitalRequired).toLocaleString()}`
+                  : "",
+              },
             },
             requirements: {
               consumerCommunication: newProjectForm.consumerCommunication,
@@ -522,6 +585,8 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
         );
 
         setProjectsList((prev) => [projectFromReport(result.report), ...prev]);
+        // Hand the finished strategy report over as a Word document too.
+        downloadReportDoc(result.report, result.moduleResults || {});
         // Real per-module scores where the server returned them.
         const results = result.moduleResults || {};
         setModulesList((prev) =>
@@ -592,6 +657,33 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
         setWizardStep(0);
       setNavbarSection("modules"); // Switch navbar to Module Wise Score to highlight results!
     }, 2400);
+  };
+
+  /* Download any project's strategy report as a Word document. API rows get
+     the full pipeline output (module scores + verdict); local sample rows get
+     the document built from what the card knows. */
+  const handleDownloadReport = async (p) => {
+    if (p.fromApi && apiStatus === "online") {
+      try {
+        const data = await getReport(p.id);
+        downloadReportDoc(data.report, data.moduleResults || {});
+        return;
+      } catch {
+        /* fall through to the local shape */
+      }
+    }
+    const m = /\((\d+)%\)/.exec(p.verdict || "");
+    downloadReportDoc(
+      {
+        name: p.title,
+        vertical: p.industry,
+        status: p.status === "ACTIVE" ? "PUBLISHED" : "PROCESSED",
+        score: m ? Number(m[1]) : 0,
+        decision: /GO/.test(p.verdict || "") ? 1 : /PIVOT/.test(p.verdict || "") ? 0 : null,
+        clusters: { market: { problem: p.description } },
+      },
+      {}
+    );
   };
 
   // Filtered queries based on search
@@ -1293,12 +1385,22 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                         <td className="p-3 font-mono font-bold">{p.modulesProcessed}</td>
                         <td className="p-3 font-extrabold text-[#400A12]">{p.verdict}</td>
                         <td className="p-3 text-right">
-                          <button
-                            onClick={() => setNavbarSection("modules")}
-                            className="text-[0.68rem] font-bold text-[#400A12] hover:text-[#B8860B] underline cursor-pointer"
-                          >
-                            View Modules
-                          </button>
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              onClick={() => handleDownloadReport(p)}
+                              title="Download strategy report (.doc)"
+                              className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-[#400A12] hover:text-[#B8860B] cursor-pointer"
+                            >
+                              <Download size={12} />
+                              <span>.doc</span>
+                            </button>
+                            <button
+                              onClick={() => setNavbarSection("modules")}
+                              className="text-[0.68rem] font-bold text-[#400A12] hover:text-[#B8860B] underline cursor-pointer"
+                            >
+                              View Modules
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1542,6 +1644,14 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                         Verdict: {p.verdict}
                       </span>
                     </div>
+
+                    <button
+                      onClick={() => handleDownloadReport(p)}
+                      className="w-full mt-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#D4AF37]/50 text-[0.68rem] font-bold text-[#400A12] hover:bg-[#F5EAD4] transition cursor-pointer"
+                    >
+                      <Download size={12} />
+                      <span>Download Strategy Report (.doc)</span>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1705,21 +1815,60 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                         </p>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className={labelCls}>Problem & Key Innovation Details</label>
-                        <textarea
-                          rows={3}
-                          value={newProjectForm.description}
-                          onChange={(e) => setNewProjectForm({ ...newProjectForm, description: e.target.value })}
-                          placeholder="What problem do you solve, for whom, and what makes your approach different..."
-                          className={`${fieldCls} rounded-2xl resize-none`}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <ReqText
+                          label="Geographic target"
+                          value={newProjectForm.geography}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, geography: v })}
+                          placeholder="e.g. Chennai, TN"
+                        />
+                        <ReqText
+                          label="Founder contact"
+                          value={newProjectForm.contact}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, contact: v })}
+                          placeholder="e.g. founder@venture.io"
                         />
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 2 — Customer Reach (MOD-01) */}
+                  {/* STEP 2 — Market Problem (report section 2) */}
                   {wizardStep === 1 && (
+                    <div className="space-y-4">
+                      <ReqText
+                        label="Core market problem"
+                        value={newProjectForm.description}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, description: v })}
+                        placeholder="What problem do you solve, for whom, and what makes your approach different..."
+                        rows={3}
+                      />
+                      <ReqText
+                        label="Customer pain point"
+                        value={newProjectForm.painPoint}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, painPoint: v })}
+                        placeholder="The specific pain the customer feels today"
+                        rows={2}
+                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <ReqText
+                          label="Ideal customer profile (ICP)"
+                          value={newProjectForm.icp}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, icp: v })}
+                          placeholder="Who exactly buys this"
+                        />
+                        <ReqText
+                          label="Willingness to pay (WTP)"
+                          value={newProjectForm.wtpText}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, wtpText: v })}
+                          placeholder='e.g. "150 rupees per order"'
+                          hint="Free text — the number in it seeds pricing if you skip the price step."
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 3 — Customer Reach (MOD-01) */}
+                  {wizardStep === 2 && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-3">
                         <div>
@@ -1767,8 +1916,8 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                     </div>
                   )}
 
-                  {/* STEP 3 — Market Size (MOD-03) */}
-                  {wizardStep === 2 && (
+                  {/* STEP 4 — Market Size (MOD-03) */}
+                  {wizardStep === 3 && (
                     <div className="space-y-4">
                       <ReqNumber
                         label="Total addressable market (TAM, USD)"
@@ -1796,8 +1945,8 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                     </div>
                   )}
 
-                  {/* STEP 4 — Feasibility self-rating (MOD-04) */}
-                  {wizardStep === 3 && (
+                  {/* STEP 5 — Feasibility self-rating (MOD-04) */}
+                  {wizardStep === 4 && (
                     <div className="space-y-4">
                       <p className="text-[0.7rem] text-[#7A1C29]">
                         Rate each dimension 0–100 as honestly as you can — these weight directly into the feasibility score.
@@ -1815,8 +1964,8 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                     </div>
                   )}
 
-                  {/* STEP 5 — Pricing & Investment (MOD-05 / MOD-08 / MOD-09) */}
-                  {wizardStep === 4 && (
+                  {/* STEP 6 — Pricing & Economics (MOD-05, report section 3) */}
+                  {wizardStep === 5 && (
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <ReqNumber
@@ -1838,6 +1987,32 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                           placeholder="e.g. 4000"
                         />
                       </div>
+                      <ReqText
+                        label="Revenue model"
+                        value={newProjectForm.revenueModel}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, revenueModel: v })}
+                        placeholder="e.g. B2C subscription + per-order commission"
+                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <ReqText
+                          label="Gross margin target"
+                          value={newProjectForm.grossMargin}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, grossMargin: v })}
+                          placeholder="e.g. 65% by year 2"
+                        />
+                        <ReqText
+                          label="Key cost drivers"
+                          value={newProjectForm.costDrivers}
+                          onChange={(v) => setNewProjectForm({ ...newProjectForm, costDrivers: v })}
+                          placeholder="e.g. raw materials, delivery, staff"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 7 — Investment & Launch (MOD-08 / MOD-09, report section 4) */}
+                  {wizardStep === 6 && (
+                    <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <ReqNumber
                           label="Capital required (USD)"
@@ -1869,6 +2044,20 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                           hint="Determines which go-to-market channels are affordable."
                         />
                       </div>
+                      <ReqText
+                        label="GTM strategy"
+                        value={newProjectForm.gtmStrategy}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, gtmStrategy: v })}
+                        placeholder="e.g. Performance marketing + creator amplification + PLG"
+                        rows={2}
+                      />
+                      <ReqText
+                        label="Growth milestones"
+                        value={newProjectForm.milestones}
+                        onChange={(v) => setNewProjectForm({ ...newProjectForm, milestones: v })}
+                        placeholder="e.g. Launch -> 10 pilot accounts -> scaled expansion"
+                        rows={2}
+                      />
                     </div>
                   )}
 
