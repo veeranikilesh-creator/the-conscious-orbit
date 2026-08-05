@@ -1,0 +1,155 @@
+"""AI decision engine — port of server/src/integrations/aiProvider.js.
+The integration point for module 7 (INDUSTRY REPORT): report data goes in,
+a structured executive decision comes out.
+
+Like the SpyFu integration this degrades rather than raises: with no
+ANTHROPIC_API_KEY (or no `anthropic` package installed) it returns a
+deterministic heuristic verdict flagged `live: False`, so the pipeline
+still completes.
+"""
+import os
+import json
+
+from scoring import verdict
+
+DECISION_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'decision': {'type': 'integer', 'enum': [0, 1]},
+        'label': {'type': 'string', 'enum': ['PROCEED', 'PIVOT']},
+        'score': {'type': 'integer'},
+        'headline': {'type': 'string'},
+        'rationale': {'type': 'string'},
+        'strengths': {'type': 'array', 'items': {'type': 'string'}},
+        'risks': {'type': 'array', 'items': {'type': 'string'}},
+        'nextActions': {'type': 'array', 'items': {'type': 'string'}},
+    },
+    'required': ['decision', 'label', 'score', 'headline', 'rationale', 'strengths', 'risks', 'nextActions'],
+    'additionalProperties': False,
+}
+
+SYSTEM_PROMPT = """You are the decision engine for The Conscious Orbit, a venture strategy platform.
+
+You receive the consolidated output of a venture's intelligence pipeline: customer
+discovery, sector profiling, TAM/SAM/SOM market sizing, feasibility, pricing,
+competitor research, business-model validation, go-to-market, and OKRs.
+
+Return a single sovereign verdict on whether the venture should proceed.
+
+Rules:
+- Ground every claim in the supplied data. If a module is missing, say so in the
+  rationale rather than inventing a figure.
+- "score" is 0-100 and must be consistent with "decision" (1/PROCEED at 60+, else 0/PIVOT).
+- Keep "headline" to one sentence. Keep each list to 3-5 concrete, specific items.
+- Prefer naming the binding constraint over listing generic startup advice."""
+
+
+def _model_name():
+    return os.getenv('ANTHROPIC_MODEL', 'claude-opus-5')
+
+
+def generate_decision(payload):
+    """Ask the model for an executive decision on a report.
+    Always returns; check `.live`."""
+    heuristic_score = payload.get('heuristicScore', 0)
+    context = {k: v for k, v in payload.items() if k != 'heuristicScore'}
+
+    api_key = os.getenv('ANTHROPIC_API_KEY', '')
+    if not api_key:
+        return {
+            **_heuristic_decision(heuristic_score, context),
+            'live': False,
+            'model': None,
+            'note': 'ANTHROPIC_API_KEY not configured — returning a heuristic verdict computed from module scores.',
+        }
+
+    try:
+        import anthropic
+    except ImportError:
+        return {
+            **_heuristic_decision(heuristic_score, context),
+            'live': False,
+            'model': None,
+            'note': 'The `anthropic` package is not installed — returning heuristic verdict. pip install anthropic',
+        }
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model=_model_name(),
+            max_tokens=16000,
+            thinking={'type': 'adaptive'},
+            output_config={'format': {'type': 'json_schema', 'schema': DECISION_SCHEMA}},
+            system=SYSTEM_PROMPT,
+            messages=[
+                {
+                    'role': 'user',
+                    'content': '\n'.join([
+                        'Here is the consolidated pipeline output for one venture.',
+                        f"The pipeline's own weighted score is {heuristic_score}/100 — treat it as a prior, not gospel.",
+                        '',
+                        '```json',
+                        json.dumps(context, indent=2, default=str),
+                        '```',
+                        '',
+                        'Return the executive decision.',
+                    ]),
+                }
+            ],
+        )
+
+        # Safety classifiers can decline; check before reading content.
+        if response.stop_reason == 'refusal':
+            category = getattr(getattr(response, 'stop_details', None), 'category', None) or 'unspecified'
+            return {
+                **_heuristic_decision(heuristic_score, context),
+                'live': False,
+                'model': _model_name(),
+                'note': f'Model declined to answer ({category}) — returning heuristic verdict.',
+            }
+
+        text = next((b.text for b in response.content if b.type == 'text'), '')
+        parsed = json.loads(text)
+
+        usage = getattr(response, 'usage', None)
+        return {
+            **parsed,
+            'live': True,
+            'model': response.model,
+            'usage': {
+                'inputTokens': getattr(usage, 'input_tokens', None),
+                'outputTokens': getattr(usage, 'output_tokens', None),
+            },
+            'note': 'Generated by the AI decision engine.',
+        }
+    except Exception as error:
+        return {
+            **_heuristic_decision(heuristic_score, context),
+            'live': False,
+            'model': _model_name(),
+            'note': f'AI decision call failed ({error}) — returning heuristic verdict.',
+        }
+
+
+def _heuristic_decision(score, context):
+    """Deterministic fallback so the pipeline never stalls on a missing key."""
+    v = verdict(score)
+    modules = list((context.get('modules') or {}).keys())
+    plural = '' if len(modules) == 1 else 's'
+    return {
+        'decision': v['decision'],
+        'label': v['label'],
+        'score': v['score'],
+        'headline': (
+            f"Weighted pipeline score of {v['score']}/100 clears the {v['threshold']} threshold."
+            if v['decision'] == 1
+            else f"Weighted pipeline score of {v['score']}/100 falls short of the {v['threshold']} threshold."
+        ),
+        'rationale': (
+            f'Computed from {len(modules)} completed module{plural} '
+            f'({", ".join(modules) or "none"}). No language model was consulted.'
+        ),
+        'strengths': [],
+        'risks': (['Verdict rests on an incomplete pipeline — run the remaining modules.'] if len(modules) < 5 else []),
+        'nextActions': ['Configure ANTHROPIC_API_KEY to receive a reasoned executive decision.'],
+    }

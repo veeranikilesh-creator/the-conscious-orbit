@@ -36,9 +36,11 @@ There is no test framework in this repo.
 
 ## Run a backend (optional)
 
-Two exist and they are **not** equivalent — see `CLAUDE.md` for the full
-comparison. In short: `server/` computes real scores, `server_python/` records
-state without running the calculators.
+Two exist and they are behavioural twins — the FastAPI backend is a full port
+of the Express engine (same ten calculators, same gated state machine, same
+response envelopes), verified to produce identical scores for identical
+inputs. Pick whichever stack you have installed; the frontend cannot tell
+them apart.
 
 ### Express + MongoDB — `server/`
 
@@ -62,8 +64,10 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000   # http://localhost:8000/api
 ```
 
-Falls back to a local SQLite file when no Postgres is configured, so it needs
-no setup.
+Uses Postgres when `DATABASE_URL` (or `POSTGRES_URI`) is set; otherwise falls
+back to a local SQLite file (`conscious_orbit_local_v2.db`), so it needs no
+setup. The same `ANTHROPIC_API_KEY` / SpyFu degradation rules apply as for
+the Express backend.
 
 ### Pointing the frontend at a backend
 

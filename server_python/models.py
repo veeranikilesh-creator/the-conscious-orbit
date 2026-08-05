@@ -1,27 +1,173 @@
-from sqlalchemy import Column, String, Integer, DateTime, JSON, Text
-from datetime import datetime
+"""SQLAlchemy models — the Postgres/SQLite persistence layer.
+
+Mirrors the Mongoose models in server/src/models/ (Report, ModuleResult,
+Client). JSON columns are not mutation-tracked by SQLAlchemy: controllers
+must REASSIGN them (r.completed_modules = [*old, key]), never mutate in place.
+
+to_json() on each model emits the exact shape the Express server's
+Mongoose toJSON transform produces, so the frontend cannot tell the two
+backends apart.
+"""
+from sqlalchemy import Column, String, Integer, Float, DateTime, JSON, Text, UniqueConstraint
+from datetime import datetime, timezone
 from database import Base
 
+VERTICALS = ['students', 'institutions', 'msmes', 'industries', 'startups']
+BUSINESS_MODELS = ['B2B', 'B2C', 'B2B2C', 'Marketplace']
+STAGES = ['Idea', 'Pre-Seed', 'Seed', 'Series A', 'Growth']
+
+MODULE_KEYS = [
+    'customerDiscovery',
+    'profiling',
+    'marketSize',
+    'feasibility',
+    'pricing',
+    'marketResearch',
+    'industryReport',
+    'businessModelValidation',
+    'gtm',
+    'okr',
+]
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
+
+
+def _iso(dt):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+
+class ClientModel(Base):
+    """Layer 1 of the intake engine — captured once, referenced by reports."""
+    __tablename__ = 'clients'
+
+    id = Column(String, primary_key=True, index=True)
+    company = Column(String, nullable=False)
+    vertical = Column(String, nullable=False)
+    industry = Column(String, nullable=True)
+    stage = Column(String, default='Idea')
+    geography = Column(String, nullable=True)
+    business_model = Column(String, default='B2B')
+    contact = Column(String, nullable=True)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    def to_json(self):
+        return {
+            'id': self.id,
+            'company': self.company,
+            'vertical': self.vertical,
+            'industry': self.industry,
+            'stage': self.stage,
+            'geography': self.geography,
+            'businessModel': self.business_model,
+            'contact': self.contact,
+            'createdAt': _iso(self.created_at),
+            'updatedAt': _iso(self.updated_at),
+        }
+
+
 class ReportModel(Base):
-    __tablename__ = "reports"
+    """The unit of work that moves through the pipeline."""
+    __tablename__ = 'reports'
 
     id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    vertical = Column(String, default="startups")
+    client_id = Column(String, nullable=True, index=True)
+    vertical = Column(String, default='startups', index=True)
     tags = Column(JSON, default=list)
-    status = Column(String, default="RECEIVED")
-    score = Column(Integer, default=85)
-    decision = Column(Integer, default=1)
-    brief = Column(JSON, default=dict)
-    metrics = Column(JSON, default=list)
+
+    status = Column(String, default='RECEIVED', index=True)
+    action = Column(String, default='SCRUMING')
+
+    # Final Conscious Orbital Score, 0-100. Zero until the aggregate runs.
+    score = Column(Integer, default=0)
+    # Binary GO/PIVOT verdict, null until scored.
+    decision = Column(Integer, nullable=True, default=None)
+
+    tracks = Column(JSON, default=list)
+    custom_modules = Column(JSON, default=list)
+    clusters = Column(JSON, default=dict)
+
+    # Module keys with a stored result — read by the action-pipeline gate.
     completed_modules = Column(JSON, default=list)
-    created_at = Column(DateTime, default=datetime.utcnow)
+
+    transitions = Column(JSON, default=list)
+    published_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    def to_json(self, client=None):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'client': client.to_json() if client else self.client_id,
+            'vertical': self.vertical,
+            'tags': self.tags or [],
+            'status': self.status,
+            'action': self.action,
+            'score': self.score or 0,
+            'decision': self.decision,
+            'tracks': self.tracks or [],
+            'customModules': self.custom_modules or [],
+            'clusters': self.clusters or {},
+            'completedModules': self.completed_modules or [],
+            'transitions': self.transitions or [],
+            'publishedAt': _iso(self.published_at),
+            'createdAt': _iso(self.created_at),
+            'updatedAt': _iso(self.updated_at),
+        }
+
+
+class ModuleResultModel(Base):
+    """One row per (report, module) pair — re-running a module overwrites."""
+    __tablename__ = 'module_results'
+    __table_args__ = (UniqueConstraint('report_id', 'module_key', name='uq_report_module'),)
+
+    id = Column(String, primary_key=True, index=True)
+    report_id = Column(String, nullable=False, index=True)
+    module_key = Column(String, nullable=False)
+
+    # Raw submitted payload, kept for audit and re-runs.
+    input = Column(JSON, default=dict)
+    # Module-specific computed output.
+    output = Column(JSON, default=dict)
+
+    # 0-100 contribution; null for modules that don't score.
+    score = Column(Float, nullable=True, default=None)
+    # Which pipeline action produced this result.
+    action = Column(String, nullable=True)
+
+    # Populated when the module called an external service.
+    integrations = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    def to_json(self):
+        return {
+            'id': self.id,
+            'report': self.report_id,
+            'moduleKey': self.module_key,
+            'input': self.input or {},
+            'output': self.output or {},
+            'score': self.score,
+            'action': self.action,
+            'integrations': self.integrations or {},
+            'createdAt': _iso(self.created_at),
+            'updatedAt': _iso(self.updated_at),
+        }
+
 
 class DomainModel(Base):
-    __tablename__ = "custom_domains"
+    __tablename__ = 'custom_domains'
 
     id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    icon = Column(String, default="Building2")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    icon = Column(String, default='Building2')
+    created_at = Column(DateTime, default=_utcnow)

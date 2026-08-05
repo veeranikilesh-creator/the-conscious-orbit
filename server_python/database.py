@@ -11,8 +11,10 @@ POSTGRES_URI = os.getenv(
     os.getenv("POSTGRES_URI", "postgresql://postgres:postgres@127.0.0.1:5432/conscious_orbit")
 )
 
-# SQLite Fallback DB File
-SQLITE_FALLBACK_URI = "sqlite:///./conscious_orbit_local.db"
+# SQLite Fallback DB File. v2: the schema gained the full pipeline columns
+# (transitions, module_results, clients) — a fresh filename avoids crashing
+# on stale v1 databases left over from the old shim.
+SQLITE_FALLBACK_URI = "sqlite:///./conscious_orbit_local_v2.db"
 
 Base = declarative_base()
 

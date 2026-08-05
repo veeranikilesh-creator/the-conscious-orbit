@@ -8,7 +8,7 @@ Three independent projects in one repo, with **two competing backends**:
 
 - repo root — the Vite/React frontend (`src/`)
 - `server/` — Express 5 + Mongoose/MongoDB, ESM JavaScript. Complete: ten calculator modules, two state machines, zod validation, AI + SpyFu integrations.
-- `server_python/` — FastAPI + SQLAlchemy, Postgres with a SQLite fallback. Added later and now the frontend's default target, but it is a **persistence shim, not a reimplementation** — see below.
+- `server_python/` — FastAPI + SQLAlchemy, Postgres with a SQLite fallback. The frontend's default target. Originally a persistence shim; in 2026-08 it became a **full port of the Express engine** — same ten calculators, same state machines, same gate, same response envelopes. See below.
 
 Each has its own dependency manifest. `npm install` at the root installs neither backend's deps.
 
@@ -34,25 +34,28 @@ uvicorn main:app --reload --port 8000   # http://localhost:8000/api
 
 There is **no test framework anywhere in this repo** — no runner, no test files, no test script. To exercise backend logic, import the modules directly in a scratch `.mjs` file run from inside `server/` (so `node_modules` resolves) and call `run(input, context)`; every calculator is a pure function. `server/` has `mongodb-memory-server` as a devDependency for database-backed checks without installing MongoDB.
 
-## The two backends diverge in behaviour, not just stack
+## The two backends are behavioural twins — keep them that way
 
-This is the single most important thing to understand before touching API code.
+`server_python/` is a line-for-line port of the Express engine, **verified score-identical**: the same intake driven through both backends produces the same ten module scores, the same Orbital Score, and the same verdict. Any behavioural change to one backend must be mirrored in the other (module formulas, weights, gate logic, envelopes), or the two will silently diverge again — which is exactly the state this port was built to end.
 
-`server/` **computes**. Ten modules in `server/src/modules/` each export `{ key, title, action, inputSchema, run }`; `run()` validates with zod and returns `{ output, score }`. `industryReport` (module 7) is the consolidator — it weights every other module's score into the Conscious Orbital Score and passes a dossier to the AI decision engine, writing the verdict back to `report.score` / `report.decision`. Advancing a report is **gated**: `requireStageComplete()` returns 409 listing missing module keys.
+The shared architecture, in both stacks:
 
-`server_python/` **records**. `POST /api/reports/{id}/modules/{key}` appends the key to `completed_modules` and returns `{ok: true}` — it runs no calculator. `score` is assigned once at creation as `random.randint(80, 95)`. `/advance` and `/revert` just step through `STAGE_FLOW` with no gate.
+- **Ten calculator modules**, each with key/title/action, an input schema (zod in `server/src/modules/*.js`, pydantic in `server_python/modules/*.py`) and a pure `run(input, context)` returning `{ output, score }`. Registries: `server/src/modules/index.js` / `server_python/modules/__init__.py`.
+- **Two coupled state machines**: `RECEIVED → PENDING → PROCESSED → PUBLISHED` paired with `SCRUMING / REQUIREMENT / MAPPING / DELIVERED` (`server/src/state/` / `server_python/state.py`). Advancing is **gated** — a 409 lists the missing module keys; reverting is ungated.
+- **`industryReport` (module 7) is the consolidator** — it weights every other module's score into the Conscious Orbital Score (weights in `MODULE_WEIGHTS`, identical in both), hands a dossier to the AI decision engine, and the controller writes the verdict back to `report.score` / `report.decision`.
+- **Integrations degrade, never throw**: no `ANTHROPIC_API_KEY` → deterministic heuristic verdict; no SpyFu creds → labelled placeholder data (`server/src/integrations/` / `server_python/integrations/`). Keep that property.
+- **Same envelopes**: success shapes (`{ report }`, `{ report, pipeline }`, `{ result, report }`) and the flat error envelope `{ error, message, issues? }` — the FastAPI exception handlers deliberately mimic Express's `errorHandler.js`, including 422 zod/pydantic issues as `{ path, message, code }`.
+- Health: both return `{ ok, db: 'connected' | 'disconnected', integrations, uptimeSeconds }`; `src/api.js#checkHealth()` also still accepts the older FastAPI shape.
 
-So identical frontend calls produce a real analysis against `server/` and a random number against `server_python/`. Response envelopes differ too — Express returns `{ report: {...} }` from advance/revert, FastAPI returns `{ status: "PUBLISHED" }`.
+Differences that remain: the stack (Mongoose/MongoDB vs SQLAlchemy/Postgres-or-SQLite), ids (ObjectId strings vs `r_<hex>`), and JS-vs-Python float formatting in a few summary strings. `server_python/scoring.py#js_round` exists because Python's banker's rounding differs from JS `Math.round` — use it, not `round()`, in module math. SQLAlchemy JSON columns are not mutation-tracked: **reassign, never mutate in place** (see `_mark_module_complete`). The SQLite fallback file is `conscious_orbit_local_v2.db` (v1 had the shim's schema).
 
-### Known live bug
-
-`src/api.js` defaults to `http://localhost:8000/api` (FastAPI) with `http://localhost:4000/api` as a network-level fallback. But `App.jsx` gates on `health.ok === true && health.db === 'connected'`, which is the **Express** health shape. FastAPI returns `{status: "ok", db: "SQLite (Local Fallback)"}` — no `ok` key. The gate therefore always fails against FastAPI and the dashboard drops to offline mode. Either loosen the gate or align the health payloads.
+To verify parity after touching module logic: run both backends (`server/dev-memory.mjs` on :4000, uvicorn on :8000) and drive the same intake through each via `src/api.js` — a scratch script comparing `moduleResults[*].score` catches any drift.
 
 ## Frontend
 
 React 19 + Vite 8, JavaScript only (`.jsx`, no TypeScript). Tailwind CSS v4 via the `@tailwindcss/vite` plugin — there is **no `tailwind.config.js`**; Tailwind is pulled in with `@import "tailwindcss"` at the top of `src/index.css` and all customization lives in that file as plain CSS. Default breakpoints only, so **there is no `xs:`** — writing one silently yields a permanently-hidden element. `framer-motion` for animation, `lenis` for smooth scrolling, `lucide-react` for icons, `ogl` for the WebGL shader background. Lint config is `.oxlintrc.json` (oxlint with the `react` and `oxc` plugins; only `react/rules-of-hooks` and `react/only-export-components` are configured).
 
-**The current UI does not call the API.** In 2026-08 the entire frontend was replaced wholesale with the redesigned UI from `github.com/Nehal-1826/Conscious-orbit` (deployed preview: ui-conscious.vercel.app), imported deliberately as a verbatim copy with no functional changes. That UI is self-contained: every dashboard holds its own seed data and simulates actions with `setTimeout`. `src/api.js` — the previous, fully tested integration layer (endpoint wrappers, `buildModuleInputs()`, `generateReportViaApi()`, dual-backend health/error normalisation) — **was kept but nothing imports it**. Wiring the new UI to a backend means importing from `src/api.js`, not writing new fetch code; its `checkHealth()` already handles both backends' payload shapes.
+In 2026-08 the entire frontend was replaced wholesale with the redesigned UI from `github.com/Nehal-1826/Conscious-orbit` (deployed preview: ui-conscious.vercel.app), imported as a verbatim copy, then the two dashboards were wired to the backend through `src/api.js` — the integration layer (endpoint wrappers, `buildModuleInputs()`, `generateReportViaApi()`, dual-backend health/error normalisation). Talk to the API by importing from `src/api.js`, never by writing new fetch code. Both dashboards health-check on mount and fall back to their seed-data simulation when no backend answers, so the app stays usable offline. Queries/tickets, client profiles and project registrations remain simulations — no endpoints exist for them.
 
 ### Routing and auth
 
@@ -123,4 +126,4 @@ The Express error envelope is flat — `{ error, message, issues? }` — not nes
 
 ## Known dead weight
 
-`src/components/PulpSenseHero.jsx` and the standalone `PulpSenseHero.html` at the repo root are unused. `docs/superpowers/` contains a plan and spec for a *third* backend (TypeScript + Prisma + Postgres) that was never built and contradicts both existing ones — treat it as historical, not as direction. `server_python/__pycache__/` and `server_python/conscious_orbit_local.db` are committed build artifacts that should be gitignored. `npm run lint` reports one pre-existing warning (an unused import in `server/src/modules/customerDiscovery.js`); the build is otherwise clean.
+`src/components/PulpSenseHero.jsx` and the standalone `PulpSenseHero.html` at the repo root are unused. `docs/superpowers/` contains a plan and spec for a *third* backend (TypeScript + Prisma + Postgres) that was never built and contradicts both existing ones — treat it as historical, not as direction. `npm run lint` reports one pre-existing warning (an unused import in `server/src/modules/customerDiscovery.js`); the build is otherwise clean.

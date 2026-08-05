@@ -1,269 +1,529 @@
+"""The Conscious Orbit — FastAPI backend.
+
+A full port of the Express/Mongo engine in server/: the same ten calculator
+modules, the same two coupled state machines, the same gated advance, and
+the same response envelopes — backed by Postgres (SQLite fallback) instead
+of MongoDB. Identical frontend calls now produce identical analyses against
+either backend.
+
+Run:  uvicorn main:app --reload --port 8000
+"""
 import os
 import time
-import random
+import uuid
 import logging
-from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, Depends, HTTPException, Query
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+from fastapi import FastAPI, Depends, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from fastapi.responses import JSONResponse, Response
+from pydantic import BaseModel, ValidationError
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db, DB_TYPE
-from models import ReportModel, DomainModel
+from errors import ApiError
+from models import (
+    ReportModel, ModuleResultModel, ClientModel, DomainModel,
+    VERTICALS,
+)
+from state import (
+    REPORT_STATUSES, PIPELINE_STAGES,
+    assert_transition, step, next_status, previous_status,
+    action_for_status, missing_modules_for_stage, require_stage_complete,
+    pipeline_progress,
+)
+from modules import get_module, module_catalogue, run_module
+from scoring import verdict
 
-# Create database tables if they do not exist
 Base.metadata.create_all(bind=engine)
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("conscious_orbit_api")
+logger = logging.getLogger('conscious_orbit_api')
+
+START_TIME = time.time()
 
 app = FastAPI(
-    title="The Conscious Orbit - Python FastAPI Backend",
-    description="Python FastAPI REST API Service with PostgreSQL Database Integration",
-    version="2.5.0"
+    title='The Conscious Orbit - Python FastAPI Backend',
+    description='FastAPI port of the full intelligence pipeline (ten modules, gated state machine).',
+    version='3.0.0',
 )
 
-# Enable CORS for frontend applications
+cors_origin = os.getenv('CORS_ORIGIN', '*')
+allow_origins = ['*'] if cors_origin == '*' else [o.strip() for o in cors_origin.split(',') if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allow_origins,
+    allow_credentials=cors_origin != '*',
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
-# Pydantic Schemas
+
+# ---------- error envelopes (match server/src/middleware/errorHandler.js) ----------
+
+@app.exception_handler(ApiError)
+async def api_error_handler(_request: Request, exc: ApiError):
+    body = {
+        'error': 'ServerError' if exc.status_code >= 500 else 'RequestError',
+        'message': exc.message,
+    }
+    if exc.details is not None:
+        body['details'] = exc.details
+    return JSONResponse(status_code=exc.status_code, content=body)
+
+
+def _validation_response(errors):
+    return JSONResponse(
+        status_code=422,
+        content={
+            'error': 'ValidationError',
+            'message': 'Request payload failed validation',
+            'issues': [
+                {
+                    'path': '.'.join(str(p) for p in e.get('loc', []) if p != 'body'),
+                    'message': e.get('msg', ''),
+                    'code': e.get('type', ''),
+                }
+                for e in errors
+            ],
+        },
+    )
+
+
+@app.exception_handler(ValidationError)
+async def pydantic_error_handler(_request: Request, exc: ValidationError):
+    return _validation_response(exc.errors())
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_handler(_request: Request, exc: RequestValidationError):
+    return _validation_response(exc.errors())
+
+
+# ---------- request schemas ----------
+
+class ClientPayload(BaseModel):
+    company: str
+    industry: Optional[str] = None
+    stage: Optional[str] = None
+    geography: Optional[str] = None
+    businessModel: Optional[str] = None
+    contact: Optional[str] = None
+
+
 class ReportCreateSchema(BaseModel):
     name: str
-    vertical: Optional[str] = "startups"
-    tags: Optional[List[str]] = []
-    tracks: Optional[List[str]] = []
-    customModules: Optional[List[str]] = []
-    clusters: Optional[Dict[str, Any]] = {}
-    client: Optional[Dict[str, Any]] = {}
+    vertical: str = 'startups'
+    clientId: Optional[str] = None
+    client: Optional[ClientPayload] = None
+    tags: List[str] = []
+    tracks: List[str] = []
+    customModules: List[str] = []
+    clusters: Optional[Dict[str, Any]] = None
+
+
+class StatusChangeSchema(BaseModel):
+    status: str
+    note: Optional[str] = None
+
+
+class NoteSchema(BaseModel):
+    note: Optional[str] = None
+
 
 class CustomDomainSchema(BaseModel):
     name: str
-    description: Optional[str] = ""
+    description: Optional[str] = ''
 
-# Seed initial default reports if database table is empty
-def seed_initial_reports(db: Session):
-    if db.query(ReportModel).count() == 0:
-        seed_data = [
+
+# ---------- helpers ----------
+
+def _new_id(prefix):
+    return f'{prefix}_{uuid.uuid4().hex[:12]}'
+
+
+def _now():
+    return datetime.now(timezone.utc)
+
+
+def _load_report(db: Session, report_id: str) -> ReportModel:
+    report = db.query(ReportModel).filter(ReportModel.id == report_id).first()
+    if not report:
+        raise ApiError.not_found('Report')
+    return report
+
+
+def _record_transition(report: ReportModel, to: str, note: Optional[str]):
+    """Port of Report.recordTransition — append to history, move status+action."""
+    entry = {
+        'from': report.status,
+        'to': to,
+        'action': action_for_status(to),
+        'at': _now().isoformat().replace('+00:00', 'Z'),
+        'note': note,
+    }
+    report.transitions = [*(report.transitions or []), entry]
+    report.status = to
+    report.action = action_for_status(to)
+    if to == 'PUBLISHED':
+        report.published_at = _now()
+
+
+def _mark_module_complete(report: ReportModel, module_key: str):
+    completed = report.completed_modules or []
+    if module_key not in completed:
+        report.completed_modules = [*completed, module_key]
+
+
+def _client_for(db: Session, report: ReportModel):
+    if not report.client_id:
+        return None
+    return db.query(ClientModel).filter(ClientModel.id == report.client_id).first()
+
+
+def _report_json(db: Session, report: ReportModel):
+    return report.to_json(client=_client_for(db, report))
+
+
+def _pipeline_view(report: ReportModel):
+    """Port of buildPipelineView — status + action + gate projection."""
+    missing = missing_modules_for_stage(report.status, report.completed_modules or [])
+    status_idx = REPORT_STATUSES.index(report.status) if report.status in REPORT_STATUSES else -1
+    return {
+        'status': report.status,
+        'action': action_for_status(report.status),
+        'progressPercent': pipeline_progress(report.status),
+        'canAdvance': bool(next_status(report.status)) and not missing,
+        'canRevert': bool(previous_status(report.status)),
+        'nextStatus': next_status(report.status),
+        'previousStatus': previous_status(report.status),
+        'missingModules': missing,
+        'completedModules': report.completed_modules or [],
+        'stages': [
             {
-                "id": "r1", "name": "Aether Dynamics", "vertical": "startups",
-                "tags": ["Aerospace", "DeepTech"], "status": "PUBLISHED", "score": 92,
-                "brief": {"company": "Aether Dynamics", "industry": "Aerospace", "stage": "Series A", "ask": "$2.5M"}
-            },
-            {
-                "id": "r2", "name": "Lumina Health AI", "vertical": "startups",
-                "tags": ["MedTech", "AI"], "status": "PROCESSED", "score": 87,
-                "brief": {"company": "Lumina Health AI", "industry": "HealthTech", "stage": "Seed", "ask": "$1.5M"}
-            },
-            {
-                "id": "r3", "name": "Pulse Energy Grid", "vertical": "msmes",
-                "tags": ["CleanTech", "Grid"], "status": "PENDING", "score": 79,
-                "brief": {"company": "Pulse Energy Grid", "industry": "CleanEnergy", "stage": "Growth", "ask": "$800K"}
-            },
-            {
-                "id": "r4", "name": "OmniFreight Robotics", "vertical": "industries",
-                "tags": ["Logistics", "Robotics"], "status": "RECEIVED", "score": 84,
-                "brief": {"company": "OmniFreight Robotics", "industry": "Logistics & Supply Chain", "stage": "Seed", "ask": "$1.2M"}
+                **stage,
+                'reached': status_idx >= REPORT_STATUSES.index(stage['status']),
+                'current': stage['status'] == report.status,
             }
-        ]
-        for r in seed_data:
-            db.add(ReportModel(
-                id=r["id"],
-                name=r["name"],
-                vertical=r["vertical"],
-                tags=r["tags"],
-                status=r["status"],
-                score=r["score"],
-                brief=r["brief"],
-                metrics=[
-                    {"k": "Market Demand", "v": 88},
-                    {"k": "Tech Feasibility", "v": 82},
-                    {"k": "Unit Economics", "v": 85}
-                ]
-            ))
-        db.commit()
+            for stage in PIPELINE_STAGES
+        ],
+        'transitions': report.transitions or [],
+    }
 
-# Root Route
-@app.get("/")
+
+# ---------- root + health + pipeline + catalogue ----------
+
+@app.get('/')
 def read_root():
     return {
-        "status": "online",
-        "service": "The Conscious Orbit - Python FastAPI Backend",
-        "db_type": DB_TYPE,
-        "docs_url": "/docs",
-        "api_health": "/api/health"
+        'status': 'online',
+        'service': 'The Conscious Orbit - Python FastAPI Backend',
+        'db_type': DB_TYPE,
+        'docs_url': '/docs',
+        'api_health': '/api/health',
     }
 
-# Health Endpoint
-@app.get("/api/health")
+
+@app.get('/api/health')
 def api_health():
+    try:
+        with engine.connect() as conn:
+            conn.execute(text('SELECT 1'))
+        db_state = 'connected'
+    except Exception:
+        db_state = 'disconnected'
+    # `ok`/`db: connected|disconnected` matches the Express health shape;
+    # `status`/`service` keep older FastAPI consumers working.
     return {
-        "status": "ok",
-        "service": "Python FastAPI + PostgreSQL Backend",
-        "db": DB_TYPE,
-        "timestamp": time.time()
+        'ok': db_state == 'connected',
+        'status': 'ok',
+        'db': db_state,
+        'dbType': DB_TYPE,
+        'service': f'Python FastAPI + {DB_TYPE}',
+        'integrations': {
+            'anthropic': bool(os.getenv('ANTHROPIC_API_KEY')),
+            'spyfu': bool(os.getenv('SPYFU_API_ID') and os.getenv('SPYFU_SECRET_KEY')),
+        },
+        'uptimeSeconds': round(time.time() - START_TIME),
     }
 
-# Reports Endpoints
-@app.get("/api/reports")
-def list_reports(limit: int = Query(100), db: Session = Depends(get_db)):
-    seed_initial_reports(db)
-    reports = db.query(ReportModel).order_by(ReportModel.created_at.desc()).limit(limit).all()
-    return {"reports": [
-        {
-            "id": r.id,
-            "name": r.name,
-            "vertical": r.vertical,
-            "tags": r.tags or [],
-            "status": r.status,
-            "score": r.score,
-            "decision": r.decision,
-            "brief": r.brief or {},
-            "metrics": r.metrics or [],
-            "completedModules": r.completed_modules or []
-        } for r in reports
-    ]}
 
-@app.get("/api/reports/{report_id}")
-def get_report(report_id: str, db: Session = Depends(get_db)):
-    r = db.query(ReportModel).filter(ReportModel.id == report_id).first()
-    if not r:
-        raise HTTPException(status_code=404, detail="Report not found")
-    return {
-        "report": {
-            "id": r.id,
-            "name": r.name,
-            "vertical": r.vertical,
-            "tags": r.tags or [],
-            "status": r.status,
-            "score": r.score,
-            "decision": r.decision,
-            "brief": r.brief or {},
-            "metrics": r.metrics or [],
-            "completedModules": r.completed_modules or []
-        }
-    }
+@app.get('/api/pipeline')
+def get_pipeline_definition():
+    return {'statuses': REPORT_STATUSES, 'stages': PIPELINE_STAGES}
 
-@app.post("/api/reports")
+
+@app.get('/api/modules')
+def list_modules():
+    return {'modules': module_catalogue()}
+
+
+# ---------- reports ----------
+
+@app.post('/api/reports', status_code=201)
 def create_report(payload: ReportCreateSchema, db: Session = Depends(get_db)):
-    report_id = f"r{int(time.time() * 1000)}"
-    client_info = payload.client or {}
-    
-    brief = {
-        "company": client_info.get("company", payload.name),
-        "industry": client_info.get("industry", "Technology"),
-        "stage": client_info.get("stage", "Seed"),
-        "geography": client_info.get("geography", "Global"),
-        "model": client_info.get("businessModel", "B2B Enterprise"),
-        "contact": client_info.get("contact", "founder@venture.io"),
-        "ask": "$1.2M Seed"
-    }
-    
-    score = random.randint(80, 95)
-    
-    db_report = ReportModel(
-        id=report_id,
+    if payload.vertical not in VERTICALS:
+        raise ApiError.bad_request(
+            f'Unknown vertical "{payload.vertical}". Expected one of: {", ".join(VERTICALS)}')
+
+    client_id = payload.clientId
+    if not client_id and payload.client:
+        client = ClientModel(
+            id=_new_id('client'),
+            company=payload.client.company,
+            vertical=payload.vertical,
+            industry=payload.client.industry,
+            stage=payload.client.stage or 'Idea',
+            geography=payload.client.geography,
+            business_model=payload.client.businessModel or 'B2B',
+            contact=(payload.client.contact or '').lower() or None,
+        )
+        db.add(client)
+        client_id = client.id
+
+    report = ReportModel(
+        id=_new_id('r'),
         name=payload.name,
-        vertical=payload.vertical or "startups",
-        tags=payload.tags or [brief["industry"], brief["model"]],
-        status="RECEIVED",
-        score=score,
-        decision=1,
-        brief=brief,
-        metrics=[
-            {"k": "Market Demand", "v": random.randint(85, 95)},
-            {"k": "Tech Feasibility", "v": random.randint(75, 90)},
-            {"k": "Unit Economics", "v": random.randint(80, 92)}
-        ],
-        completed_modules=[]
+        vertical=payload.vertical,
+        client_id=client_id,
+        tags=payload.tags,
+        tracks=payload.tracks,
+        custom_modules=payload.customModules,
+        clusters=payload.clusters or {},
+        status='RECEIVED',
+        action=action_for_status('RECEIVED'),
+        score=0,
+        decision=None,
+        completed_modules=[],
+        transitions=[{
+            'from': None,
+            'to': 'RECEIVED',
+            'action': action_for_status('RECEIVED'),
+            'at': _now().isoformat().replace('+00:00', 'Z'),
+            'note': 'Report created',
+        }],
     )
-    db.add(db_report)
+    db.add(report)
     db.commit()
-    db.refresh(db_report)
-    
+    db.refresh(report)
+    return {'report': _report_json(db, report)}
+
+
+@app.get('/api/reports')
+def list_reports(
+    status: Optional[str] = None,
+    vertical: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = Query(50),
+    skip: int = Query(0),
+    db: Session = Depends(get_db),
+):
+    if status and status not in REPORT_STATUSES:
+        raise ApiError.bad_request(f'Unknown status "{status}"')
+
+    query = db.query(ReportModel)
+    if status:
+        query = query.filter(ReportModel.status == status)
+    if vertical:
+        query = query.filter(ReportModel.vertical == vertical)
+
+    rows = query.order_by(ReportModel.created_at.desc()).all()
+
+    if search:
+        needle = search.lower()
+        rows = [
+            r for r in rows
+            if needle in (r.name or '').lower()
+            or needle in (r.vertical or '').lower()
+            or any(needle in str(t).lower() for t in (r.tags or []))
+        ]
+
+    total = len(rows)
+    limit = min(int(limit), 200)
+    skip = int(skip)
+    page = rows[skip:skip + limit]
+
     return {
-        "report": {
-            "id": db_report.id,
-            "name": db_report.name,
-            "vertical": db_report.vertical,
-            "tags": db_report.tags,
-            "status": db_report.status,
-            "score": db_report.score,
-            "decision": db_report.decision,
-            "brief": db_report.brief,
-            "metrics": db_report.metrics
-        }
+        'reports': [_report_json(db, r) for r in page],
+        'total': total,
+        'limit': limit,
+        'skip': skip,
     }
 
-STAGE_FLOW = ["RECEIVED", "PENDING", "PROCESSED", "PUBLISHED"]
 
-@app.post("/api/reports/{report_id}/advance")
-def advance_report(report_id: str, db: Session = Depends(get_db)):
-    r = db.query(ReportModel).filter(ReportModel.id == report_id).first()
-    if not r:
-        raise HTTPException(status_code=404, detail="Report not found")
-    
-    try:
-        curr_idx = STAGE_FLOW.index(r.status)
-        if curr_idx < len(STAGE_FLOW) - 1:
-            r.status = STAGE_FLOW[curr_idx + 1]
-            db.commit()
-    except ValueError:
-        r.status = "PENDING"
-        db.commit()
-        
-    return {"status": r.status}
+@app.get('/api/reports/{report_id}')
+def get_report(report_id: str, db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    results = db.query(ModuleResultModel).filter(ModuleResultModel.report_id == report.id).all()
+    return {
+        'report': _report_json(db, report),
+        'moduleResults': {r.module_key: r.to_json() for r in results},
+        'pipeline': _pipeline_view(report),
+    }
 
-@app.post("/api/reports/{report_id}/revert")
-def revert_report(report_id: str, db: Session = Depends(get_db)):
-    r = db.query(ReportModel).filter(ReportModel.id == report_id).first()
-    if not r:
-        raise HTTPException(status_code=404, detail="Report not found")
-    
-    try:
-        curr_idx = STAGE_FLOW.index(r.status)
-        if curr_idx > 0:
-            r.status = STAGE_FLOW[curr_idx - 1]
-            db.commit()
-    except ValueError:
-        r.status = "RECEIVED"
-        db.commit()
-        
-    return {"status": r.status}
 
-@app.post("/api/reports/{report_id}/modules/{module_key}")
-def run_module(report_id: str, module_key: str, body: Dict[str, Any] = {}, db: Session = Depends(get_db)):
-    r = db.query(ReportModel).filter(ReportModel.id == report_id).first()
-    if not r:
-        raise HTTPException(status_code=404, detail="Report not found")
-    
-    completed = r.completed_modules or []
-    if module_key not in completed:
-        completed.append(module_key)
-        r.completed_modules = completed
-        db.commit()
-        
-    return {"ok": True, "module": module_key, "reportId": report_id}
+@app.get('/api/reports/{report_id}/pipeline')
+def get_report_pipeline(report_id: str, db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    return {'pipeline': _pipeline_view(report)}
 
-# Custom Domain Creation Endpoints
-@app.get("/api/domains")
+
+@app.patch('/api/reports/{report_id}/status')
+def set_status(report_id: str, payload: StatusChangeSchema, db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    assert_transition(report.status, payload.status)
+    _record_transition(report, payload.status, payload.note)
+    db.commit()
+    db.refresh(report)
+    return {'report': _report_json(db, report), 'pipeline': _pipeline_view(report)}
+
+
+@app.post('/api/reports/{report_id}/advance')
+def advance_report(report_id: str, payload: Optional[NoteSchema] = None, db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    # The gate: every module the current stage owns must have a stored result
+    # before the report may move on — 409 lists the missing keys.
+    require_stage_complete(report)
+    to = step(report.status, 1)
+    _record_transition(report, to, (payload.note if payload else None) or 'Advanced one stage')
+    db.commit()
+    db.refresh(report)
+    return {'report': _report_json(db, report), 'pipeline': _pipeline_view(report)}
+
+
+@app.post('/api/reports/{report_id}/revert')
+def revert_report(report_id: str, payload: Optional[NoteSchema] = None, db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    to = step(report.status, -1)
+    _record_transition(report, to, (payload.note if payload else None) or 'Reverted one stage')
+    db.commit()
+    db.refresh(report)
+    return {'report': _report_json(db, report), 'pipeline': _pipeline_view(report)}
+
+
+@app.delete('/api/reports/{report_id}', status_code=204)
+def delete_report(report_id: str, db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    db.query(ModuleResultModel).filter(ModuleResultModel.report_id == report.id).delete()
+    db.delete(report)
+    db.commit()
+    return Response(status_code=204)
+
+
+# ---------- modules ----------
+
+@app.post('/api/reports/{report_id}/modules/{module_key}')
+def execute_module(report_id: str, module_key: str, body: Optional[Dict[str, Any]] = None,
+                   db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    mod = get_module(module_key)
+    if not mod:
+        raise ApiError.not_found(f'Module "{module_key}"')
+
+    # Sibling results are context for the modules that consolidate (7 and 8).
+    existing = db.query(ModuleResultModel).filter(ModuleResultModel.report_id == report.id).all()
+    module_results = {r.module_key: r.to_json() for r in existing}
+
+    outcome = run_module(module_key, body or {}, {
+        'report': _report_json(db, report),
+        'moduleResults': module_results,
+    })
+    output = outcome.get('output')
+    score = outcome.get('score')
+    integrations = outcome.get('integrations') or {}
+
+    # Upsert: one result per (report, module) — re-running overwrites.
+    result = db.query(ModuleResultModel).filter(
+        ModuleResultModel.report_id == report.id,
+        ModuleResultModel.module_key == module_key,
+    ).first()
+    if not result:
+        result = ModuleResultModel(id=_new_id('mr'), report_id=report.id, module_key=module_key)
+        db.add(result)
+    result.input = body or {}
+    result.output = output
+    result.score = score
+    result.action = mod.ACTION
+    result.integrations = integrations
+
+    _mark_module_complete(report, module_key)
+
+    # Module 7 is the consolidator — its verdict becomes the report's own score.
+    if module_key == 'industryReport':
+        v = verdict(output['orbitalScore'])
+        decision = output.get('decision') or {}
+        report.score = decision.get('score', v['score'])
+        report.decision = decision.get('decision', v['decision'])
+
+    db.commit()
+    db.refresh(result)
+    db.refresh(report)
+    return {'result': result.to_json(), 'report': _report_json(db, report)}
+
+
+@app.get('/api/reports/{report_id}/modules')
+def list_module_results(report_id: str, db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    results = (
+        db.query(ModuleResultModel)
+        .filter(ModuleResultModel.report_id == report.id)
+        .order_by(ModuleResultModel.created_at.asc())
+        .all()
+    )
+    return {
+        'results': {r.module_key: r.to_json() for r in results},
+        'completed': [r.module_key for r in results],
+    }
+
+
+@app.get('/api/reports/{report_id}/modules/{module_key}')
+def get_module_result(report_id: str, module_key: str, db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    if not get_module(module_key):
+        raise ApiError.not_found(f'Module "{module_key}"')
+    result = db.query(ModuleResultModel).filter(
+        ModuleResultModel.report_id == report.id,
+        ModuleResultModel.module_key == module_key,
+    ).first()
+    if not result:
+        raise ApiError.not_found(f'Result for module "{module_key}"')
+    return {'result': result.to_json()}
+
+
+@app.delete('/api/reports/{report_id}/modules/{module_key}', status_code=204)
+def delete_module_result(report_id: str, module_key: str, db: Session = Depends(get_db)):
+    report = _load_report(db, report_id)
+    result = db.query(ModuleResultModel).filter(
+        ModuleResultModel.report_id == report.id,
+        ModuleResultModel.module_key == module_key,
+    ).first()
+    if not result:
+        raise ApiError.not_found(f'Result for module "{module_key}"')
+    db.delete(result)
+    report.completed_modules = [k for k in (report.completed_modules or []) if k != module_key]
+    db.commit()
+    return Response(status_code=204)
+
+
+# ---------- custom domains (kept from the original shim) ----------
+
+@app.get('/api/domains')
 def list_domains(db: Session = Depends(get_db)):
     domains = db.query(DomainModel).all()
-    return {"domains": [{"id": d.id, "name": d.name, "description": d.description} for d in domains]}
+    return {'domains': [{'id': d.id, 'name': d.name, 'description': d.description} for d in domains]}
 
-@app.post("/api/domains")
+
+@app.post('/api/domains')
 def create_domain(payload: CustomDomainSchema, db: Session = Depends(get_db)):
-    domain_id = f"domain_{int(time.time() * 1000)}"
-    d = DomainModel(id=domain_id, name=payload.name, description=payload.description)
+    d = DomainModel(id=_new_id('domain'), name=payload.name, description=payload.description)
     db.add(d)
     db.commit()
-    return {"domain": {"id": d.id, "name": d.name, "description": d.description}}
+    return {'domain': {'id': d.id, 'name': d.name, 'description': d.description}}
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)
