@@ -68,6 +68,7 @@ const SEED_REPORTS = [
 
 function App() {
   const [page, setPage] = useState('home'); // 'home' | 'login' | 'dashboard' | 'admin-dashboard'
+  const [userEmail, setUserEmail] = useState('');
   const [activeVertical, setActiveVertical] = useState('startups');
   const [activeCluster, setActiveCluster] = useState('market');
   const [selectedTracks, setSelectedTracks] = useState(['validation', 'investor']);
@@ -163,7 +164,10 @@ function App() {
           transition={{ duration: 0.4 }}
         >
           <Login
-            onLogin={(role) => setPage(role === 'admin' ? 'admin-dashboard' : 'dashboard')}
+            onLogin={(role, email) => {
+              setUserEmail(email || '');
+              setPage(role === 'admin' ? 'admin-dashboard' : 'dashboard');
+            }}
             onBack={() => setPage('home')}
           />
         </motion.div>
@@ -201,6 +205,7 @@ function App() {
         <ExecutiveDashboard
           onLogout={() => setPage('home')}
           onGoHome={() => setPage('home')}
+          userEmail={userEmail}
         />
       </motion.div>
     </AnimatePresence>

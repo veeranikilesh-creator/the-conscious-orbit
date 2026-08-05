@@ -49,7 +49,7 @@ export default function Login({ onLogin, onBack }) {
     }
 
     setError("");
-    if (onLogin) onLogin(isAdmin ? "admin" : "executive");
+    if (onLogin) onLogin(isAdmin ? "admin" : "executive", email.trim().toLowerCase());
   };
 
   return (

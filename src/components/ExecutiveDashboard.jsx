@@ -415,7 +415,17 @@ const INITIAL_QUERIES = [
   }
 ];
 
-export default function ExecutiveDashboard({ onLogout, onGoHome }) {
+export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
+  /* Display name derived from the signed-in email's domain:
+     founder@venture.io -> "Venture". Falls back to the mailbox name,
+     then to a generic label when no email was captured. */
+  const emailName = (() => {
+    const email = (userEmail || "").trim();
+    const [mailbox, domain] = email.split("@");
+    const base = (domain || "").split(".")[0] || mailbox || "";
+    return base ? base.charAt(0).toUpperCase() + base.slice(1) : "Executive";
+  })();
+  const emailInitials = emailName.slice(0, 2).toUpperCase();
   // Navigation & View States
   const [navbarSection, setNavbarSection] = useState("queries"); // 'queries' | 'modules' | 'track' | 'engines'
   const [engineTab, setEngineTab] = useState("startup");
@@ -835,9 +845,9 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
             {/* Profile Avatar */}
             <div
               className="w-9 h-9 rounded-full bg-[#B8860B] hover:bg-[#9A7008] text-white font-extrabold text-xs flex items-center justify-center shadow-xs cursor-pointer select-none transition"
-              title="Executive Profile (Nehal)"
+              title={`Executive Profile (${emailName})`}
             >
-              NS
+              {emailInitials}
             </div>
 
             {/* Logout Button */}
@@ -876,9 +886,9 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
               Client Executive Workspace
             </div>
 
-            {/* Headline: Welcome back, Nehal! 👋 */}
+            {/* Headline: Welcome back, <name from email>! 👋 */}
             <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#FAF4E8] tracking-tight leading-tight flex items-center gap-2">
-              <span>Welcome back, Nehal!</span>
+              <span>Welcome back, {emailName}!</span>
               <span className="animate-bounce inline-block">👋</span>
             </h2>
 
