@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { checkHealth, listReports, generateReportViaApi, getReport } from "../api.js";
 import { downloadReportDoc } from "../reportDoc.js";
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from "./VerticalEngines.jsx";
+import IntakeEngine from "./IntakeEngine.jsx";
 import {
   Search,
   Bell,
@@ -415,7 +416,7 @@ const INITIAL_QUERIES = [
   }
 ];
 
-export default function ExecutiveDashboard({ onLogout, onGoHome, onOpenLegacy }) {
+export default function ExecutiveDashboard({ onLogout, onGoHome }) {
   // Navigation & View States
   const [navbarSection, setNavbarSection] = useState("queries"); // 'queries' | 'modules' | 'track' | 'engines'
   const [engineTab, setEngineTab] = useState("startup");
@@ -1064,17 +1065,22 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, onOpenLegacy })
               )}
             </button>
 
-            {/* 5. The original three-layer intake workspace, untouched */}
-            {onOpenLegacy && (
-              <button
-                type="button"
-                onClick={onOpenLegacy}
-                className="group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-4 rounded-xl flex items-center gap-2 text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
-              >
-                <FileText size={16} className="text-[#B8860B]" />
-                <span>5. Intake Engine</span>
-              </button>
-            )}
+            {/* 5. The original three-layer intake engine, in this UI's styling */}
+            <button
+              type="button"
+              onClick={() => setNavbarSection("intake")}
+              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-4 rounded-xl flex items-center gap-2 ${
+                navbarSection === "intake"
+                  ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
+                  : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
+              }`}
+            >
+              <FileText size={16} className={navbarSection === "intake" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
+              <span>5. Intake Engine</span>
+              {navbarSection === "intake" && (
+                <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
+              )}
+            </button>
 
           </nav>
 
@@ -1464,6 +1470,26 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, onOpenLegacy })
               {engineTab === "industry" && <IndustryAnalysisEngine />}
             </div>
           </section>
+        )}
+
+        {/* ---------------- SECTION 5: THREE-LAYER INTAKE ENGINE ---------------- */}
+        {navbarSection === "intake" && (
+          <IntakeEngine
+            apiStatus={apiStatus}
+            onComplete={(result) => {
+              setProjectsList((prev) => [projectFromReport(result.report), ...prev]);
+              const results = result.moduleResults || {};
+              setModulesList((prev) =>
+                prev.map((mod, i) => {
+                  const run = results[MODULE_KEY_ORDER[i]];
+                  return run
+                    ? { ...mod, project: result.report.name, status: "COMPLETED", score: Math.round(run.score ?? mod.score), lastUpdated: "Just now" }
+                    : mod;
+                })
+              );
+            }}
+            onSimulated={(project) => setProjectsList((prev) => [project, ...prev])}
+          />
         )}
 
       </main>

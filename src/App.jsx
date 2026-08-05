@@ -20,7 +20,6 @@ import Login from './components/Login.jsx';
 import Contact from './components/Contact.jsx';
 import ExecutiveDashboard from './components/ExecutiveDashboard.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
-import LegacyWorkspace from './components/LegacyWorkspace.jsx';
 
 /* ============================================================
    THE CONSCIOUS ORBIT — Ultra-Luxury Red & Gold Executive Workspace
@@ -190,24 +189,6 @@ function App() {
     );
   }
 
-  /* The pre-redesign workspace, verbatim: three-layer intake engine, venture
-     reports board, strategy engine view — reached from the executive portal. */
-  if (page === 'legacy') {
-    return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="legacy"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <LegacyWorkspace onExit={() => setPage('dashboard')} />
-        </motion.div>
-      </AnimatePresence>
-    );
-  }
-
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -220,7 +201,6 @@ function App() {
         <ExecutiveDashboard
           onLogout={() => setPage('home')}
           onGoHome={() => setPage('home')}
-          onOpenLegacy={() => setPage('legacy')}
         />
       </motion.div>
     </AnimatePresence>
