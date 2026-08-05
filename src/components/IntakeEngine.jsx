@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Plus, Play, Target, TrendingUp, DollarSign, CheckCircle2, Layers } from "lucide-react";
 import { generateReportViaApi } from "../api.js";
-import { downloadReportDoc } from "../reportDoc.js";
 
 /* ============================================================
    THREE-LAYER DYNAMIC INTAKE ENGINE
@@ -183,11 +182,10 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
         const result = await generateReportViaApi(intake, (label, done, total) =>
           setProgressText(`${label} (${done}/${total})…`)
         );
-        downloadReportDoc(result.report, result.moduleResults || {});
         setPhase("done");
         setDoneNote(
           `${result.report.name} published — Orbital Score ${result.report.score}/100, ` +
-          `${result.report.decision === 1 ? "GO" : "PIVOT"}. The .doc report has been downloaded.`
+          `${result.report.decision === 1 ? "GO" : "PIVOT"}. Review the overview; download the .doc from there.`
         );
         onComplete?.(result);
         return;
@@ -210,21 +208,18 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
         date: new Date().toISOString().split("T")[0],
         description: clusters.market.problem || "Venture evaluated through the intake engine.",
       };
-      downloadReportDoc(
-        {
-          name: project.title,
-          vertical: "startups",
-          status: "PUBLISHED",
-          score,
-          decision: 1,
-          clusters,
-          client: { company: profile.company, industry: profile.industry, stage: profile.stage, businessModel: profile.model, geography: profile.geography, contact: profile.contact },
-        },
-        {}
-      );
+      const localReport = {
+        name: project.title,
+        vertical: "startups",
+        status: "PUBLISHED",
+        score,
+        decision: 1,
+        clusters,
+        client: { company: profile.company, industry: profile.industry, stage: profile.stage, businessModel: profile.model, geography: profile.geography, contact: profile.contact },
+      };
       setPhase("done");
-      setDoneNote(`${project.title} evaluated locally at ${score}% (no backend). The .doc report has been downloaded.`);
-      onSimulated?.(project);
+      setDoneNote(`${project.title} evaluated locally at ${score}% (no backend). Review the overview; download the .doc from there.`);
+      onSimulated?.(project, localReport);
     }, 1900);
   };
 
@@ -466,8 +461,8 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
                 ) : (
                   <p className="text-xs text-[#7A1C29]">
                     Runs all ten intelligence modules over this intake — real scoring
-                    {apiStatus === "online" ? " via the live pipeline" : " (backend offline: local simulation)"} — and
-                    downloads the strategy report as .doc.
+                    {apiStatus === "online" ? " via the live pipeline" : " (backend offline: local simulation)"} — then
+                    opens the report overview, where the .doc download lives.
                   </p>
                 )}
               </div>

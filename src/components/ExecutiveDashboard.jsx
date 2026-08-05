@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkHealth, listReports, generateReportViaApi, getReport } from "../api.js";
-import { downloadReportDoc } from "../reportDoc.js";
+import ReportOverview from "./ReportOverview.jsx";
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from "./VerticalEngines.jsx";
 import IntakeEngine from "./IntakeEngine.jsx";
 import {
@@ -35,8 +35,7 @@ import {
   Clock,
   BarChart3,
   Zap,
-  RotateCcw,
-  Download
+  RotateCcw
 } from "lucide-react";
 
 /* ============================================================
@@ -451,6 +450,10 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
      its original simulation. */
   const [apiStatus, setApiStatus] = useState("checking");
 
+  /* { report, moduleResults } — opens the on-site report overview, which
+     carries the .doc download box. */
+  const [reportOverview, setReportOverview] = useState(null);
+
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
@@ -586,8 +589,8 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
         );
 
         setProjectsList((prev) => [projectFromReport(result.report), ...prev]);
-        // Hand the finished strategy report over as a Word document too.
-        downloadReportDoc(result.report, result.moduleResults || {});
+        // Show the on-site overview; the .doc download lives inside it.
+        setReportOverview({ report: result.report, moduleResults: result.moduleResults || {} });
         // Real per-module scores where the server returned them.
         const results = result.moduleResults || {};
         setModulesList((prev) =>
@@ -640,6 +643,25 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
       };
 
       setProjectsList((prev) => [newProj, ...prev]);
+      setReportOverview({
+        report: {
+          name: newProj.title,
+          vertical: "startups",
+          status: "PUBLISHED",
+          score: calculatedScore,
+          decision: 1,
+          clusters: { market: { problem: newProjectForm.description } },
+          client: {
+            company: newProjectForm.startupName,
+            industry: newProjectForm.sector,
+            stage: STAGE_TO_SERVER[newProjectForm.stage] || "Seed",
+            businessModel: newProjectForm.businessModel,
+            geography: newProjectForm.geography,
+            contact: newProjectForm.contact,
+          },
+        },
+        moduleResults: {},
+      });
 
       // Update all 10 module scores to reflect analysis for this new startup
       setModulesList((prev) =>
@@ -660,22 +682,22 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
     }, 2400);
   };
 
-  /* Download any project's strategy report as a Word document. API rows get
-     the full pipeline output (module scores + verdict); local sample rows get
-     the document built from what the card knows. */
-  const handleDownloadReport = async (p) => {
+  /* Open a project's report overview on-site. API rows get the full pipeline
+     output (module scores + verdict); local sample rows get an overview built
+     from what the card knows. The .doc download lives inside the overview. */
+  const handleOpenReportOverview = async (p) => {
     if (p.fromApi && apiStatus === "online") {
       try {
         const data = await getReport(p.id);
-        downloadReportDoc(data.report, data.moduleResults || {});
+        setReportOverview({ report: data.report, moduleResults: data.moduleResults || {} });
         return;
       } catch {
         /* fall through to the local shape */
       }
     }
     const m = /\((\d+)%\)/.exec(p.verdict || "");
-    downloadReportDoc(
-      {
+    setReportOverview({
+      report: {
         name: p.title,
         vertical: p.industry,
         status: p.status === "ACTIVE" ? "PUBLISHED" : "PROCESSED",
@@ -683,8 +705,8 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
         decision: /GO/.test(p.verdict || "") ? 1 : /PIVOT/.test(p.verdict || "") ? 0 : null,
         clusters: { market: { problem: p.description } },
       },
-      {}
-    );
+      moduleResults: {},
+    });
   };
 
   // Filtered queries based on search
@@ -1405,12 +1427,12 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                         <td className="p-3 text-right">
                           <div className="inline-flex items-center gap-2">
                             <button
-                              onClick={() => handleDownloadReport(p)}
-                              title="Download strategy report (.doc)"
+                              onClick={() => handleOpenReportOverview(p)}
+                              title="View report overview (with .doc download)"
                               className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-[#400A12] hover:text-[#B8860B] cursor-pointer"
                             >
-                              <Download size={12} />
-                              <span>.doc</span>
+                              <FileText size={12} />
+                              <span>Report</span>
                             </button>
                             <button
                               onClick={() => setNavbarSection("modules")}
@@ -1478,6 +1500,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
             apiStatus={apiStatus}
             onComplete={(result) => {
               setProjectsList((prev) => [projectFromReport(result.report), ...prev]);
+              setReportOverview({ report: result.report, moduleResults: result.moduleResults || {} });
               const results = result.moduleResults || {};
               setModulesList((prev) =>
                 prev.map((mod, i) => {
@@ -1488,7 +1511,10 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                 })
               );
             }}
-            onSimulated={(project) => setProjectsList((prev) => [project, ...prev])}
+            onSimulated={(project, localReport) => {
+              setProjectsList((prev) => [project, ...prev]);
+              if (localReport) setReportOverview({ report: localReport, moduleResults: {} });
+            }}
           />
         )}
 
@@ -1684,11 +1710,11 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                     </div>
 
                     <button
-                      onClick={() => handleDownloadReport(p)}
+                      onClick={() => handleOpenReportOverview(p)}
                       className="w-full mt-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#D4AF37]/50 text-[0.68rem] font-bold text-[#400A12] hover:bg-[#F5EAD4] transition cursor-pointer"
                     >
-                      <Download size={12} />
-                      <span>Download Strategy Report (.doc)</span>
+                      <FileText size={12} />
+                      <span>View Report Overview</span>
                     </button>
                   </div>
                 ))}
@@ -2144,6 +2170,17 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
               )}
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Generated-report overview with the .doc download box */}
+      <AnimatePresence>
+        {reportOverview && (
+          <ReportOverview
+            report={reportOverview.report}
+            moduleResults={reportOverview.moduleResults}
+            onClose={() => setReportOverview(null)}
+          />
         )}
       </AnimatePresence>
 
