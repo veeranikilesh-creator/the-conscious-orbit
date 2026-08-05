@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkHealth, listReports, generateReportViaApi } from "../api.js";
+import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from "./VerticalEngines.jsx";
 import {
   Search,
   Bell,
@@ -373,7 +374,8 @@ const INITIAL_QUERIES = [
 
 export default function ExecutiveDashboard({ onLogout, onGoHome }) {
   // Navigation & View States
-  const [navbarSection, setNavbarSection] = useState("queries"); // 'queries' | 'modules' | 'track'
+  const [navbarSection, setNavbarSection] = useState("queries"); // 'queries' | 'modules' | 'track' | 'engines'
+  const [engineTab, setEngineTab] = useState("startup");
   const [searchQuery, setSearchQuery] = useState("");
   
   // Data States
@@ -953,6 +955,23 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
               )}
             </button>
 
+            {/* 4. Vertical Engines */}
+            <button
+              type="button"
+              onClick={() => setNavbarSection("engines")}
+              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-4 rounded-xl flex items-center gap-2 ${
+                navbarSection === "engines"
+                  ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
+                  : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
+              }`}
+            >
+              <Cpu size={16} className={navbarSection === "engines" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
+              <span>4. Vertical Engines</span>
+              {navbarSection === "engines" && (
+                <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
+              )}
+            </button>
+
           </nav>
 
           {/* Right Live System Telemetry Status Indicator */}
@@ -1288,6 +1307,48 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
               </div>
             </div>
 
+          </section>
+        )}
+
+        {/* ---------------- SECTION 4: VERTICAL ENGINES ---------------- */}
+        {navbarSection === "engines" && (
+          <section className="space-y-6 pt-2">
+            <div className="space-y-1">
+              <h2 className="font-serif text-2xl font-extrabold text-[#400A12]">Vertical Engines</h2>
+              <p className="text-xs text-[#7A1C29]">
+                Standalone TAM/SAM/SOM, unit-economics and feasibility calculators per vertical — run
+                what-if numbers instantly, no report required.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              {[
+                ["startup", "Startups — Market Sizing"],
+                ["msme", "MSMEs — Optimization"],
+                ["industry", "Industries — Analysis"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setEngineTab(id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    engineTab === id
+                      ? "bg-[#400A12] text-[#F5D77F] border border-[#D4AF37]/50"
+                      : "bg-[#FAF4E8] text-[#4A0A13] border border-[#D4AF37]/30 hover:bg-[#F5EAD4]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* The engines are the originals from the previous site, verbatim —
+                they carry their own executive black & gold styling. */}
+            <div className="rounded-3xl border border-[#D4AF37]/40 bg-[#050505] p-4 sm:p-6">
+              {engineTab === "startup" && <StartupMarketEngine />}
+              {engineTab === "msme" && <MsmeOptimizationEngine />}
+              {engineTab === "industry" && <IndustryAnalysisEngine />}
+            </div>
           </section>
         )}
 

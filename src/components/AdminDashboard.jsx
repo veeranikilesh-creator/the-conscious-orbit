@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { checkHealth, listReports, advanceReport, revertReport } from "../api.js";
+import { checkHealth, listReports, advanceReport, revertReport, getReport, deleteReport } from "../api.js";
 import {
   ShieldCheck,
   Layers,
@@ -442,6 +442,10 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
   const [profileStatusFilter, setProfileStatusFilter] = useState("ALL");
   const [domainFilter, setDomainFilter] = useState("ALL");
   const [reportStatusFilter, setReportStatusFilter] = useState("ALL");
+  const [reportView, setReportView] = useState("list"); // 'list' | 'board'
+  /* { row, loading, detail } — detail is the server's { report, moduleResults,
+     pipeline } for API rows, null for local sample rows. */
+  const [reportDetail, setReportDetail] = useState(null);
   const [ticketFilter, setTicketFilter] = useState("ALL");
 
   // Modals
@@ -508,6 +512,36 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
         return { ...rep, progressPct: newPct, status: newStatus };
       })
     );
+  };
+
+  // Report detail view — pulls module results + transition history for API rows.
+  const handleViewReport = async (rep) => {
+    if (rep.fromApi && apiStatus === "online") {
+      setReportDetail({ row: rep, loading: true, detail: null });
+      try {
+        const data = await getReport(rep.id);
+        setReportDetail({ row: rep, loading: false, detail: data });
+      } catch (err) {
+        setReportDetail({ row: rep, loading: false, detail: null, error: err.message });
+      }
+    } else {
+      setReportDetail({ row: rep, loading: false, detail: null });
+    }
+  };
+
+  // Delete a report (and its module results, server-side) after confirmation.
+  const handleDeleteReport = async (rep) => {
+    if (!window.confirm(`Delete "${rep.reportName}" and all its module results? This cannot be undone.`)) return;
+    if (rep.fromApi && apiStatus === "online") {
+      try {
+        await deleteReport(rep.id);
+      } catch (err) {
+        alert(err.message || "The server refused to delete this report.");
+        return;
+      }
+    }
+    setReports((prev) => prev.filter((r) => r.id !== rep.id));
+    setReportDetail((d) => (d?.row?.id === rep.id ? null : d));
   };
 
   const handleUpdateTicketStatus = (id, newStatus, note) => {
@@ -1076,48 +1110,126 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                     {st}
                   </button>
                 ))}
+                <div className="w-px h-5 bg-[#D4AF37]/30 mx-1" />
+                {[["list", "List"], ["board", "Board"]].map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => setReportView(id)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
+                      reportView === id
+                        ? "bg-[#D4AF37] text-[#4A0A13]"
+                        : "bg-[#FAF4E8] text-[#4A0A13] border border-[#D4AF37]/30 hover:bg-[#F5EAD4]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="space-y-4">
-              {filteredReports.map((rep) => (
-                <div
-                  key={rep.id}
-                  className="rounded-2xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <span className="text-[0.65rem] text-[#D4AF37] font-medium uppercase">{rep.domain} · {rep.status}</span>
-                    <h3 className="font-semibold text-sm text-[#4A0A13]">{rep.reportName}</h3>
-                    <p className="text-xs text-[#7A1C29]">Auditor: {rep.auditor}</p>
-                  </div>
-
-                  <div className="w-full md:w-64 space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-[#7A1C29]">Progress</span>
-                      <span className="font-medium text-[#4A0A13]">{rep.progressPct}%</span>
-                    </div>
-                    <div className="w-full bg-[#4A0A13]/10 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-[#4A0A13] h-1.5 rounded-full" style={{ width: `${rep.progressPct}%` }} />
+            {reportView === "list" ? (
+              <div className="space-y-4">
+                {filteredReports.map((rep) => (
+                  <div
+                    key={rep.id}
+                    className="rounded-2xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1">
+                      <span className="text-[0.65rem] text-[#D4AF37] font-medium uppercase">{rep.domain} · {rep.status}</span>
+                      <h3 className="font-semibold text-sm text-[#4A0A13]">{rep.reportName}</h3>
+                      <p className="text-xs text-[#7A1C29]">Auditor: {rep.auditor}</p>
                     </div>
 
-                    <div className="flex justify-end gap-1 pt-1">
-                      <button
-                        onClick={() => handleUpdateReportProgress(rep.id, -20)}
-                        className="h-6 w-6 rounded-full border border-[#D4AF37]/40 text-xs font-bold flex items-center justify-center cursor-pointer"
-                      >
-                        -
-                      </button>
-                      <button
-                        onClick={() => handleUpdateReportProgress(rep.id, 20)}
-                        className="h-6 w-6 rounded-full bg-[#4A0A13] text-[#FAF4E8] text-xs font-bold flex items-center justify-center cursor-pointer"
-                      >
-                        +
-                      </button>
+                    <div className="w-full md:w-64 space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-[#7A1C29]">Progress</span>
+                        <span className="font-medium text-[#4A0A13]">{rep.progressPct}%</span>
+                      </div>
+                      <div className="w-full bg-[#4A0A13]/10 rounded-full h-1.5 overflow-hidden">
+                        <div className="bg-[#4A0A13] h-1.5 rounded-full" style={{ width: `${rep.progressPct}%` }} />
+                      </div>
+
+                      <div className="flex justify-end gap-1 pt-1">
+                        <button
+                          onClick={() => handleViewReport(rep)}
+                          title="View report detail"
+                          className="h-6 w-6 rounded-full border border-[#D4AF37]/40 text-[#4A0A13] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]"
+                        >
+                          <Eye size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReport(rep)}
+                          title="Delete report"
+                          className="h-6 w-6 rounded-full border border-[#D4AF37]/40 text-[#7A1C29] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleUpdateReportProgress(rep.id, -20)}
+                          className="h-6 w-6 rounded-full border border-[#D4AF37]/40 text-xs font-bold flex items-center justify-center cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <button
+                          onClick={() => handleUpdateReportProgress(rep.id, 20)}
+                          className="h-6 w-6 rounded-full bg-[#4A0A13] text-[#FAF4E8] text-xs font-bold flex items-center justify-center cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              /* Kanban board — one column per pipeline status, same actions. */
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                {["PENDING", "IN_PROGRESS", "PROCESSED", "COMPLETED"].map((col) => {
+                  const items = filteredReports.filter((r) => r.status === col);
+                  return (
+                    <div key={col} className="rounded-2xl border border-[#D4AF37]/40 bg-[#FAF4E8]/60 p-3 space-y-3 min-h-40">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#B8860B]">{col}</span>
+                        <span className="text-[0.65rem] font-mono text-[#7A1C29]">{items.length}</span>
+                      </div>
+                      {items.map((rep) => (
+                        <div key={rep.id} className="rounded-xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-3 shadow-xs space-y-2">
+                          <span className="text-[0.6rem] text-[#D4AF37] font-medium uppercase">{rep.domain}</span>
+                          <h4 className="font-semibold text-xs text-[#4A0A13] leading-snug">{rep.reportName}</h4>
+                          <div className="w-full bg-[#4A0A13]/10 rounded-full h-1 overflow-hidden">
+                            <div className="bg-[#4A0A13] h-1 rounded-full" style={{ width: `${rep.progressPct}%` }} />
+                          </div>
+                          <div className="flex items-center justify-between pt-0.5">
+                            <span className="font-mono text-[0.65rem] font-bold text-[#4A0A13]">{rep.score}%</span>
+                            <div className="flex gap-1">
+                              <button onClick={() => handleViewReport(rep)} title="View"
+                                className="h-5 w-5 rounded-full border border-[#D4AF37]/40 text-[#4A0A13] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]">
+                                <Eye size={10} />
+                              </button>
+                              <button onClick={() => handleDeleteReport(rep)} title="Delete"
+                                className="h-5 w-5 rounded-full border border-[#D4AF37]/40 text-[#7A1C29] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]">
+                                <Trash2 size={10} />
+                              </button>
+                              <button onClick={() => handleUpdateReportProgress(rep.id, -20)}
+                                className="h-5 w-5 rounded-full border border-[#D4AF37]/40 text-[0.65rem] font-bold flex items-center justify-center cursor-pointer">
+                                -
+                              </button>
+                              <button onClick={() => handleUpdateReportProgress(rep.id, 20)}
+                                className="h-5 w-5 rounded-full bg-[#4A0A13] text-[#FAF4E8] text-[0.65rem] font-bold flex items-center justify-center cursor-pointer">
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {!items.length && (
+                        <p className="text-center text-[0.65rem] text-[#8C6D58] py-4">No reports</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -1196,6 +1308,104 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
         )}
 
       </main>
+
+      {/* Report Detail Modal — module scores, pipeline state, history */}
+      {reportDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] p-5 shadow-xl space-y-4 text-xs text-[#4A0A13]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <span className="text-[0.65rem] text-[#D4AF37] font-medium uppercase">
+                  {reportDetail.row.domain} · {reportDetail.row.status}
+                </span>
+                <h2 className="text-lg font-semibold text-[#4A0A13]">{reportDetail.row.reportName}</h2>
+                <p className="text-[#7A1C29]">Auditor: {reportDetail.row.auditor}</p>
+              </div>
+              <button
+                onClick={() => setReportDetail(null)}
+                className="p-1.5 rounded-full hover:bg-[#F5EAD4] text-[#8C6D58] cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {reportDetail.loading && (
+              <p className="text-[#7A1C29] animate-pulse py-6 text-center">Loading report detail from the pipeline…</p>
+            )}
+            {reportDetail.error && (
+              <p className="text-[#7A1C29] py-2">Could not load detail: {reportDetail.error}</p>
+            )}
+
+            {!reportDetail.loading && reportDetail.detail && (() => {
+              const { report, moduleResults = {}, pipeline } = reportDetail.detail;
+              const decision = moduleResults.industryReport?.output?.decision;
+              return (
+                <div className="space-y-4">
+                  {/* Verdict strip */}
+                  <div className="rounded-xl border border-[#D4AF37]/50 bg-white p-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <div>
+                      <span className="text-[0.65rem] uppercase text-[#B8860B] font-bold">Orbital Score</span>
+                      <p className="font-mono text-xl font-bold">{report.score ?? 0}/100</p>
+                    </div>
+                    <div>
+                      <span className="text-[0.65rem] uppercase text-[#B8860B] font-bold">Verdict</span>
+                      <p className="font-bold">{report.decision === 1 ? "GO / PROCEED" : report.decision === 0 ? "PIVOT" : "Pending"}</p>
+                    </div>
+                    <div>
+                      <span className="text-[0.65rem] uppercase text-[#B8860B] font-bold">Pipeline</span>
+                      <p className="font-mono">{report.status} · {pipeline?.progressPercent ?? 0}%</p>
+                    </div>
+                    {decision?.headline && (
+                      <p className="w-full text-[#7A1C29] italic">"{decision.headline}"</p>
+                    )}
+                  </div>
+
+                  {/* Module results */}
+                  <div>
+                    <h3 className="font-semibold text-sm mb-2">Module Results ({Object.keys(moduleResults).length}/10)</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {Object.entries(moduleResults).map(([key, res]) => (
+                        <div key={key} className="rounded-xl border border-[#D4AF37]/40 bg-white px-3 py-2 flex items-center justify-between">
+                          <span className="font-medium">{key}</span>
+                          <span className="font-mono font-bold">{res.score ?? "—"}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {pipeline?.missingModules?.length > 0 && (
+                      <p className="text-[#7A1C29] mt-2">
+                        Missing for this stage: {pipeline.missingModules.join(", ")}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Transition history */}
+                  {(report.transitions || []).length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-sm mb-2">Status History</h3>
+                      <div className="space-y-1.5">
+                        {report.transitions.map((t, i) => (
+                          <div key={i} className="flex items-center gap-2 text-[0.7rem]">
+                            <span className="font-mono text-[#B8860B]">{t.from || "•"} → {t.to}</span>
+                            <span className="text-[#8C6D58]">{t.note}</span>
+                            {t.at && <span className="ml-auto text-[#8C6D58]">{String(t.at).slice(0, 10)}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {!reportDetail.loading && !reportDetail.detail && !reportDetail.error && (
+              <p className="text-[#7A1C29] py-2">
+                This is a local sample report — score {reportDetail.row.score}%, progress {reportDetail.row.progressPct}%.
+                Generate a report through the pipeline to see per-module results and history here.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Simple Modals */}
       {selectedModule && (
