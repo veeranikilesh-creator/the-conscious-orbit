@@ -415,7 +415,7 @@ const INITIAL_QUERIES = [
   }
 ];
 
-export default function ExecutiveDashboard({ onLogout, onGoHome }) {
+export default function ExecutiveDashboard({ onLogout, onGoHome, onOpenLegacy }) {
   // Navigation & View States
   const [navbarSection, setNavbarSection] = useState("queries"); // 'queries' | 'modules' | 'track' | 'engines'
   const [engineTab, setEngineTab] = useState("startup");
@@ -1063,6 +1063,18 @@ export default function ExecutiveDashboard({ onLogout, onGoHome }) {
                 <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
               )}
             </button>
+
+            {/* 5. The original three-layer intake workspace, untouched */}
+            {onOpenLegacy && (
+              <button
+                type="button"
+                onClick={onOpenLegacy}
+                className="group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-4 rounded-xl flex items-center gap-2 text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
+              >
+                <FileText size={16} className="text-[#B8860B]" />
+                <span>5. Intake Engine</span>
+              </button>
+            )}
 
           </nav>
 
