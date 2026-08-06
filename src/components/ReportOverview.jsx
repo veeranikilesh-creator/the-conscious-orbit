@@ -56,6 +56,10 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
   const client = typeof report.client === "object" && report.client ? report.client : {};
   const verdict = moduleResults.industryReport?.output?.decision || null;
 
+  /* Reports awaiting admin approval hide the verdict, scores and download —
+     the admin reviews and publishes before the client sees the result. */
+  const pending = Boolean(report.status) && report.status !== "PUBLISHED";
+
   const score = report.score ?? 0;
   const decisionLabel =
     report.decision === 1 ? "GO / PROCEED" : report.decision === 0 ? "PIVOT" : "PENDING";
@@ -95,7 +99,20 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
           </button>
         </div>
 
+        {/* Awaiting-approval banner replaces the result until an admin publishes */}
+        {pending && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900">
+            <p className="font-bold mb-1">⏳ Awaiting admin approval</p>
+            <p>
+              Your intake has been analysed across all ten intelligence modules. An administrator is
+              reviewing the result — the Orbital Score, verdict and downloadable report unlock here as
+              soon as it is approved.
+            </p>
+          </div>
+        )}
+
         {/* Score + verdict strip */}
+        {!pending && (
         <div className="rounded-2xl border-2 border-[#D4AF37] bg-white p-5 flex flex-wrap items-center gap-x-8 gap-y-3">
           <div className="text-center">
             <p className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">Conscious Orbital Score</p>
@@ -108,8 +125,10 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
             <p className="text-xs italic text-[#7A1C29] flex-1 min-w-52">"{verdict.headline}"</p>
           )}
         </div>
+        )}
 
         {/* Download box */}
+        {!pending && (
         <div className="rounded-2xl border border-[#D4AF37]/60 bg-[#F5EAD4]/70 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
             <FileText size={26} className="text-[#B8860B] shrink-0 mt-0.5" />
@@ -128,9 +147,10 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
             <span>Download .doc</span>
           </button>
         </div>
+        )}
 
         {/* Executive verdict */}
-        {verdict && (
+        {!pending && verdict && (
           <div className="rounded-2xl border border-[#D4AF37]/40 bg-white p-5 space-y-3">
             <h3 className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">Executive Verdict</h3>
             {verdict.rationale && <p className="text-xs text-[#4A0A13]">{verdict.rationale}</p>}
@@ -158,7 +178,7 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
         )}
 
         {/* Module scores */}
-        {scoredModules.length > 0 && (
+        {!pending && scoredModules.length > 0 && (
           <div className="rounded-2xl border border-[#D4AF37]/40 bg-white p-5 space-y-3">
             <h3 className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">
               Intelligence Module Scores ({scoredModules.length}/10)
@@ -179,6 +199,93 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* How the score was composed — weights and contributions */}
+        {!pending && (moduleResults.industryReport?.output?.contributions || []).length > 0 && (
+          <div className="rounded-2xl border border-[#D4AF37]/40 bg-white p-5 space-y-3">
+            <h3 className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">
+              Score Composition — how the Orbital Score is weighted
+            </h3>
+            <div className="space-y-1.5">
+              {moduleResults.industryReport.output.contributions.map((c) => (
+                <div key={c.module} className="flex items-center gap-3 text-xs">
+                  <span className="w-44 shrink-0 text-[#4A0A13]">{MODULE_LABELS[c.module] || c.module}</span>
+                  <span className="font-mono text-[#8C6D58] w-20">{Math.round(c.weight * 100)}% weight</span>
+                  <div className="flex-1 bg-[#4A0A13]/10 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-[#B8860B] h-1.5 rounded-full" style={{ width: `${c.score}%` }} />
+                  </div>
+                  <span className="font-mono font-bold text-[#400A12] w-16 text-right">+{c.weightedContribution} pts</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* What was compared — competitors and external data sources */}
+        {!pending && (moduleResults.pricing || moduleResults.marketResearch) && (
+          <div className="rounded-2xl border border-[#D4AF37]/40 bg-white p-5 space-y-4">
+            <h3 className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">
+              Data Sources & Comparisons used in this report
+            </h3>
+
+            {moduleResults.pricing?.output && (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-[#4A0A13]">
+                  Pricing benchmark — your price {moduleResults.pricing.output.currency} {moduleResults.pricing.output.ourPrice}{" "}
+                  vs a market median of {moduleResults.pricing.output.currency} {moduleResults.pricing.output.market?.median}{" "}
+                  ({moduleResults.pricing.output.position?.replace(/_/g, " ")},{" "}
+                  {moduleResults.pricing.output.deltaFromMedianPercent}% from median)
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-left text-[#8C6D58] font-mono text-[0.65rem] uppercase">
+                        <th className="py-1 pr-3">Compared against</th>
+                        <th className="py-1 pr-3">Monthly price</th>
+                        <th className="py-1">Vs us</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(moduleResults.pricing.output.competitors || []).map((c) => (
+                        <tr key={c.name} className="border-t border-[#D4AF37]/20 text-[#4A0A13]">
+                          <td className="py-1.5 pr-3 font-medium">{c.name}</td>
+                          <td className="py-1.5 pr-3 font-mono">{moduleResults.pricing.output.currency} {c.monthlyPrice}</td>
+                          <td className="py-1.5">{c.cheaperThanUs ? "cheaper" : "pricier"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {moduleResults.marketResearch?.output && (() => {
+              const mr = moduleResults.marketResearch.output;
+              return (
+                <div className="space-y-1.5 text-xs text-[#4A0A13]">
+                  <p className="font-bold">
+                    Competitive landscape — {mr.competition?.total ?? 0} competitor(s), market {mr.competition?.intensity?.toLowerCase()}
+                  </p>
+                  {(mr.competition?.known || []).length > 0 && (
+                    <p><span className="text-[#8C6D58]">Declared by you:</span> {mr.competition.known.join(", ")}</p>
+                  )}
+                  {(mr.competition?.discovered || []).length > 0 && (
+                    <p><span className="text-[#8C6D58]">Discovered via domain intelligence:</span> {mr.competition.discovered.join(", ")}</p>
+                  )}
+                  {(mr.keywords?.targeted || []).length > 0 && (
+                    <p>
+                      <span className="text-[#8C6D58]">Keywords compared:</span> {mr.keywords.targeted.join(", ")}
+                      {(mr.keywords?.unclaimed || []).length > 0 && ` — ${mr.keywords.unclaimed.length} show whitespace`}
+                    </p>
+                  )}
+                  <p className="text-[0.68rem] text-[#8C6D58] italic">
+                    Source: {mr.spyfu?.live ? "Live SpyFu competitor intelligence." : "SpyFu integration (placeholder data — no credentials configured)."}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         )}
 

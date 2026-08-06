@@ -185,8 +185,8 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
         );
         setPhase("done");
         setDoneNote(
-          `${result.report.name} published — Orbital Score ${result.report.score}/100, ` +
-          `${result.report.decision === 1 ? "GO" : "PIVOT"}. Review the overview; download the .doc from there.`
+          `${result.report.name} analysed across all ten modules and submitted for admin approval — ` +
+          `the verdict and .doc download unlock once an administrator approves it.`
         );
         onComplete?.(result);
         return;

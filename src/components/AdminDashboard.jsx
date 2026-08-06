@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { checkHealth, listReports, advanceReport, revertReport, getReport, deleteReport } from "../api.js";
+import { checkHealth, listReports, advanceReport, getReport, deleteReport } from "../api.js";
 import { downloadReportDoc } from "../reportDoc.js";
 import {
   ShieldCheck,
@@ -469,51 +469,39 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
     setRegistrations((prev) => prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)));
   };
 
-  const handleUpdateReportProgress = async (id, delta) => {
-    const target = reports.find((r) => r.id === id);
-
-    /* API-backed rows move through the server's state machine instead of a
-       local percentage — advance is gated there, so a 409 names the modules
-       still missing rather than letting the row lie about its progress. */
-    if (target?.fromApi && apiStatus === "online") {
+  /* Tracking is view-only for the admin — the one action left is APPROVAL:
+     a client-submitted report waits at PROCESSED with all modules complete,
+     and approving it advances the state machine to PUBLISHED, which unlocks
+     the verdict and .doc download on the client portal. The server's 409
+     gate still refuses approval if modules are missing. */
+  const handleApproveReport = async (rep) => {
+    if (rep.fromApi && apiStatus === "online") {
       try {
-        const data = delta > 0 ? await advanceReport(id) : await revertReport(id);
-        // Express answers { report }, FastAPI answers { status }.
+        const data = await advanceReport(rep.id);
         const serverStatus = data?.report?.status || data?.status;
         if (serverStatus) {
           setReports((prev) =>
-            prev.map((rep) =>
-              rep.id === id
-                ? {
-                    ...rep,
-                    serverStatus,
-                    status: SERVER_STATUS_TO_ADMIN[serverStatus] || serverStatus,
-                    progressPct: data?.report
-                      ? Math.round(((data.report.completedModules || []).length / 10) * 100)
-                      : rep.progressPct,
-                  }
-                : rep
+            prev.map((r) =>
+              r.id === rep.id
+                ? { ...r, serverStatus, status: SERVER_STATUS_TO_ADMIN[serverStatus] || serverStatus }
+                : r
             )
           );
         }
       } catch (err) {
-        alert(err.message || "The pipeline refused that transition.");
+        alert(err.message || "The pipeline refused the approval.");
       }
       return;
     }
-
     setReports((prev) =>
-      prev.map((rep) => {
-        if (rep.id !== id) return rep;
-        const newPct = Math.min(100, Math.max(0, rep.progressPct + delta));
-        let newStatus = rep.status;
-        if (newPct === 100) newStatus = "COMPLETED";
-        else if (newPct > 50) newStatus = "PROCESSED";
-        else if (newPct > 0) newStatus = "IN_PROGRESS";
-        return { ...rep, progressPct: newPct, status: newStatus };
-      })
+      prev.map((r) => (r.id === rep.id ? { ...r, status: "COMPLETED", progressPct: 100 } : r))
     );
   };
+
+  /* A report is approvable when the pipeline finished its work and is
+     waiting at PROCESSED for the admin's sign-off. */
+  const canApprove = (rep) =>
+    rep.fromApi ? rep.serverStatus === "PROCESSED" && rep.progressPct === 100 : rep.status === "PROCESSED";
 
   // Report detail view — pulls module results + transition history for API rows.
   const handleViewReport = async (rep) => {
@@ -1094,7 +1082,10 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#D4AF37]/20 pb-4">
               <div>
                 <h1 className="text-xl font-semibold text-[#4A0A13]">Report Progress Tracking</h1>
-                <p className="text-xs text-[#7A1C29]">Monitor report generation status and scores.</p>
+                <p className="text-xs text-[#7A1C29]">
+                  View-only tracking. Reports waiting at PROCESSED carry an Approve action — approving
+                  releases the verdict and download to the client.
+                </p>
               </div>
 
               <div className="flex items-center gap-1.5 overflow-x-auto">
@@ -1150,7 +1141,17 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                         <div className="bg-[#4A0A13] h-1.5 rounded-full" style={{ width: `${rep.progressPct}%` }} />
                       </div>
 
-                      <div className="flex justify-end gap-1 pt-1">
+                      <div className="flex justify-end items-center gap-1.5 pt-1">
+                        {canApprove(rep) && (
+                          <button
+                            onClick={() => handleApproveReport(rep)}
+                            title="Approve the result and release it to the client"
+                            className="flex items-center gap-1 px-2.5 h-6 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-[0.65rem] font-bold cursor-pointer"
+                          >
+                            <Check size={11} />
+                            <span>Approve</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => handleViewReport(rep)}
                           title="View report detail"
@@ -1164,18 +1165,6 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                           className="h-6 w-6 rounded-full border border-[#D4AF37]/40 text-[#7A1C29] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]"
                         >
                           <Trash2 size={12} />
-                        </button>
-                        <button
-                          onClick={() => handleUpdateReportProgress(rep.id, -20)}
-                          className="h-6 w-6 rounded-full border border-[#D4AF37]/40 text-xs font-bold flex items-center justify-center cursor-pointer"
-                        >
-                          -
-                        </button>
-                        <button
-                          onClick={() => handleUpdateReportProgress(rep.id, 20)}
-                          className="h-6 w-6 rounded-full bg-[#4A0A13] text-[#FAF4E8] text-xs font-bold flex items-center justify-center cursor-pointer"
-                        >
-                          +
                         </button>
                       </div>
                     </div>
@@ -1202,7 +1191,14 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                           </div>
                           <div className="flex items-center justify-between pt-0.5">
                             <span className="font-mono text-[0.65rem] font-bold text-[#4A0A13]">{rep.score}%</span>
-                            <div className="flex gap-1">
+                            <div className="flex items-center gap-1">
+                              {canApprove(rep) && (
+                                <button onClick={() => handleApproveReport(rep)} title="Approve & release to client"
+                                  className="flex items-center gap-0.5 px-2 h-5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-[0.6rem] font-bold cursor-pointer">
+                                  <Check size={9} />
+                                  <span>Approve</span>
+                                </button>
+                              )}
                               <button onClick={() => handleViewReport(rep)} title="View"
                                 className="h-5 w-5 rounded-full border border-[#D4AF37]/40 text-[#4A0A13] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]">
                                 <Eye size={10} />
@@ -1210,14 +1206,6 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                               <button onClick={() => handleDeleteReport(rep)} title="Delete"
                                 className="h-5 w-5 rounded-full border border-[#D4AF37]/40 text-[#7A1C29] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]">
                                 <Trash2 size={10} />
-                              </button>
-                              <button onClick={() => handleUpdateReportProgress(rep.id, -20)}
-                                className="h-5 w-5 rounded-full border border-[#D4AF37]/40 text-[0.65rem] font-bold flex items-center justify-center cursor-pointer">
-                                -
-                              </button>
-                              <button onClick={() => handleUpdateReportProgress(rep.id, 20)}
-                                className="h-5 w-5 rounded-full bg-[#4A0A13] text-[#FAF4E8] text-[0.65rem] font-bold flex items-center justify-center cursor-pointer">
-                                +
                               </button>
                             </div>
                           </div>
@@ -1420,28 +1408,97 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
         </div>
       )}
 
-      {/* Simple Modals */}
+      {/* Module detail modal — full descriptor, not just name + blurb */}
       {selectedModule && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] p-5 shadow-xl space-y-3">
-            <h2 className="text-lg font-semibold text-[#4A0A13]">{selectedModule.name}</h2>
-            <p className="text-xs text-[#7A1C29]">{selectedModule.desc}</p>
-            <div className="text-right pt-2">
-              <button onClick={() => setSelectedModule(null)} className="rounded-full bg-[#4A0A13] text-[#FAF4E8] px-4 py-1 text-xs font-medium">Close</button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] p-5 shadow-xl space-y-4 text-[#4A0A13]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <span className="font-mono text-[0.65rem] font-bold uppercase tracking-wider text-[#B8860B]">
+                  {selectedModule.code} · {selectedModule.category}
+                </span>
+                <h2 className="text-lg font-semibold text-[#4A0A13]">{selectedModule.name}</h2>
+              </div>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[0.65rem] font-medium border shrink-0 ${
+                  selectedModule.status === "COMPLETED"
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : selectedModule.status === "IN_PROGRESS"
+                    ? "bg-amber-50 text-amber-800 border-amber-200"
+                    : "bg-slate-50 text-slate-700 border-slate-200"
+                }`}
+              >
+                {selectedModule.status}
+              </span>
+            </div>
+
+            <p className="text-xs text-[#7A1C29] leading-relaxed">{selectedModule.desc}</p>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-[#7A1C29]">Audit Score</span>
+                <span className="font-bold">{selectedModule.score} / 100</span>
+              </div>
+              <div className="w-full bg-[#4A0A13]/10 rounded-full h-1.5 overflow-hidden">
+                <div className="bg-[#4A0A13] h-1.5 rounded-full" style={{ width: `${selectedModule.score}%` }} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-xl border border-[#D4AF37]/40 bg-white p-2.5">
+                <span className="block text-[0.62rem] uppercase font-mono text-[#8C6D58]">Lead Auditor</span>
+                <span className="font-semibold">{selectedModule.leadAuditor}</span>
+              </div>
+              <div className="rounded-xl border border-[#D4AF37]/40 bg-white p-2.5">
+                <span className="block text-[0.62rem] uppercase font-mono text-[#8C6D58]">Active Projects</span>
+                <span className="font-semibold">{selectedModule.activeProjects}</span>
+              </div>
+            </div>
+
+            <div className="text-right pt-1">
+              <button onClick={() => setSelectedModule(null)} className="rounded-full bg-[#4A0A13] text-[#FAF4E8] px-4 py-1.5 text-xs font-medium cursor-pointer">Close</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Client profile modal — every field the profile carries */}
       {selectedProfile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] p-5 shadow-xl space-y-3 text-xs text-[#4A0A13]">
-            <h2 className="text-lg font-semibold">{selectedProfile.fullName}</h2>
-            <p><strong>Company:</strong> {selectedProfile.company}</p>
-            <p><strong>Email:</strong> {selectedProfile.email}</p>
-            <p><strong>Domain:</strong> {selectedProfile.domain}</p>
-            <div className="text-right pt-2">
-              <button onClick={() => setSelectedProfile(null)} className="rounded-full bg-[#4A0A13] text-[#FAF4E8] px-4 py-1 text-xs font-medium">Close</button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] p-5 shadow-xl space-y-4 text-xs text-[#4A0A13]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#B8860B] text-white font-extrabold text-sm flex items-center justify-center">
+                  {(selectedProfile.fullName || "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold leading-tight">{selectedProfile.fullName}</h2>
+                  <p className="text-[#7A1C29]">{selectedProfile.email}</p>
+                </div>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-[0.65rem] border border-[#D4AF37]/40 bg-[#4A0A13]/5 font-medium shrink-0">
+                {selectedProfile.status}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {[
+                ["Company", selectedProfile.company],
+                ["Domain / Vertical", selectedProfile.domain],
+                ["Account Type", selectedProfile.accountType],
+                ["Phone", selectedProfile.phone],
+                ["Location", selectedProfile.location],
+                ["Profile ID", selectedProfile.id],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border border-[#D4AF37]/40 bg-white p-2.5">
+                  <span className="block text-[0.62rem] uppercase font-mono text-[#8C6D58]">{label}</span>
+                  <span className="font-semibold break-all">{value || "—"}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-right pt-1">
+              <button onClick={() => setSelectedProfile(null)} className="rounded-full bg-[#4A0A13] text-[#FAF4E8] px-4 py-1.5 text-xs font-medium cursor-pointer">Close</button>
             </div>
           </div>
         </div>

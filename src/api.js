@@ -346,9 +346,13 @@ const STAGE_MODULES = [
 ];
 
 /**
- * Create a report and drive it all the way to PUBLISHED: run each stage's
- * gating modules, advance, repeat, then run the consolidator (module 7) which
- * writes the Conscious Orbital Score and the GO/PIVOT verdict back onto it.
+ * Create a report and drive it through the pipeline to PROCESSED: run each
+ * stage's gating modules, advance, repeat, then run the consolidator
+ * (module 7) which writes the Conscious Orbital Score and the GO/PIVOT
+ * verdict onto it. The report deliberately STOPS at PROCESSED — the final
+ * PROCESSED -> PUBLISHED step is the admin's approval, taken in the admin
+ * console after reviewing the result. Until then the client portal shows
+ * the report as awaiting approval.
  *
  * `onProgress(label, done, total)` is called between steps so the UI can show
  * where it is — this takes seconds, not the 1.9s the old simulation faked.
@@ -358,8 +362,9 @@ export async function generateReportViaApi(
   onProgress = () => {}
 ) {
   const inputs = buildModuleInputs({ profile, clusters, vertical, tracks, customModules, requirements });
-  // create + every gating module + one advance per stage + consolidate + fetch
-  const totalSteps = 1 + STAGE_MODULES.flat().length + STAGE_MODULES.length + 2;
+  // create + every gating module + one advance per completed stage (the last
+  // stage's advance is the admin's approval) + consolidate + fetch
+  const totalSteps = 1 + STAGE_MODULES.flat().length + (STAGE_MODULES.length - 1) + 2;
   let done = 0;
   const tick = (label) => onProgress(label, ++done, totalSteps);
 
@@ -383,13 +388,16 @@ export async function generateReportViaApi(
   });
   tick('Report created');
 
-  for (const stage of STAGE_MODULES) {
-    for (const key of stage) {
+  for (let i = 0; i < STAGE_MODULES.length; i++) {
+    for (const key of STAGE_MODULES[i]) {
       await runModule(report.id, key, inputs[key]);
       tick(`Ran ${key}`);
     }
-    await advanceReport(report.id);
-    tick('Stage advanced');
+    // The last advance (PROCESSED -> PUBLISHED) belongs to the admin.
+    if (i < STAGE_MODULES.length - 1) {
+      await advanceReport(report.id);
+      tick('Stage advanced');
+    }
   }
 
   // Module 7 consolidates every other score and calls the decision engine.

@@ -190,18 +190,24 @@ const STAGE_TO_SERVER = {
 
 function projectFromReport(r) {
   const score = r.score ?? 0;
+  const done = (r.completedModules || []).length;
+  /* The verdict is only revealed once an admin has approved (published) the
+     report — until then the client sees it as awaiting approval. */
   const verdict =
-    r.decision === 0 ? `PIVOT (${score}%)`
-    : r.decision === 1 ? `GO (${score}%)`
-    : score > 0 ? `CONDITIONAL (${score}%)`
-    : "IN PIPELINE";
+    r.status !== "PUBLISHED"
+      ? (done >= 10 ? "AWAITING APPROVAL" : "IN PIPELINE")
+      : r.decision === 0 ? `PIVOT (${score}%)`
+      : r.decision === 1 ? `GO (${score}%)`
+      : score > 0 ? `CONDITIONAL (${score}%)`
+      : "IN PIPELINE";
   return {
     id: r.id,
     title: r.name,
     industry: r.tags?.[0] || r.vertical,
     verdict,
     status: r.status === "PUBLISHED" ? "ACTIVE" : "UNDER_REVIEW",
-    modulesProcessed: `${(r.completedModules || []).length}/10`,
+    serverStatus: r.status,
+    modulesProcessed: `${done}/10`,
     date: (r.createdAt || new Date().toISOString()).split("T")[0],
     description: r.clusters?.market?.problem || "Venture evaluated through the intelligence pipeline.",
     fromApi: true,
