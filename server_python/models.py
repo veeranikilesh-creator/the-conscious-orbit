@@ -54,6 +54,7 @@ class ClientModel(Base):
     geography = Column(String, nullable=True)
     business_model = Column(String, default='B2B')
     contact = Column(String, nullable=True)
+    email = Column(String, nullable=True)
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
@@ -67,6 +68,7 @@ class ClientModel(Base):
             'geography': self.geography,
             'businessModel': self.business_model,
             'contact': self.contact,
+            'email': self.email,
             'createdAt': _iso(self.created_at),
             'updatedAt': _iso(self.updated_at),
         }
@@ -93,6 +95,10 @@ class ReportModel(Base):
     tracks = Column(JSON, default=list)
     custom_modules = Column(JSON, default=list)
     clusters = Column(JSON, default=dict)
+    # Per-module inputs derived from the intake form (buildModuleInputs on the
+    # frontend). Stored so the admin can process the report later without the
+    # user re-submitting.
+    intake_data = Column(JSON, default=dict)
 
     # Module keys with a stored result — read by the action-pipeline gate.
     completed_modules = Column(JSON, default=list)
@@ -101,6 +107,17 @@ class ReportModel(Base):
     published_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    # Admin review fields
+    admin_score = Column(Integer, nullable=True)
+    admin_analysis = Column(String, nullable=True)
+    admin_verdict = Column(String, nullable=True)
+    admin_strengths = Column(String, nullable=True)
+    admin_risks = Column(String, nullable=True)
+    orbita_analysis = Column(JSON, nullable=True)
+    reviewed_by = Column(String, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    approval_note = Column(String, nullable=True)
 
     def to_json(self, client=None):
         return {
@@ -116,9 +133,19 @@ class ReportModel(Base):
             'tracks': self.tracks or [],
             'customModules': self.custom_modules or [],
             'clusters': self.clusters or {},
+            'intakeData': self.intake_data or {},
             'completedModules': self.completed_modules or [],
             'transitions': self.transitions or [],
             'publishedAt': _iso(self.published_at),
+            'adminScore': self.admin_score,
+            'adminAnalysis': self.admin_analysis,
+            'adminVerdict': self.admin_verdict,
+            'adminStrengths': self.admin_strengths,
+            'adminRisks': self.admin_risks,
+            'orbitaAnalysis': self.orbita_analysis,
+            'reviewedBy': self.reviewed_by,
+            'reviewedAt': _iso(self.reviewed_at),
+            'approvalNote': self.approval_note,
             'createdAt': _iso(self.created_at),
             'updatedAt': _iso(self.updated_at),
         }
@@ -148,6 +175,10 @@ class ModuleResultModel(Base):
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
+    # Admin verification fields
+    verified_score = Column(Integer, nullable=True)
+    verified_at = Column(DateTime, nullable=True)
+
     def to_json(self):
         return {
             'id': self.id,
@@ -158,6 +189,8 @@ class ModuleResultModel(Base):
             'score': self.score,
             'action': self.action,
             'integrations': self.integrations or {},
+            'verifiedScore': self.verified_score,
+            'verifiedAt': _iso(self.verified_at),
             'createdAt': _iso(self.created_at),
             'updatedAt': _iso(self.updated_at),
         }

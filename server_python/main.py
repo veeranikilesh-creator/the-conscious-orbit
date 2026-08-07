@@ -15,6 +15,9 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, Depends, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +40,9 @@ from state import (
 )
 from modules import get_module, module_catalogue, run_module
 from scoring import verdict
+from routers.orbita import router as orbita_router
+from routers.review import router as review_router
+from integrations.email import build_report_docx
 
 Base.metadata.create_all(bind=engine)
 
@@ -103,6 +109,12 @@ async def request_validation_handler(_request: Request, exc: RequestValidationEr
     return _validation_response(exc.errors())
 
 
+# ---------- routers ----------
+
+app.include_router(orbita_router)
+app.include_router(review_router)
+
+
 # ---------- request schemas ----------
 
 class ClientPayload(BaseModel):
@@ -123,6 +135,7 @@ class ReportCreateSchema(BaseModel):
     tracks: List[str] = []
     customModules: List[str] = []
     clusters: Optional[Dict[str, Any]] = None
+    intakeData: Optional[Dict[str, Any]] = None
 
 
 class StatusChangeSchema(BaseModel):
@@ -293,6 +306,7 @@ def create_report(payload: ReportCreateSchema, db: Session = Depends(get_db)):
         tracks=payload.tracks,
         custom_modules=payload.customModules,
         clusters=payload.clusters or {},
+        intake_data=payload.intakeData or {},
         status='RECEIVED',
         action=action_for_status('RECEIVED'),
         score=0,
@@ -506,6 +520,27 @@ def delete_module_result(report_id: str, module_key: str, db: Session = Depends(
     report.completed_modules = [k for k in (report.completed_modules or []) if k != module_key]
     db.commit()
     return Response(status_code=204)
+
+
+# ---------- report .docx download ----------
+
+@app.get('/api/reports/{report_id}/report.docx')
+def download_report_docx(report_id: str, db: Session = Depends(get_db)):
+    """Render the admin-approved report as a real Office Open XML .docx and
+    stream it back. Usable before publish (previews the current draft) and
+    after publish (permanent artifact)."""
+    report = _load_report(db, report_id)
+    client = _client_for(db, report)
+    buf = build_report_docx(
+        report.to_json(client=client),
+        client.to_json() if client else None,
+    )
+    slug = ''.join(c if c.isalnum() or c == '-' else '-' for c in (report.name or 'venture').lower()).strip('-') or 'venture'
+    return Response(
+        content=buf.read(),
+        media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        headers={'Content-Disposition': f'attachment; filename="{slug}-strategy-report.docx"'},
+    )
 
 
 # ---------- custom domains (kept from the original shim) ----------

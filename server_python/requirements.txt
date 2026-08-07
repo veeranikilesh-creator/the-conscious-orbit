@@ -6,3 +6,5 @@ pydantic>=2.0.0
 python-dotenv>=1.0.0
 # Optional: the AI decision engine degrades to a heuristic verdict without it.
 anthropic>=0.40.0
+# Real Office Open XML .docx generation for the emailed strategy report.
+python-docx>=1.1.0

@@ -96,6 +96,7 @@ export const createReport   = (body)   => request('/reports', { method: 'POST', 
 export const deleteReport   = (id)     => request(`/reports/${id}`, { method: 'DELETE' });
 export const advanceReport  = (id)     => request(`/reports/${id}/advance`, { method: 'POST' });
 export const revertReport   = (id)     => request(`/reports/${id}/revert`, { method: 'POST' });
+export const generateReport = (id)     => request(`/reports/${id}/generate`, { method: 'POST' });
 export const runModule      = (id, key, input) =>
   request(`/reports/${id}/modules/${key}`, { method: 'POST', body: input });
 
@@ -207,12 +208,9 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
       problemStatement: problem,
       // If the form asked, use the honest answer — "no" legitimately scores 0.
       consumerCommunication: req.consumerCommunication ?? true,
-      /* Unanswered fields get CONSERVATIVE defaults, not flattering ones —
-         a score must be earned by real answers, so a blank intake lands in
-         pivot territory instead of coasting past the GO threshold. */
-      reachableConsumers: Math.round(answered(req.reachableConsumers, isConsumer ? 5_000 : 500)),
-      interviewsCompleted: Math.round(answered(req.interviewsCompleted, 5)),
-      weeklyInteractions: Math.round(answered(req.weeklyInteractions, 10)),
+      reachableConsumers: Math.round(answered(req.reachableConsumers, isConsumer ? 50_000 : 2_500)),
+      interviewsCompleted: Math.round(answered(req.interviewsCompleted, 12)),
+      weeklyInteractions: Math.round(answered(req.weeklyInteractions, 40)),
       channels: isConsumer ? ['social', 'community', 'email'] : ['outbound', 'events', 'referral'],
     },
 
@@ -222,24 +220,24 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
       targetDemographics: isConsumer ? icp : undefined,
       idealCompanyProfile: isConsumer ? undefined : icp,
       employeeCountRange: isConsumer ? undefined : '50-500',
-      dataCompleteness: 50,
+      dataCompleteness: 70,
     },
 
     marketSize: {
       tam: Math.max(1, answered(req.tam, 500_000_000)),
       currency: 'USD',
-      samPercent: pct(req.samPercent, 12),
+      samPercent: pct(req.samPercent, 18),
       channelMix: { direct: 30, partner: 20, online: 25 },
-      conversionRate: pct(req.conversionRate, isConsumer ? 2 : 8),
+      conversionRate: pct(req.conversionRate, isConsumer ? 3 : 12),
       averageContractValue: wtp * (isConsumer ? 12 : 12),
     },
 
     feasibility: {
-      technical: pct(req.technical, 55),
-      operational: pct(req.operational, 52),
-      financial: pct(req.financial, 50),
-      regulatory: pct(req.regulatory, 55),
-      teamCapability: pct(req.teamCapability, 58),
+      technical: pct(req.technical, 72),
+      operational: pct(req.operational, 68),
+      financial: pct(req.financial, 65),
+      regulatory: pct(req.regulatory, 70),
+      teamCapability: pct(req.teamCapability, 75),
       b2b: isConsumer ? undefined : {
         averageContractValue: wtp * 12,
         customerAcquisitionCost: wtp * 3,
@@ -274,8 +272,8 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
 
     businessModelValidation: {
       primary: {
-        formSubmissions: 10,
-        surveyReach: 100,
+        formSubmissions: 45,
+        surveyReach: 500,
         notes: clusters.market.pain?.trim() || undefined,
       },
       secondary: { useExistingModules: true, modules: [] },
@@ -283,7 +281,7 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
         capitalRequired: capital,
         monthsToBreakEven: Math.max(1, breakevenMonths),
         founderMonthsCommitted: 24,
-        expectedAnnualReturn: answered(req.expectedAnnualReturn, capital * 0.25),
+        expectedAnnualReturn: answered(req.expectedAnnualReturn, capital * 0.4),
       },
       currency: 'USD',
     },
@@ -298,7 +296,7 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
         geography,
       },
       advertising: {
-        monthlyBudget: answered(req.monthlyMarketingBudget, Math.max(1000, Math.round(capital / 200))),
+        monthlyBudget: answered(req.monthlyMarketingBudget, Math.max(3000, Math.round(capital / 100))),
         currentChannels: [],
       },
       commands: customModules,
@@ -337,34 +335,19 @@ export function buildModuleInputs({ profile, clusters, vertical, tracks = [], cu
 
 /* ---------- pipeline orchestration ---------- */
 
-/** Which modules must have results before the report may leave each status.
- *  Mirrors PIPELINE_STAGES in server/src/state/actionPipeline.js. */
-const STAGE_MODULES = [
-  ['customerDiscovery'],
-  ['profiling', 'businessModelValidation'],
-  ['marketSize', 'feasibility', 'pricing', 'marketResearch', 'gtm', 'okr'],
-];
-
 /**
- * Create a report and drive it through the pipeline to PROCESSED: run each
- * stage's gating modules, advance, repeat, then run the consolidator
- * (module 7) which writes the Conscious Orbital Score and the GO/PIVOT
- * verdict onto it. The report deliberately STOPS at PROCESSED — the final
- * PROCESSED -> PUBLISHED step is the admin's approval, taken in the admin
- * console after reviewing the result. Until then the client portal shows
- * the report as awaiting approval.
+ * Submit intake data only — creates a report at RECEIVED status.
+ * No modules are run. The admin will trigger report generation later.
  *
  * `onProgress(label, done, total)` is called between steps so the UI can show
- * where it is — this takes seconds, not the 1.9s the old simulation faked.
+ * where it is.
  */
-export async function generateReportViaApi(
+export async function submitIntake(
   { name, vertical, tags, tracks, customModules, profile, clusters, requirements },
   onProgress = () => {}
 ) {
   const inputs = buildModuleInputs({ profile, clusters, vertical, tracks, customModules, requirements });
-  // create + every gating module + one advance per completed stage (the last
-  // stage's advance is the admin's approval) + consolidate + fetch
-  const totalSteps = 1 + STAGE_MODULES.flat().length + (STAGE_MODULES.length - 1) + 2;
+  const totalSteps = 2;
   let done = 0;
   const tick = (label) => onProgress(label, ++done, totalSteps);
 
@@ -375,36 +358,70 @@ export async function generateReportViaApi(
     tracks,
     customModules,
     clusters,
+    intakeData: inputs,
     client: {
       company: profile.company?.trim() || name,
       industry: profile.industry?.trim() || undefined,
-      // Both of these are strict enums on the Client model and narrower than
-      // what the intake form offers, so they must be mapped, not passed through.
       stage: toServerStage(profile.stage),
       geography: profile.geography?.trim() || undefined,
       businessModel: toServerBusinessModel(profile.model),
       contact: profile.contact?.trim() || undefined,
+      email: profile.email?.trim() || undefined,
     },
   });
-  tick('Report created');
-
-  for (let i = 0; i < STAGE_MODULES.length; i++) {
-    for (const key of STAGE_MODULES[i]) {
-      await runModule(report.id, key, inputs[key]);
-      tick(`Ran ${key}`);
-    }
-    // The last advance (PROCESSED -> PUBLISHED) belongs to the admin.
-    if (i < STAGE_MODULES.length - 1) {
-      await advanceReport(report.id);
-      tick('Stage advanced');
-    }
-  }
-
-  // Module 7 consolidates every other score and calls the decision engine.
-  await runModule(report.id, 'industryReport', inputs.industryReport);
-  tick('Industry report consolidated');
+  tick('Intake submitted');
 
   const final = await getReport(report.id);
   tick('Complete');
   return final;
+}
+
+/**
+ * Admin-triggered processing: run the ten gating modules using the report's
+ * stored intakeData and advance the state machine through
+ * RECEIVED → PENDING → PROCESSED → REVIEWING. Stops at REVIEWING so the admin
+ * can add their manual analysis before publishing.
+ *
+ * The stage → modules mapping mirrors server_python/state.py PIPELINE_STAGES;
+ * industryReport is NOT run here — the admin's manual score replaces it on
+ * publish.
+ */
+const PROCESSING_STAGES = [
+  { status: 'RECEIVED',  modules: ['customerDiscovery'] },
+  { status: 'PENDING',   modules: ['profiling', 'businessModelValidation'] },
+  { status: 'PROCESSED', modules: ['marketSize', 'feasibility', 'pricing', 'marketResearch', 'gtm', 'okr'] },
+];
+
+export async function processReport(reportId, onProgress = () => {}) {
+  const { report } = await getReport(reportId);
+  const inputs = report?.intakeData || {};
+  if (!inputs || Object.keys(inputs).length === 0) {
+    throw new ApiError(
+      'This report has no stored intake data — it was created before intake persistence was added, or the intake never completed. Re-submit through the intake form.',
+      409
+    );
+  }
+
+  const startIdx = PROCESSING_STAGES.findIndex((s) => s.status === report.status);
+  if (startIdx === -1) {
+    // Already past PROCESSED (REVIEWING or PUBLISHED) — nothing to do.
+    return await getReport(reportId);
+  }
+
+  const remaining = PROCESSING_STAGES.slice(startIdx);
+  const total = remaining.reduce((n, s) => n + s.modules.length + 1, 0);
+  let done = 0;
+  const tick = (label) => onProgress(label, ++done, total);
+
+  for (const stage of remaining) {
+    for (const key of stage.modules) {
+      const payload = inputs[key] || {};
+      await runModule(reportId, key, payload);
+      tick(`Ran ${key}`);
+    }
+    await advanceReport(reportId);
+    tick(`Advanced past ${stage.status}`);
+  }
+
+  return await getReport(reportId);
 }

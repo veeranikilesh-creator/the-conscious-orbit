@@ -3,19 +3,20 @@ import { REPORT_STATUSES } from './reportState.js';
 
 /* ============================================================
    ACTION PIPELINE
-   SCRUMING -> REQUIREMENT -> MAPPING  (-> DELIVERED)
+   SCRUMING -> REQUIREMENT -> MAPPING -> ADMIN_REVIEW -> DELIVERED
 
    The action is the *work being done* while a report sits in a
    status. Status and action advance together: completing an
    action is what earns the report its next status.
 
-     RECEIVED  · SCRUMING     reviewing ideas & problem statements
-     PENDING   · REQUIREMENT  gathering customer data & B2B/B2C specs
-     PROCESSED · MAPPING      defining TAM/SAM/SOM conversions
-     PUBLISHED · DELIVERED    scores & downloadable artifacts
+     RECEIVED  · SCRUMING      reviewing ideas & problem statements
+     PENDING   · REQUIREMENT   gathering customer data & B2B/B2C specs
+     PROCESSED · MAPPING       defining TAM/SAM/SOM conversions
+     REVIEWING · ADMIN_REVIEW  admin reviews the report
+     PUBLISHED · DELIVERED     scores & downloadable artifacts
    ============================================================ */
 
-export const ACTIONS = ['SCRUMING', 'REQUIREMENT', 'MAPPING', 'DELIVERED'];
+export const ACTIONS = ['SCRUMING', 'REQUIREMENT', 'MAPPING', 'ADMIN_REVIEW', 'DELIVERED'];
 
 /** Ordered stage descriptors — index-aligned with REPORT_STATUSES. */
 export const PIPELINE_STAGES = [
@@ -36,6 +37,12 @@ export const PIPELINE_STAGES = [
     status: 'PROCESSED',
     note: 'Defining TAM/SAM/SOM conversions',
     modules: ['marketSize', 'feasibility', 'pricing', 'marketResearch', 'gtm', 'okr'],
+  },
+  {
+    action: 'ADMIN_REVIEW',
+    status: 'REVIEWING',
+    note: 'Admin reviews the report before publication',
+    modules: [],
   },
   {
     action: 'DELIVERED',

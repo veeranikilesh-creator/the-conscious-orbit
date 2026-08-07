@@ -1,7 +1,7 @@
 """Report state machine + action pipeline — ports of
 server/src/state/reportState.js and server/src/state/actionPipeline.js.
 
-RECEIVED -> PENDING -> PROCESSED -> PUBLISHED, linear and strictly ordered.
+RECEIVED -> PENDING -> PROCESSED -> REVIEWING -> PUBLISHED, linear and strictly ordered.
 Every transition goes through assert_transition() so an illegal jump is
 rejected at the service layer rather than silently written. The action is
 the *work being done* while a report sits in a status; completing an action
@@ -9,7 +9,7 @@ is what earns the report its next status.
 """
 from errors import ApiError
 
-REPORT_STATUSES = ['RECEIVED', 'PENDING', 'PROCESSED', 'PUBLISHED']
+REPORT_STATUSES = ['RECEIVED', 'PENDING', 'PROCESSED', 'REVIEWING', 'PUBLISHED']
 
 INITIAL_STATUS = 'RECEIVED'
 TERMINAL_STATUS = 'PUBLISHED'
@@ -17,7 +17,8 @@ TERMINAL_STATUS = 'PUBLISHED'
 FORWARD = {
     'RECEIVED': 'PENDING',
     'PENDING': 'PROCESSED',
-    'PROCESSED': 'PUBLISHED',
+    'PROCESSED': 'REVIEWING',
+    'REVIEWING': 'PUBLISHED',
     'PUBLISHED': None,
 }
 
@@ -25,10 +26,11 @@ BACKWARD = {
     'RECEIVED': None,
     'PENDING': 'RECEIVED',
     'PROCESSED': 'PENDING',
-    'PUBLISHED': 'PROCESSED',
+    'REVIEWING': 'PROCESSED',
+    'PUBLISHED': 'REVIEWING',
 }
 
-ACTIONS = ['SCRUMING', 'REQUIREMENT', 'MAPPING', 'DELIVERED']
+ACTIONS = ['SCRUMING', 'REQUIREMENT', 'MAPPING', 'ADMIN_REVIEW', 'DELIVERED']
 
 # Ordered stage descriptors — index-aligned with REPORT_STATUSES.
 PIPELINE_STAGES = [
@@ -49,6 +51,12 @@ PIPELINE_STAGES = [
         'status': 'PROCESSED',
         'note': 'Defining TAM/SAM/SOM conversions',
         'modules': ['marketSize', 'feasibility', 'pricing', 'marketResearch', 'gtm', 'okr'],
+    },
+    {
+        'action': 'ADMIN_REVIEW',
+        'status': 'REVIEWING',
+        'note': 'Admin reviews the report before publication',
+        'modules': [],
     },
     {
         'action': 'DELIVERED',

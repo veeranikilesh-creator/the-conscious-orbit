@@ -232,6 +232,7 @@ const STATUS_STYLES = {
   RECEIVED: 'bg-[#D4AF37] text-[#050505] border-[#F4D67A] font-bold',
   PENDING: 'bg-[#78350F]/80 text-[#F4D67A] border-[#F4D67A]',
   PROCESSED: 'bg-[#4C1D95]/80 text-[#DDD6FE] border-[#C084FC]',
+  REVIEWING: 'bg-amber-500/10 text-amber-400 border-amber-400',
   PUBLISHED: 'bg-[#065F46]/80 text-[#A7F3D0] border-[#34D399]',
 };
 
@@ -252,6 +253,7 @@ export function StatusDot({ status }) {
     RECEIVED: 'bg-[#D4AF37]',
     PENDING: 'bg-[#F4D67A]',
     PROCESSED: 'bg-[#C084FC]',
+    REVIEWING: 'bg-amber-400',
     PUBLISHED: 'bg-[#34D399]',
   };
   return (

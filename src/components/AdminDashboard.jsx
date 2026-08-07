@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { checkHealth, listReports, advanceReport, getReport, deleteReport } from "../api.js";
+import { checkHealth, listReports, advanceReport, revertReport, getReport, deleteReport, processReport } from "../api.js";
 import { downloadReportDoc } from "../reportDoc.js";
 import {
   ShieldCheck,
@@ -45,6 +45,7 @@ import {
   Mail,
   User
 } from "lucide-react";
+import { KANBAN_COLUMNS } from "../constants.js";
 import { OrbitBrand } from "./ui.jsx";
 
 /* ============================================================
@@ -307,6 +308,7 @@ const SERVER_STATUS_TO_ADMIN = {
   RECEIVED: "PENDING",
   PENDING: "IN_PROGRESS",
   PROCESSED: "PROCESSED",
+  REVIEWING: "REVIEWING",
   PUBLISHED: "COMPLETED",
 };
 
@@ -456,6 +458,17 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
   const [isAddProfileModalOpen, setIsAddProfileModalOpen] = useState(false);
   const [isAddRegistrationModalOpen, setIsAddRegistrationModalOpen] = useState(false);
 
+  // Report Review Modal
+  const [reviewReportId, setReviewReportId] = useState(null);
+  const [reviewReportData, setReviewReportData] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState(null);
+  const [orbitaResult, setOrbitaResult] = useState(null);
+  const [orbitaLoading, setOrbitaLoading] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ adminScore: "", approvalNote: "", verdict: "", analysis: "", strengths: "", risks: "" });
+  const [moduleOverrides, setModuleOverrides] = useState({});
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
   // New Profile Form
   const [newProfile, setNewProfile] = useState({ fullName: "", email: "", company: "", domain: "Startups" });
   // New Registration Form
@@ -469,39 +482,51 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
     setRegistrations((prev) => prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)));
   };
 
-  /* Tracking is view-only for the admin — the one action left is APPROVAL:
-     a client-submitted report waits at PROCESSED with all modules complete,
-     and approving it advances the state machine to PUBLISHED, which unlocks
-     the verdict and .doc download on the client portal. The server's 409
-     gate still refuses approval if modules are missing. */
-  const handleApproveReport = async (rep) => {
-    if (rep.fromApi && apiStatus === "online") {
+  const handleUpdateReportProgress = async (id, delta) => {
+    const target = reports.find((r) => r.id === id);
+
+    /* API-backed rows move through the server's state machine instead of a
+       local percentage — advance is gated there, so a 409 names the modules
+       still missing rather than letting the row lie about its progress. */
+    if (target?.fromApi && apiStatus === "online") {
       try {
-        const data = await advanceReport(rep.id);
+        const data = delta > 0 ? await advanceReport(id) : await revertReport(id);
+        // Express answers { report }, FastAPI answers { status }.
         const serverStatus = data?.report?.status || data?.status;
         if (serverStatus) {
           setReports((prev) =>
-            prev.map((r) =>
-              r.id === rep.id
-                ? { ...r, serverStatus, status: SERVER_STATUS_TO_ADMIN[serverStatus] || serverStatus }
-                : r
+            prev.map((rep) =>
+              rep.id === id
+                ? {
+                    ...rep,
+                    serverStatus,
+                    status: SERVER_STATUS_TO_ADMIN[serverStatus] || serverStatus,
+                    progressPct: data?.report
+                      ? Math.round(((data.report.completedModules || []).length / 10) * 100)
+                      : rep.progressPct,
+                  }
+                : rep
             )
           );
         }
       } catch (err) {
-        alert(err.message || "The pipeline refused the approval.");
+        alert(err.message || "The pipeline refused that transition.");
       }
       return;
     }
+
     setReports((prev) =>
-      prev.map((r) => (r.id === rep.id ? { ...r, status: "COMPLETED", progressPct: 100 } : r))
+      prev.map((rep) => {
+        if (rep.id !== id) return rep;
+        const newPct = Math.min(100, Math.max(0, rep.progressPct + delta));
+        let newStatus = rep.status;
+        if (newPct === 100) newStatus = "COMPLETED";
+        else if (newPct > 50) newStatus = "PROCESSED";
+        else if (newPct > 0) newStatus = "IN_PROGRESS";
+        return { ...rep, progressPct: newPct, status: newStatus };
+      })
     );
   };
-
-  /* A report is approvable when the pipeline finished its work and is
-     waiting at PROCESSED for the admin's sign-off. */
-  const canApprove = (rep) =>
-    rep.fromApi ? rep.serverStatus === "PROCESSED" && rep.progressPct === 100 : rep.status === "PROCESSED";
 
   // Report detail view — pulls module results + transition history for API rows.
   const handleViewReport = async (rep) => {
@@ -533,10 +558,150 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
     setReportDetail((d) => (d?.row?.id === rep.id ? null : d));
   };
 
+  // Run all 10 gating modules using the report's stored intake data and
+  // advance the pipeline through to REVIEWING — the point where the admin
+  // manually reviews and publishes.
+  const [processingId, setProcessingId] = useState(null);
+  const handleProcessReport = async (rep) => {
+    if (!rep.fromApi || apiStatus !== "online") {
+      alert("Processing requires a live backend.");
+      return;
+    }
+    setProcessingId(rep.id);
+    try {
+      const data = await processReport(rep.id);
+      const serverStatus = data?.report?.status;
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === rep.id
+            ? {
+                ...r,
+                serverStatus,
+                status: SERVER_STATUS_TO_ADMIN[serverStatus] || serverStatus,
+                progressPct: Math.round(((data?.report?.completedModules || []).length / 10) * 100),
+              }
+            : r
+        )
+      );
+      alert(`Processed. Report is now in ${serverStatus} — open the review to add your analysis.`);
+    } catch (err) {
+      alert(err.message || "Processing failed.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const handleUpdateTicketStatus = (id, newStatus, note) => {
     setTickets((prev) =>
       prev.map((t) => (t.id === id ? { ...t, status: newStatus, investigationNote: note || t.investigationNote } : t))
     );
+  };
+
+  const openReviewModal = async (reportId) => {
+    setReviewReportId(reportId);
+    setReviewReportData(null);
+    setReviewError(null);
+    setOrbitaResult(null);
+    setReviewForm({ adminScore: "", approvalNote: "" });
+    setModuleOverrides({});
+    setReviewLoading(true);
+    try {
+      const data = await getReport(reportId);
+      setReviewReportData(data);
+    } catch (err) {
+      setReviewError(err.message || "Failed to load report data.");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const runOrbitaAnalysis = async () => {
+    if (!reviewReportId) return;
+    const apiBase = import.meta.env?.VITE_API_URL || 'http://localhost:8000/api';
+    setOrbitaLoading(true);
+    setOrbitaResult(null);
+    try {
+      const res = await fetch(`${apiBase}/reports/${reviewReportId}/orbita-analysis`, { method: 'POST' });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Analysis failed (${res.status})`);
+      }
+      const data = await res.json();
+      setOrbitaResult(data);
+    } catch (err) {
+      setOrbitaResult({ error: err.message || "Analysis failed." });
+    } finally {
+      setOrbitaLoading(false);
+    }
+  };
+
+  const submitReview = async (action) => {
+    if (!reviewReportId) return;
+    const apiBase = import.meta.env?.VITE_API_URL || 'http://localhost:8000/api';
+
+    if (action === "approve") {
+      // Backend requires adminScore (0-100). Catch it here so we don't waste
+      // a round trip on a 422.
+      const raw = reviewForm.adminScore;
+      const n = Number(raw);
+      if (raw === "" || raw === null || raw === undefined || Number.isNaN(n) || n < 0 || n > 100) {
+        alert("Please enter a Score between 0 and 100 before approving.");
+        return;
+      }
+    }
+
+    setReviewSubmitting(true);
+    try {
+      if (action === "approve") {
+        const body = {
+          adminScore: Number(reviewForm.adminScore),
+          adminAnalysis: reviewForm.analysis || undefined,
+          adminVerdict: reviewForm.verdict || undefined,
+          adminStrengths: reviewForm.strengths || undefined,
+          adminRisks: reviewForm.risks || undefined,
+          approvalNote: reviewForm.approvalNote || undefined,
+        };
+        const res = await fetch(`${apiBase}/reports/${reviewReportId}/review`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          let msg = `Submit failed (${res.status})`;
+          try {
+            const parsed = JSON.parse(text);
+            if (parsed?.issues?.length) {
+              msg = parsed.issues.map((i) => `${i.path}: ${i.message}`).join("; ");
+            } else if (parsed?.message) {
+              msg = parsed.message;
+            } else if (Array.isArray(parsed?.detail)) {
+              msg = parsed.detail.map((d) => `${(d.loc || []).join('.')}: ${d.msg}`).join("; ");
+            } else if (typeof parsed?.detail === "string") {
+              msg = parsed.detail;
+            }
+          } catch { /* keep default */ }
+          throw new Error(msg);
+        }
+      } else {
+        await revertReport(reviewReportId);
+      }
+
+      // Clear submitting BEFORE the alert so the button doesn't hang on
+      // "Submitting…" while the alert blocks the event loop.
+      setReviewSubmitting(false);
+      setReviewReportId(null);
+      alert(action === "approve" ? "Review submitted and report published." : "Report sent back.");
+
+      try {
+        const data = await listReports();
+        const rows = (data?.reports || []).map(adminReportFromServer);
+        if (rows.length) setReports(rows);
+      } catch (_) { /* ignore refresh errors */ }
+    } catch (err) {
+      setReviewSubmitting(false);
+      alert(err.message || "Review submission failed.");
+    }
   };
 
   const handleCreateProfileSubmit = (e) => {
@@ -1082,14 +1247,11 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#D4AF37]/20 pb-4">
               <div>
                 <h1 className="text-xl font-semibold text-[#4A0A13]">Report Progress Tracking</h1>
-                <p className="text-xs text-[#7A1C29]">
-                  View-only tracking. Reports waiting at PROCESSED carry an Approve action — approving
-                  releases the verdict and download to the client.
-                </p>
+                <p className="text-xs text-[#7A1C29]">Monitor report generation status and scores.</p>
               </div>
 
               <div className="flex items-center gap-1.5 overflow-x-auto">
-                {["ALL", "PENDING", "IN_PROGRESS", "PROCESSED", "COMPLETED"].map((st) => (
+                {["ALL", "PENDING", "IN_PROGRESS", "PROCESSED", "REVIEWING", "COMPLETED"].map((st) => (
                   <button
                     key={st}
                     onClick={() => setReportStatusFilter(st)}
@@ -1141,17 +1303,7 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                         <div className="bg-[#4A0A13] h-1.5 rounded-full" style={{ width: `${rep.progressPct}%` }} />
                       </div>
 
-                      <div className="flex justify-end items-center gap-1.5 pt-1">
-                        {canApprove(rep) && (
-                          <button
-                            onClick={() => handleApproveReport(rep)}
-                            title="Approve the result and release it to the client"
-                            className="flex items-center gap-1 px-2.5 h-6 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-[0.65rem] font-bold cursor-pointer"
-                          >
-                            <Check size={11} />
-                            <span>Approve</span>
-                          </button>
-                        )}
+                      <div className="flex justify-end gap-1 pt-1">
                         <button
                           onClick={() => handleViewReport(rep)}
                           title="View report detail"
@@ -1159,12 +1311,55 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                         >
                           <Eye size={12} />
                         </button>
+                        {rep.fromApi && ["RECEIVED", "PENDING", "PROCESSED"].includes(rep.serverStatus) && (
+                          <button
+                            onClick={() => handleProcessReport(rep)}
+                            disabled={processingId === rep.id}
+                            title="Run all modules and advance to REVIEWING"
+                            className="h-6 px-2 rounded-full bg-[#4A0A13] text-[#F5D77F] text-[0.65rem] font-semibold flex items-center gap-1 cursor-pointer hover:bg-[#5C0F1A] disabled:opacity-50"
+                          >
+                            <Sparkles size={10} />
+                            {processingId === rep.id ? "…" : "Process"}
+                          </button>
+                        )}
+                        {(rep.status === "REVIEWING" || rep.serverStatus === "REVIEWING") && (
+                          <button
+                            onClick={() => openReviewModal(rep.id)}
+                            title="Review report"
+                            className="h-6 w-6 rounded-full bg-[#D4AF37] text-[#4A0A13] flex items-center justify-center cursor-pointer hover:bg-[#F5D77F]"
+                          >
+                            <Edit size={12} />
+                          </button>
+                        )}
+                        {rep.fromApi && rep.serverStatus === "PUBLISHED" && (
+                          <a
+                            href={`${(import.meta.env?.VITE_API_URL || 'http://localhost:8000/api')}/reports/${rep.id}/report.docx`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Download the published .docx"
+                            className="h-6 w-6 rounded-full border border-[#D4AF37]/40 text-[#4A0A13] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]"
+                          >
+                            <Download size={12} />
+                          </a>
+                        )}
                         <button
                           onClick={() => handleDeleteReport(rep)}
                           title="Delete report"
                           className="h-6 w-6 rounded-full border border-[#D4AF37]/40 text-[#7A1C29] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]"
                         >
                           <Trash2 size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleUpdateReportProgress(rep.id, -20)}
+                          className="h-6 w-6 rounded-full border border-[#D4AF37]/40 text-xs font-bold flex items-center justify-center cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <button
+                          onClick={() => handleUpdateReportProgress(rep.id, 20)}
+                          className="h-6 w-6 rounded-full bg-[#4A0A13] text-[#FAF4E8] text-xs font-bold flex items-center justify-center cursor-pointer"
+                        >
+                          +
                         </button>
                       </div>
                     </div>
@@ -1173,13 +1368,14 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
               </div>
             ) : (
               /* Kanban board — one column per pipeline status, same actions. */
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {["PENDING", "IN_PROGRESS", "PROCESSED", "COMPLETED"].map((col) => {
-                  const items = filteredReports.filter((r) => r.status === col);
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+                {KANBAN_COLUMNS.map((col) => {
+                  const adminStatus = SERVER_STATUS_TO_ADMIN[col.status] || col.status;
+                  const items = filteredReports.filter((r) => r.status === adminStatus);
                   return (
-                    <div key={col} className="rounded-2xl border border-[#D4AF37]/40 bg-[#FAF4E8]/60 p-3 space-y-3 min-h-40">
+                    <div key={col.status} className="rounded-2xl border border-[#D4AF37]/40 bg-[#FAF4E8]/60 p-3 space-y-3 min-h-40">
                       <div className="flex items-center justify-between px-1">
-                        <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#B8860B]">{col}</span>
+                        <span className="text-[0.65rem] font-bold uppercase tracking-wider text-[#B8860B]">{adminStatus}</span>
                         <span className="text-[0.65rem] font-mono text-[#7A1C29]">{items.length}</span>
                       </div>
                       {items.map((rep) => (
@@ -1191,21 +1387,39 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                           </div>
                           <div className="flex items-center justify-between pt-0.5">
                             <span className="font-mono text-[0.65rem] font-bold text-[#4A0A13]">{rep.score}%</span>
-                            <div className="flex items-center gap-1">
-                              {canApprove(rep) && (
-                                <button onClick={() => handleApproveReport(rep)} title="Approve & release to client"
-                                  className="flex items-center gap-0.5 px-2 h-5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-[0.6rem] font-bold cursor-pointer">
-                                  <Check size={9} />
-                                  <span>Approve</span>
-                                </button>
-                              )}
+                            <div className="flex gap-1">
                               <button onClick={() => handleViewReport(rep)} title="View"
                                 className="h-5 w-5 rounded-full border border-[#D4AF37]/40 text-[#4A0A13] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]">
                                 <Eye size={10} />
                               </button>
+                              {rep.fromApi && ["RECEIVED", "PENDING", "PROCESSED"].includes(rep.serverStatus) && (
+                                <button
+                                  onClick={() => handleProcessReport(rep)}
+                                  disabled={processingId === rep.id}
+                                  title="Run modules & advance to REVIEWING"
+                                  className="h-5 px-1.5 rounded-full bg-[#4A0A13] text-[#F5D77F] text-[0.55rem] font-bold flex items-center gap-0.5 cursor-pointer hover:bg-[#5C0F1A] disabled:opacity-50"
+                                >
+                                  <Sparkles size={8} />
+                                  {processingId === rep.id ? "…" : "Run"}
+                                </button>
+                              )}
+                              {(adminStatus === "REVIEWING" || rep.serverStatus === "REVIEWING") && (
+                                <button onClick={() => openReviewModal(rep.id)} title="Review"
+                                  className="h-5 w-5 rounded-full bg-[#D4AF37] text-[#4A0A13] flex items-center justify-center cursor-pointer hover:bg-[#F5D77F]">
+                                  <Edit size={10} />
+                                </button>
+                              )}
                               <button onClick={() => handleDeleteReport(rep)} title="Delete"
                                 className="h-5 w-5 rounded-full border border-[#D4AF37]/40 text-[#7A1C29] flex items-center justify-center cursor-pointer hover:bg-[#F5EAD4]">
                                 <Trash2 size={10} />
+                              </button>
+                              <button onClick={() => handleUpdateReportProgress(rep.id, -20)}
+                                className="h-5 w-5 rounded-full border border-[#D4AF37]/40 text-[0.65rem] font-bold flex items-center justify-center cursor-pointer">
+                                -
+                              </button>
+                              <button onClick={() => handleUpdateReportProgress(rep.id, 20)}
+                                className="h-5 w-5 rounded-full bg-[#4A0A13] text-[#FAF4E8] text-[0.65rem] font-bold flex items-center justify-center cursor-pointer">
+                                +
                               </button>
                             </div>
                           </div>
@@ -1408,97 +1622,28 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
         </div>
       )}
 
-      {/* Module detail modal — full descriptor, not just name + blurb */}
+      {/* Simple Modals */}
       {selectedModule && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] p-5 shadow-xl space-y-4 text-[#4A0A13]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <span className="font-mono text-[0.65rem] font-bold uppercase tracking-wider text-[#B8860B]">
-                  {selectedModule.code} · {selectedModule.category}
-                </span>
-                <h2 className="text-lg font-semibold text-[#4A0A13]">{selectedModule.name}</h2>
-              </div>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[0.65rem] font-medium border shrink-0 ${
-                  selectedModule.status === "COMPLETED"
-                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                    : selectedModule.status === "IN_PROGRESS"
-                    ? "bg-amber-50 text-amber-800 border-amber-200"
-                    : "bg-slate-50 text-slate-700 border-slate-200"
-                }`}
-              >
-                {selectedModule.status}
-              </span>
-            </div>
-
-            <p className="text-xs text-[#7A1C29] leading-relaxed">{selectedModule.desc}</p>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-[#7A1C29]">Audit Score</span>
-                <span className="font-bold">{selectedModule.score} / 100</span>
-              </div>
-              <div className="w-full bg-[#4A0A13]/10 rounded-full h-1.5 overflow-hidden">
-                <div className="bg-[#4A0A13] h-1.5 rounded-full" style={{ width: `${selectedModule.score}%` }} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="rounded-xl border border-[#D4AF37]/40 bg-white p-2.5">
-                <span className="block text-[0.62rem] uppercase font-mono text-[#8C6D58]">Lead Auditor</span>
-                <span className="font-semibold">{selectedModule.leadAuditor}</span>
-              </div>
-              <div className="rounded-xl border border-[#D4AF37]/40 bg-white p-2.5">
-                <span className="block text-[0.62rem] uppercase font-mono text-[#8C6D58]">Active Projects</span>
-                <span className="font-semibold">{selectedModule.activeProjects}</span>
-              </div>
-            </div>
-
-            <div className="text-right pt-1">
-              <button onClick={() => setSelectedModule(null)} className="rounded-full bg-[#4A0A13] text-[#FAF4E8] px-4 py-1.5 text-xs font-medium cursor-pointer">Close</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] p-5 shadow-xl space-y-3">
+            <h2 className="text-lg font-semibold text-[#4A0A13]">{selectedModule.name}</h2>
+            <p className="text-xs text-[#7A1C29]">{selectedModule.desc}</p>
+            <div className="text-right pt-2">
+              <button onClick={() => setSelectedModule(null)} className="rounded-full bg-[#4A0A13] text-[#FAF4E8] px-4 py-1 text-xs font-medium">Close</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Client profile modal — every field the profile carries */}
       {selectedProfile && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] p-5 shadow-xl space-y-4 text-xs text-[#4A0A13]">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#B8860B] text-white font-extrabold text-sm flex items-center justify-center">
-                  {(selectedProfile.fullName || "?").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold leading-tight">{selectedProfile.fullName}</h2>
-                  <p className="text-[#7A1C29]">{selectedProfile.email}</p>
-                </div>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-full text-[0.65rem] border border-[#D4AF37]/40 bg-[#4A0A13]/5 font-medium shrink-0">
-                {selectedProfile.status}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
-                ["Company", selectedProfile.company],
-                ["Domain / Vertical", selectedProfile.domain],
-                ["Account Type", selectedProfile.accountType],
-                ["Phone", selectedProfile.phone],
-                ["Location", selectedProfile.location],
-                ["Profile ID", selectedProfile.id],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-xl border border-[#D4AF37]/40 bg-white p-2.5">
-                  <span className="block text-[0.62rem] uppercase font-mono text-[#8C6D58]">{label}</span>
-                  <span className="font-semibold break-all">{value || "—"}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="text-right pt-1">
-              <button onClick={() => setSelectedProfile(null)} className="rounded-full bg-[#4A0A13] text-[#FAF4E8] px-4 py-1.5 text-xs font-medium cursor-pointer">Close</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] p-5 shadow-xl space-y-3 text-xs text-[#4A0A13]">
+            <h2 className="text-lg font-semibold">{selectedProfile.fullName}</h2>
+            <p><strong>Company:</strong> {selectedProfile.company}</p>
+            <p><strong>Email:</strong> {selectedProfile.email}</p>
+            <p><strong>Domain:</strong> {selectedProfile.domain}</p>
+            <div className="text-right pt-2">
+              <button onClick={() => setSelectedProfile(null)} className="rounded-full bg-[#4A0A13] text-[#FAF4E8] px-4 py-1 text-xs font-medium">Close</button>
             </div>
           </div>
         </div>
@@ -1565,6 +1710,326 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
               <button type="submit" className="rounded-full bg-[#4A0A13] text-[#F5D77F] px-4 py-1 font-medium">Save</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Report Review Modal */}
+      {reviewReportId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[#D4AF37] bg-[#FAF4E8] shadow-xl text-xs text-[#4A0A13]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#D4AF37]/30 sticky top-0 bg-[#FAF4E8] z-10">
+              <div>
+                <h2 className="text-base font-semibold text-[#4A0A13]">Report Review</h2>
+                <p className="text-[0.65rem] text-[#7A1C29]">ID: {reviewReportId}</p>
+              </div>
+              <button onClick={() => setReviewReportId(null)}
+                className="p-1.5 rounded-full hover:bg-[#F5EAD4] text-[#8C6D58] cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Loading state */}
+            {reviewLoading && (
+              <div className="p-8 text-center text-[#7A1C29] animate-pulse">Loading report data…</div>
+            )}
+
+            {/* Error state */}
+            {reviewError && (
+              <div className="p-8 text-center text-red-600">{reviewError}</div>
+            )}
+
+            {/* Content */}
+            {!reviewLoading && !reviewError && reviewReportData && (() => {
+              const { report, moduleResults = {}, pipeline } = reviewReportData;
+              const intakeData = report.intakeData ? Object.fromEntries(
+                Object.entries(report.intakeData).map(([k, v]) => [k, v ? (typeof v === 'object' ? v : { value: v }) : {}])
+              ) : {};
+              return (
+                <div className="space-y-0">
+                  {/* Top: Intake Data */}
+                  <div className="p-5 space-y-3">
+                    <h3 className="font-semibold text-sm text-[#4A0A13] mb-2">Intake Data from User</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Company Info */}
+                      <div className="rounded-xl border border-[#D4AF37]/40 bg-white p-3 space-y-2">
+                        <span className="text-[0.65rem] uppercase text-[#B8860B] font-bold">Company</span>
+                        <p className="text-sm font-medium text-[#4A0A13]">{report.name}</p>
+                        <p className="text-xs text-[#7A1C29]">{report.client?.company || report.name}</p>
+                        <p className="text-xs text-[#7A1C29]">{report.client?.industry || report.vertical}</p>
+                        <p className="text-xs text-[#7A1C29]">Email: {report.client?.email || '—'}</p>
+                      </div>
+
+                      {/* Cluster Data */}
+                      {report.clusters && Object.entries(report.clusters).map(([cluster, data]) => (
+                        <div key={cluster} className="rounded-xl border border-[#D4AF37]/40 bg-white p-3 space-y-2">
+                          <span className="text-[0.65rem] uppercase text-[#B8860B] font-bold">{cluster}</span>
+                          {data && typeof data === 'object' ? Object.entries(data).map(([key, val]) => (
+                            <div key={key}>
+                              <span className="text-[0.6rem] text-[#8C6D58] uppercase">{key}</span>
+                              <p className="text-xs text-[#4A0A13]">{val || '—'}</p>
+                            </div>
+                          )) : (
+                            <p className="text-xs text-[#7A1C29]">{String(data) || '—'}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Middle: Orbitaa AI assist */}
+                  <div className="p-5 border-t border-[#D4AF37]/30 space-y-3 bg-[#FBF7ED]">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <h3 className="font-semibold text-sm text-[#4A0A13] flex items-center gap-1.5">
+                          <Sparkles size={14} className="text-[#D4AF37]" />
+                          Ask Orbitaa
+                        </h3>
+                        <p className="text-[0.65rem] text-[#7A1C29]">
+                          AI second-opinion on the module scores — flags anything over- or under-scored and gives an overall recommendation.
+                        </p>
+                      </div>
+                      <button
+                        onClick={runOrbitaAnalysis}
+                        disabled={orbitaLoading}
+                        className="rounded-full bg-[#4A0A13] text-[#F5D77F] px-4 py-1.5 text-[0.7rem] font-semibold flex items-center gap-1.5 cursor-pointer hover:bg-[#5C0F1A] disabled:opacity-50"
+                      >
+                        <Sparkles size={12} />
+                        {orbitaLoading ? "Orbitaa is analysing…" : orbitaResult ? "Re-run Orbitaa" : "Run Orbitaa Analysis"}
+                      </button>
+                    </div>
+
+                    {orbitaResult?.error && (
+                      <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-[0.7rem] text-red-700">
+                        {orbitaResult.error}
+                      </div>
+                    )}
+
+                    {orbitaResult?.analysis && (() => {
+                      const a = orbitaResult.analysis;
+                      const overallColor = {
+                        confident_go: "bg-emerald-100 text-emerald-800 border-emerald-300",
+                        cautious_go: "bg-amber-100 text-amber-800 border-amber-300",
+                        needs_work: "bg-orange-100 text-orange-800 border-orange-300",
+                        pivot_recommended: "bg-red-100 text-red-800 border-red-300",
+                      }[a.overallAssessment] || "bg-gray-100 text-gray-800 border-gray-300";
+                      const overallLabel = {
+                        confident_go: "Confident GO",
+                        cautious_go: "Cautious GO",
+                        needs_work: "Needs Work",
+                        pivot_recommended: "Pivot Recommended",
+                      }[a.overallAssessment] || a.overallAssessment;
+
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-2 flex-wrap">
+                            <span className={`inline-block px-2.5 py-1 rounded-full border text-[0.65rem] font-bold uppercase tracking-wider ${overallColor}`}>
+                              {overallLabel}
+                            </span>
+                            {a.live === false && (
+                              <span className="inline-block px-2 py-1 rounded-full border border-[#D4AF37]/40 bg-[#FAF4E8] text-[0.6rem] text-[#7A1C29]">
+                                heuristic (no live model)
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-[#4A0A13] leading-relaxed whitespace-pre-wrap">{a.summary}</p>
+
+                          {(a.keyStrengths?.length || a.keyConcerns?.length) ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {a.keyStrengths?.length > 0 && (
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                                  <span className="text-[0.65rem] uppercase font-bold text-emerald-700">Key Strengths</span>
+                                  <ul className="mt-1.5 space-y-1 list-disc list-inside text-[0.7rem] text-emerald-900">
+                                    {a.keyStrengths.map((s, i) => <li key={i}>{s}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                              {a.keyConcerns?.length > 0 && (
+                                <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+                                  <span className="text-[0.65rem] uppercase font-bold text-red-700">Key Concerns</span>
+                                  <ul className="mt-1.5 space-y-1 list-disc list-inside text-[0.7rem] text-red-900">
+                                    {a.keyConcerns.map((c, i) => <li key={i}>{c}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+
+                          {a.moduleReviews?.length > 0 && (
+                            <div className="rounded-xl border border-[#D4AF37]/40 bg-white p-3">
+                              <span className="text-[0.65rem] uppercase font-bold text-[#B8860B]">Per-Module Review</span>
+                              <div className="mt-2 space-y-1.5">
+                                {a.moduleReviews.map((m) => {
+                                  const badge = m.assessment === "over_scored"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : m.assessment === "under_scored"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-emerald-100 text-emerald-800";
+                                  return (
+                                    <div key={m.moduleKey} className="flex items-start gap-2 text-[0.7rem]">
+                                      <span className="font-mono text-[0.65rem] text-[#7A1C29] min-w-[10rem] shrink-0">{m.moduleKey}</span>
+                                      <span className="font-mono text-[0.65rem] text-[#4A0A13] min-w-[5.5rem] shrink-0">
+                                        pipeline {Math.round(m.pipelineScore ?? 0)} → orbitaa {Math.round(m.orbitaScore ?? 0)}
+                                      </span>
+                                      <span className={`px-1.5 py-0.5 rounded text-[0.6rem] font-semibold uppercase shrink-0 ${badge}`}>
+                                        {m.assessment.replace("_", " ")}
+                                      </span>
+                                      <span className="text-[0.7rem] text-[#4A0A13] leading-snug">{m.reasoning}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          <button
+                            onClick={() => {
+                              const strengths = (a.keyStrengths || []).join("\n");
+                              const risks = (a.keyConcerns || []).join("\n");
+                              const analysis = a.summary || "";
+                              const avg = a.moduleReviews?.length
+                                ? Math.round(a.moduleReviews.reduce((s, m) => s + (m.orbitaScore || 0), 0) / a.moduleReviews.length)
+                                : "";
+                              const verdictMap = {
+                                confident_go: "GO",
+                                cautious_go: "CONDITIONAL",
+                                needs_work: "PIVOT",
+                                pivot_recommended: "REJECT",
+                              };
+                              setReviewForm((f) => ({
+                                ...f,
+                                adminScore: String(avg || f.adminScore),
+                                verdict: verdictMap[a.overallAssessment] || f.verdict,
+                                analysis: f.analysis ? f.analysis : analysis,
+                                strengths: f.strengths ? f.strengths : strengths,
+                                risks: f.risks ? f.risks : risks,
+                              }));
+                            }}
+                            className="text-[0.7rem] text-[#4A0A13] underline hover:text-[#7A1C29] cursor-pointer"
+                          >
+                            ↓ Prefill my review form with Orbitaa's findings
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Bottom: Admin Manual Review Form */}
+                  <div className="p-5 border-t border-[#D4AF37]/30 space-y-4">
+                    <h3 className="font-semibold text-sm text-[#4A0A13]">Your Analysis & Score</h3>
+
+                    {/* Score */}
+                    <div className="space-y-1">
+                      <label className="text-[0.7rem] font-medium text-[#7A1C29]">Score (0-100)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={reviewForm.adminScore}
+                        onChange={(e) => setReviewForm({ ...reviewForm, adminScore: e.target.value })}
+                        placeholder="Enter score"
+                        className="w-full max-w-xs rounded-xl border border-[#D4AF37]/50 bg-[#FAF4E8] px-3 py-2 text-xs text-[#4A0A13]"
+                      />
+                    </div>
+
+                    {/* Verdict */}
+                    <div className="space-y-1">
+                      <label className="text-[0.7rem] font-medium text-[#7A1C29]">Verdict</label>
+                      <select
+                        value={reviewForm.verdict || ""}
+                        onChange={(e) => setReviewForm({ ...reviewForm, verdict: e.target.value })}
+                        className="w-full max-w-xs rounded-xl border border-[#D4AF37]/50 bg-[#FAF4E8] px-3 py-2 text-xs text-[#4A0A13]"
+                      >
+                        <option value="">Select verdict</option>
+                        <option value="GO">GO — Proceed with venture</option>
+                        <option value="CONDITIONAL">CONDITIONAL — Proceed with caveats</option>
+                        <option value="PIVOT">PIVOT — Needs changes</option>
+                        <option value="REJECT">REJECT — Not viable</option>
+                      </select>
+                    </div>
+
+                    {/* Analysis */}
+                    <div className="space-y-1">
+                      <label className="text-[0.7rem] font-medium text-[#7A1C29]">Your Analysis</label>
+                      <textarea
+                        rows={4}
+                        value={reviewForm.analysis || ""}
+                        onChange={(e) => setReviewForm({ ...reviewForm, analysis: e.target.value })}
+                        placeholder="Write your analysis of this venture based on the intake data..."
+                        className="w-full rounded-xl border border-[#D4AF37]/50 bg-[#FAF4E8] px-3 py-2 text-xs text-[#4A0A13]"
+                      />
+                    </div>
+
+                    {/* Strengths */}
+                    <div className="space-y-1">
+                      <label className="text-[0.7rem] font-medium text-[#7A1C29]">Strengths</label>
+                      <textarea
+                        rows={2}
+                        value={reviewForm.strengths || ""}
+                        onChange={(e) => setReviewForm({ ...reviewForm, strengths: e.target.value })}
+                        placeholder="Key strengths (one per line)"
+                        className="w-full rounded-xl border border-[#D4AF37]/50 bg-[#FAF4E8] px-3 py-2 text-xs text-[#4A0A13]"
+                      />
+                    </div>
+
+                    {/* Risks */}
+                    <div className="space-y-1">
+                      <label className="text-[0.7rem] font-medium text-[#7A1C29]">Risks & Concerns</label>
+                      <textarea
+                        rows={2}
+                        value={reviewForm.risks || ""}
+                        onChange={(e) => setReviewForm({ ...reviewForm, risks: e.target.value })}
+                        placeholder="Key risks (one per line)"
+                        className="w-full rounded-xl border border-[#D4AF37]/50 bg-[#FAF4E8] px-3 py-2 text-xs text-[#4A0A13]"
+                      />
+                    </div>
+
+                    {/* Approval Note */}
+                    <div className="space-y-1">
+                      <label className="text-[0.7rem] font-medium text-[#7A1C29]">Note to User</label>
+                      <textarea
+                        rows={2}
+                        value={reviewForm.approvalNote}
+                        onChange={(e) => setReviewForm({ ...reviewForm, approvalNote: e.target.value })}
+                        placeholder="Add a note for the user..."
+                        className="w-full rounded-xl border border-[#D4AF37]/50 bg-[#FAF4E8] px-3 py-2 text-xs text-[#4A0A13]"
+                      />
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center justify-end gap-3 pt-2 flex-wrap">
+                      <a
+                        href={`${(import.meta.env?.VITE_API_URL || 'http://localhost:8000/api')}/reports/${reviewReportId}/report.docx`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Preview the current .docx (uses whatever's saved on the server so far)"
+                        className="rounded-full border border-[#D4AF37]/50 bg-[#FAF4E8] hover:bg-[#F5EAD4] px-5 py-2 text-xs font-medium text-[#4A0A13] transition cursor-pointer inline-flex items-center gap-1.5"
+                      >
+                        <Download size={12} />
+                        Preview .docx
+                      </a>
+                      <button
+                        onClick={() => submitReview("sendBack")}
+                        disabled={reviewSubmitting}
+                        className="rounded-full border border-[#D4AF37]/50 bg-[#FAF4E8] hover:bg-[#F5EAD4] px-5 py-2 text-xs font-medium text-[#4A0A13] transition cursor-pointer disabled:opacity-50"
+                      >
+                        Send Back
+                      </button>
+                      <button
+                        onClick={() => submitReview("approve")}
+                        disabled={reviewSubmitting}
+                        className="rounded-full bg-[#4A0A13] text-[#F5D77F] px-5 py-2 text-xs font-semibold transition cursor-pointer hover:bg-[#5C0F1A] disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 size={14} />
+                        {reviewSubmitting ? "Submitting…" : "Approve & Publish"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       )}
 

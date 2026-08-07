@@ -24,6 +24,18 @@ export const env = {
       return Boolean(process.env.SPYFU_API_ID && process.env.SPYFU_SECRET_KEY);
     },
   },
+
+  smtp: {
+    host: process.env.SMTP_HOST ?? '',
+    port: Number(process.env.SMTP_PORT ?? 587),
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER ?? '',
+    pass: process.env.SMTP_PASS ?? '',
+    from: process.env.SMTP_FROM ?? '"The Conscious Orbit" <reports@consciousorbit.com>',
+    get enabled() {
+      return Boolean(process.env.SMTP_HOST);
+    },
+  },
 };
 
 export const isProduction = env.nodeEnv === 'production';

@@ -76,29 +76,6 @@ export function buildReportDoc(report = {}, moduleResults = {}) {
       ? `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`
       : '—';
 
-  const contributions = moduleResults.industryReport?.output?.contributions || [];
-  const pricingOut = moduleResults.pricing?.output || null;
-  const researchOut = moduleResults.marketResearch?.output || null;
-
-  // Section numbering continues past the four fixed intake sections.
-  let sec = 4;
-  const secModules = moduleRows ? ++sec : null;
-  const secVerdict = verdict ? ++sec : null;
-  const secComposition = contributions.length ? ++sec : null;
-  const secSources = pricingOut || researchOut ? ++sec : null;
-
-  const compositionRows = contributions
-    .map((c) =>
-      `<tr><td class="label">${esc(MODULE_TITLES[c.module] || c.module)}</td>` +
-      `<td>${Math.round(c.weight * 100)}% weight × score ${esc(c.score)} = <strong>+${esc(c.weightedContribution)} pts</strong></td></tr>`)
-    .join('\n');
-
-  const competitorRows = (pricingOut?.competitors || [])
-    .map((c) =>
-      `<tr><td class="label">${esc(c.name)}</td>` +
-      `<td>${esc(pricingOut.currency)} ${esc(c.monthlyPrice)} / month — ${c.cheaperThanUs ? 'cheaper than us' : 'pricier than us'}</td></tr>`)
-    .join('\n');
-
   return `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
@@ -170,14 +147,14 @@ export function buildReportDoc(report = {}, moduleResults = {}) {
         </table>
 
         ${moduleRows ? `
-        <div class="section-heading">${secModules}. Intelligence Module Scores</div>
+        <div class="section-heading">5. Intelligence Module Scores</div>
         <table>
           <tr><th>Module</th><th>Score &amp; Finding</th></tr>
           ${moduleRows}
         </table>` : ''}
 
         ${verdict ? `
-        <div class="section-heading">${secVerdict}. Executive Verdict</div>
+        <div class="section-heading">${moduleRows ? '6' : '5'}. Executive Verdict</div>
         <table>
           <tr><td class="label">Decision</td><td><strong>${esc(verdict.label || '—')}</strong> (${esc(verdict.score ?? score)} / 100)</td></tr>
           <tr><td class="label">Headline</td><td>${or(verdict.headline)}</td></tr>
@@ -186,33 +163,6 @@ export function buildReportDoc(report = {}, moduleResults = {}) {
           <tr><td class="label">Risks</td><td>${list(verdict.risks)}</td></tr>
           <tr><td class="label">Next Actions</td><td>${list(verdict.nextActions)}</td></tr>
         </table>` : ''}
-
-        ${compositionRows ? `
-        <div class="section-heading">${secComposition}. Score Composition</div>
-        <p style="font-size:9pt;color:#64748B;">How each module's weighted score builds the Conscious Orbital Score of ${esc(score)}/100.</p>
-        <table>
-          <tr><th>Module</th><th>Contribution</th></tr>
-          ${compositionRows}
-        </table>` : ''}
-
-        ${secSources ? `
-        <div class="section-heading">${secSources}. Data Sources &amp; Comparisons</div>
-        ${pricingOut ? `
-        <p style="font-size:10pt;"><strong>Pricing benchmark:</strong> your price ${esc(pricingOut.currency)} ${esc(pricingOut.ourPrice)}
-          vs a market median of ${esc(pricingOut.currency)} ${esc(pricingOut.market?.median)}
-          (${esc(String(pricingOut.position || '').replace(/_/g, ' '))}, ${esc(pricingOut.deltaFromMedianPercent)}% from median).</p>
-        <table>
-          <tr><th>Compared against</th><th>Position</th></tr>
-          ${competitorRows}
-        </table>` : ''}
-        ${researchOut ? `
-        <table>
-          <tr><td class="label">Competitive landscape</td><td>${esc(researchOut.competition?.total ?? 0)} competitor(s) — market ${esc(String(researchOut.competition?.intensity || '').toLowerCase())}</td></tr>
-          <tr><td class="label">Declared competitors</td><td>${or((researchOut.competition?.known || []).join(', '))}</td></tr>
-          <tr><td class="label">Discovered via domain intel</td><td>${or((researchOut.competition?.discovered || []).join(', '))}</td></tr>
-          <tr><td class="label">Keywords compared</td><td>${or((researchOut.keywords?.targeted || []).join(', '))}</td></tr>
-          <tr><td class="label">External source</td><td>${researchOut.spyfu?.live ? 'Live SpyFu competitor intelligence' : 'SpyFu integration (placeholder data — no credentials configured)'}</td></tr>
-        </table>` : ''}` : ''}
 
         <div class="footer">
           Generated automatically by <strong>The Conscious Orbit — Executive Strategy Engine</strong><br/>

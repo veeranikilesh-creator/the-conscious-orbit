@@ -69,8 +69,21 @@ const reportSchema = new mongoose.Schema(
 
     clusters: { type: clustersSchema, default: () => ({}) },
 
+    /** Raw intake data from user submission — stored for admin review. */
+    intakeData: { type: Map, of: mongoose.Schema.Types.Mixed, default: null },
+
     /** Module keys with a stored result — read by the action-pipeline gate. */
     completedModules: { type: [String], default: [] },
+
+    adminScore: { type: Number, min: 0, max: 100, default: null },
+    adminAnalysis: { type: String, default: null },
+    adminVerdict: { type: String, enum: ['GO', 'CONDITIONAL', 'PIVOT', 'REJECT', null], default: null },
+    adminStrengths: { type: String, default: null },
+    adminRisks: { type: String, default: null },
+    orbitaAnalysis: { type: Map, default: null },
+    reviewedBy: { type: String, default: null },
+    reviewedAt: { type: Date, default: null },
+    approvalNote: { type: String, default: null },
 
     transitions: { type: [transitionSchema], default: [] },
     publishedAt: Date,

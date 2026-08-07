@@ -35,6 +35,8 @@ const moduleResultSchema = new mongoose.Schema(
 
     /** 0–100 contribution; null for modules that don't score (e.g. OKR tracking). */
     score: { type: Number, min: 0, max: 100, default: null },
+    verifiedScore: { type: Number, min: 0, max: 100, default: null },
+    verifiedAt: { type: Date, default: null },
     /** Which pipeline action produced this result. */
     action: String,
 

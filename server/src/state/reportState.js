@@ -2,14 +2,14 @@ import { ApiError } from '../utils/ApiError.js';
 
 /* ============================================================
    REPORT STATE MACHINE
-   RECEIVED -> PENDING -> PROCESSED -> PUBLISHED
+   RECEIVED -> PENDING -> PROCESSED -> REVIEWING -> PUBLISHED
 
    Linear and strictly ordered. Every transition goes through
    assertTransition() so an illegal jump (e.g. RECEIVED -> PUBLISHED)
    is rejected at the service layer rather than silently written.
    ============================================================ */
 
-export const REPORT_STATUSES = ['RECEIVED', 'PENDING', 'PROCESSED', 'PUBLISHED'];
+export const REPORT_STATUSES = ['RECEIVED', 'PENDING', 'PROCESSED', 'REVIEWING', 'PUBLISHED'];
 
 export const INITIAL_STATUS = 'RECEIVED';
 export const TERMINAL_STATUS = 'PUBLISHED';
@@ -18,7 +18,8 @@ export const TERMINAL_STATUS = 'PUBLISHED';
 const FORWARD = {
   RECEIVED: 'PENDING',
   PENDING: 'PROCESSED',
-  PROCESSED: 'PUBLISHED',
+  PROCESSED: 'REVIEWING',
+  REVIEWING: 'PUBLISHED',
   PUBLISHED: null,
 };
 
@@ -27,7 +28,8 @@ const BACKWARD = {
   RECEIVED: null,
   PENDING: 'RECEIVED',
   PROCESSED: 'PENDING',
-  PUBLISHED: 'PROCESSED',
+  REVIEWING: 'PROCESSED',
+  PUBLISHED: 'REVIEWING',
 };
 
 export const isValidStatus = (status) => REPORT_STATUSES.includes(status);

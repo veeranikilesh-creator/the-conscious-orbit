@@ -18,6 +18,7 @@ const clientSchema = new mongoose.Schema(
     geography: { type: String, trim: true },
     businessModel: { type: String, enum: BUSINESS_MODELS, default: 'B2B' },
     contact: { type: String, trim: true, lowercase: true },
+    email: { type: String, trim: true, lowercase: true },
   },
   { timestamps: true }
 );

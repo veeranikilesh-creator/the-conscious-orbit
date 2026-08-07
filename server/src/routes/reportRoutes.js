@@ -11,7 +11,10 @@ import {
   advanceReport,
   revertReport,
   deleteReport,
+  generateReport,
 } from '../controllers/reportController.js';
+import { runOrbitaAnalysis } from '../controllers/orbitaController.js';
+import { submitReview } from '../controllers/reviewController.js';
 
 export const reportRoutes = Router();
 
@@ -37,3 +40,9 @@ reportRoutes.post(
 );
 
 reportRoutes.post('/:reportId/revert', asyncHandler(loadReport), asyncHandler(revertReport));
+
+reportRoutes.post('/:reportId/generate', asyncHandler(loadReport), asyncHandler(generateReport));
+
+reportRoutes.post('/:reportId/orbita-analysis', asyncHandler(loadReport), asyncHandler(runOrbitaAnalysis));
+
+reportRoutes.post('/:reportId/review', asyncHandler(loadReport), asyncHandler(submitReview));

@@ -29,12 +29,14 @@ const createSchema = z.object({
       geography: z.string().optional(),
       businessModel: z.string().optional(),
       contact: z.string().optional(),
+      email: z.string().optional(),
     })
     .optional(),
   tags: z.array(z.string()).default([]),
   tracks: z.array(z.string()).default([]),
   customModules: z.array(z.string()).default([]),
   clusters: z.record(z.string(), z.any()).optional(),
+  intakeData: z.record(z.string(), z.any()).optional(),
 });
 
 /** POST /api/reports — create a report at RECEIVED. */
@@ -55,6 +57,7 @@ export async function createReport(req, res) {
     tracks: data.tracks,
     customModules: data.customModules,
     clusters: data.clusters ?? {},
+    intakeData: data.intakeData ?? null,
     transitions: [{ from: null, to: 'RECEIVED', action: actionForStatus('RECEIVED'), note: 'Report created' }],
   });
 
@@ -126,6 +129,94 @@ export async function revertReport(req, res) {
   req.report.recordTransition(to, req.body?.note ?? 'Reverted one stage');
   await req.report.save();
   res.json({ report: req.report, pipeline: buildPipelineView(req.report) });
+}
+
+/** POST /api/reports/:reportId/generate — run all modules and generate scores.
+ *  Triggered by admin after reviewing intake data. */
+export async function generateReport(req, res) {
+  const report = req.report;
+
+  if (report.status !== 'RECEIVED') {
+    return res.status(409).json({
+      error: 'Report not in RECEIVED status',
+      message: `Report is currently ${report.status}. Can only generate from RECEIVED status.`,
+    });
+  }
+
+  // Import the module runner
+  const { getModule, runModule } = await import('../modules/index.js');
+  const { verdict } = await import('../utils/scoring.js');
+
+  // Build module inputs from intake data and clusters
+  const intakeData = report.intakeData ? Object.fromEntries(report.intakeData) : {};
+  const clusters = report.clusters ? Object.fromEntries(
+    Object.entries(report.clusters).map(([k, v]) => [k, v ? Object.fromEntries(Object.entries(v)) : {}])
+  ) : {};
+
+  // Define which modules run in each stage
+  const stageModules = [
+    ['customerDiscovery'],
+    ['profiling', 'businessModelValidation'],
+    ['marketSize', 'feasibility', 'pricing', 'marketResearch', 'gtm', 'okr', 'industryReport'],
+  ];
+
+  // Run all modules and advance through stages
+  for (const moduleKeys of stageModules) {
+    for (const key of moduleKeys) {
+      const mod = getModule(key);
+      if (!mod) continue;
+
+      // Build input from intake data
+      const input = intakeData[key] || intakeData;
+
+      try {
+        const existing = await ModuleResult.find({ report: report.id });
+        const moduleResults = Object.fromEntries(existing.map((r) => [r.moduleKey, r.toJSON()]));
+
+        const { output, score = null, integrations = {} } = await runModule(key, input, {
+          report: report.toJSON(),
+          moduleResults,
+        });
+
+        await ModuleResult.findOneAndUpdate(
+          { report: report.id, moduleKey: key },
+          {
+            report: report.id,
+            moduleKey: key,
+            input,
+            output,
+            score,
+            action: mod.action,
+            integrations,
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        report.markModuleComplete(key);
+
+        // Module 7 is the consolidator
+        if (key === 'industryReport') {
+          const v = verdict(output.orbitalScore);
+          report.score = output.decision?.score ?? v.score;
+          report.decision = output.decision?.decision ?? v.decision;
+        }
+      } catch (err) {
+        console.error(`Module ${key} failed:`, err.message);
+      }
+    }
+
+    // Advance to next stage
+    try {
+      const { step: stepFn } = await import('../state/reportState.js');
+      const next = stepFn(report.status, 1);
+      report.recordTransition(next, `Advanced after ${moduleKeys.join(', ')}`);
+    } catch (err) {
+      console.error('Advance failed:', err.message);
+    }
+  }
+
+  await report.save();
+  res.json({ report: report.toJSON(), pipeline: buildPipelineView(report) });
 }
 
 /** DELETE /api/reports/:reportId — remove the report and its module results. */

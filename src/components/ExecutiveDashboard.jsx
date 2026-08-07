@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { checkHealth, listReports, generateReportViaApi, getReport } from "../api.js";
+import { checkHealth, listReports, submitIntake, getReport } from "../api.js";
 import ReportOverview from "./ReportOverview.jsx";
-import { estimateOfflineVerdict, offlineModuleScore } from "../localScoring.js";
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from "./VerticalEngines.jsx";
 import IntakeEngine from "./IntakeEngine.jsx";
 import {
@@ -190,29 +189,41 @@ const STAGE_TO_SERVER = {
 
 function projectFromReport(r) {
   const score = r.score ?? 0;
-  const done = (r.completedModules || []).length;
-  /* The verdict is only revealed once an admin has approved (published) the
-     report — until then the client sees it as awaiting approval. */
   const verdict =
-    r.status !== "PUBLISHED"
-      ? (done >= 10 ? "AWAITING APPROVAL" : "IN PIPELINE")
-      : r.decision === 0 ? `PIVOT (${score}%)`
-      : r.decision === 1 ? `GO (${score}%)`
-      : score > 0 ? `CONDITIONAL (${score}%)`
-      : "IN PIPELINE";
+    r.decision === 0 ? `PIVOT (${score}%)`
+    : r.decision === 1 ? `GO (${score}%)`
+    : score > 0 ? `CONDITIONAL (${score}%)`
+    : "IN PIPELINE";
   return {
     id: r.id,
     title: r.name,
     industry: r.tags?.[0] || r.vertical,
     verdict,
     status: r.status === "PUBLISHED" ? "ACTIVE" : "UNDER_REVIEW",
-    serverStatus: r.status,
-    modulesProcessed: `${done}/10`,
+    modulesProcessed: `${(r.completedModules || []).length}/10`,
     date: (r.createdAt || new Date().toISOString()).split("T")[0],
     description: r.clusters?.market?.problem || "Venture evaluated through the intelligence pipeline.",
     fromApi: true,
+    rawStatus: r.status,
+    adminScore: r.adminScore ?? null,
+    approvalNote: r.approvalNote ?? null,
+    adminOverrides: r.adminOverrides ?? null,
   };
 }
+
+const getStatusBadge = (report) => {
+  if (report.rawStatus === 'REVIEWING') return { label: 'UNDER_REVIEW', color: 'amber' };
+  if (report.rawStatus === 'PUBLISHED' && report.adminScore !== null) return { label: 'VERIFIED', color: 'green' };
+  if (report.rawStatus === 'PUBLISHED') return { label: 'DRAFT', color: 'blue' };
+  return { label: 'INTAKE', color: 'gray' };
+};
+
+const STATUS_BADGE_STYLES = {
+  amber: "bg-amber-100 text-amber-800 border border-amber-300",
+  green: "bg-emerald-100 text-emerald-800 border border-emerald-300",
+  blue: "bg-blue-100 text-blue-800 border border-blue-300",
+  gray: "bg-gray-100 text-gray-800 border border-gray-300",
+};
 
 /* ---- New Project requirements wizard ------------------------------------
    Five steps that collect the actual inputs the ten calculators score on.
@@ -249,12 +260,12 @@ const EMPTY_PROJECT_FORM = {
   tam: "",
   samPercent: "",
   conversionRate: "",
-  // Feasibility self-rating (MOD-04) — starts neutral; the user earns higher.
-  technical: 50,
-  operational: 50,
-  financial: 50,
-  regulatory: 50,
-  teamCapability: 50,
+  // Feasibility self-rating (MOD-04)
+  technical: 70,
+  operational: 70,
+  financial: 70,
+  regulatory: 70,
+  teamCapability: 70,
   // Pricing & investment (MOD-05 / MOD-08 / MOD-09)
   ourPrice: "",
   competitorLowPrice: "",
@@ -352,7 +363,11 @@ const INITIAL_MY_PROJECTS = [
     status: "ACTIVE",
     modulesProcessed: "10/10",
     date: "2026-08-01",
-    description: "Autonomous cold-chain drone delivery network for rural tier-2 hospital hubs."
+    description: "Autonomous cold-chain drone delivery network for rural tier-2 hospital hubs.",
+    rawStatus: "PUBLISHED",
+    adminScore: 87,
+    approvalNote: "Verified by admin review panel.",
+    adminOverrides: null,
   },
   {
     id: "p2",
@@ -362,7 +377,11 @@ const INITIAL_MY_PROJECTS = [
     status: "ACTIVE",
     modulesProcessed: "9/10",
     date: "2026-07-28",
-    description: "AI autonomous agent system for technical engineering candidate screening."
+    description: "AI autonomous agent system for technical engineering candidate screening.",
+    rawStatus: "PUBLISHED",
+    adminScore: null,
+    approvalNote: null,
+    adminOverrides: null,
   },
   {
     id: "p3",
@@ -372,7 +391,11 @@ const INITIAL_MY_PROJECTS = [
     status: "UNDER_REVIEW",
     modulesProcessed: "6/10",
     date: "2026-07-25",
-    description: "Bio-polymers derived from agricultural waste for eco-friendly packaging."
+    description: "Bio-polymers derived from agricultural waste for eco-friendly packaging.",
+    rawStatus: "REVIEWING",
+    adminScore: null,
+    approvalNote: null,
+    adminOverrides: null,
   },
   {
     id: "p4",
@@ -382,7 +405,11 @@ const INITIAL_MY_PROJECTS = [
     status: "INTAKE",
     modulesProcessed: "2/10",
     date: "2026-08-03",
-    description: "Automated real-time compliance audit engine for AWS/GCP cloud environments."
+    description: "Automated real-time compliance audit engine for AWS/GCP cloud environments.",
+    rawStatus: "RECEIVED",
+    adminScore: null,
+    approvalNote: null,
+    adminOverrides: null,
   }
 ];
 
@@ -540,7 +567,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
     if (apiStatus === "online") {
       setIsAnalyzing(true);
       try {
-        const result = await generateReportViaApi(
+        const result = await submitIntake(
           {
             name: newProjectForm.startupName,
             vertical: "startups",
@@ -605,128 +632,40 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
           (label, done, total) => setAnalysisStatusText(`${label} (${done}/${total})…`)
         );
 
+        // Intake only — the report sits at RECEIVED until admin runs the
+        // modules, gets Orbita's analysis, adds their own notes, and publishes.
+        // Do NOT populate module scores or open the report overview: nothing has
+        // been scored yet.
         setProjectsList((prev) => [projectFromReport(result.report), ...prev]);
-        // Show the on-site overview; the .doc download lives inside it.
-        setReportOverview({ report: result.report, moduleResults: result.moduleResults || {} });
-        // Real per-module scores where the server returned them.
-        const results = result.moduleResults || {};
-        setModulesList((prev) =>
-          prev.map((mod, i) => {
-            const run = results[MODULE_KEY_ORDER[i]];
-            return run
-              ? { ...mod, project: newProjectForm.startupName, status: "COMPLETED", score: Math.round(run.score ?? mod.score), lastUpdated: "Just now" }
-              : mod;
-          })
-        );
         setIsAnalyzing(false);
         setIsNewProjectModalOpen(false);
         setNewProjectForm(EMPTY_PROJECT_FORM);
         setWizardStep(0);
-        setNavbarSection("modules");
+        setNavbarSection("projects");
+        alert(
+          "Report sent to admin for approval.\n\n" +
+          "Our team will review your submission with Orbita AI and publish your strategy report. " +
+          "You'll receive the final report by email once it's approved."
+        );
         return;
       } catch (err) {
-        // Server refused or dropped mid-run — finish with the simulation so
-        // the user still gets a project card, and stop trusting the API.
-        setApiStatus("offline");
-        setAnalysisStatusText(`Backend unavailable (${err.message}) — completing locally…`);
+        setIsAnalyzing(false);
+        alert(
+          `Could not submit your report: ${err.message}\n\n` +
+          `The backend must be running to send your submission to admin for review.`
+        );
+        return;
       }
     }
 
-    setIsAnalyzing(true);
-    setAnalysisStatusText(`Auditing ${newProjectForm.startupName} across 10 intelligence modules...`);
-
-    // Step-by-step progress simulation
-    setTimeout(() => {
-      setAnalysisStatusText("Evaluating Market Whitespace & TAM/SAM Sizing (MOD-01)...");
-    }, 600);
-    setTimeout(() => {
-      setAnalysisStatusText("Modeling Unit Economics & Risk Matrix (MOD-03 & MOD-05)...");
-    }, 1200);
-    setTimeout(() => {
-      setAnalysisStatusText("Synthesizing Executive Scorecard & Final Verdict...");
-    }, 1800);
-
-    setTimeout(() => {
-      /* Honest offline estimate — computed from the answers, not invented.
-         A thin or weak intake lands in PIVOT here, same as the real pipeline. */
-      const est = estimateOfflineVerdict({
-        profile: {
-          company: newProjectForm.startupName,
-          industry: newProjectForm.sector,
-          geography: newProjectForm.geography,
-          contact: newProjectForm.contact,
-        },
-        clusters: {
-          market: {
-            problem: newProjectForm.description,
-            pain: newProjectForm.painPoint,
-            wtp: newProjectForm.wtpText,
-            icp: newProjectForm.icp,
-          },
-          viability: {
-            revenue: newProjectForm.revenueModel,
-            margin: newProjectForm.grossMargin,
-            costs: newProjectForm.costDrivers,
-            breakeven: newProjectForm.monthsToBreakEven,
-          },
-          launch: {
-            gtm: newProjectForm.gtmStrategy,
-            milestones: newProjectForm.milestones,
-            ask: newProjectForm.capitalRequired,
-          },
-        },
-        requirements: newProjectForm,
-      });
-      const calculatedScore = est.score;
-      const newProj = {
-        id: `p-${Date.now()}`,
-        title: newProjectForm.startupName,
-        industry: newProjectForm.sector,
-        verdict: est.verdictLabel,
-        status: est.decision === 1 ? "ACTIVE" : "UNDER_REVIEW",
-        modulesProcessed: "10/10",
-        date: new Date().toISOString().split("T")[0],
-        description: newProjectForm.description || "Newly evaluated startup project."
-      };
-
-      setProjectsList((prev) => [newProj, ...prev]);
-      setReportOverview({
-        report: {
-          name: newProj.title,
-          vertical: "startups",
-          status: "PUBLISHED",
-          score: calculatedScore,
-          decision: est.decision,
-          clusters: { market: { problem: newProjectForm.description } },
-          client: {
-            company: newProjectForm.startupName,
-            industry: newProjectForm.sector,
-            stage: STAGE_TO_SERVER[newProjectForm.stage] || "Seed",
-            businessModel: newProjectForm.businessModel,
-            geography: newProjectForm.geography,
-            contact: newProjectForm.contact,
-          },
-        },
-        moduleResults: {},
-      });
-
-      // Per-module estimates spread deterministically around the overall score.
-      setModulesList((prev) =>
-        prev.map((mod, i) => ({
-          ...mod,
-          project: newProjectForm.startupName,
-          status: "COMPLETED",
-          score: offlineModuleScore(calculatedScore, i),
-          lastUpdated: "Just now"
-        }))
-      );
-
-      setIsAnalyzing(false);
-      setIsNewProjectModalOpen(false);
-      setNewProjectForm(EMPTY_PROJECT_FORM);
-        setWizardStep(0);
-      setNavbarSection("modules"); // Switch navbar to Module Wise Score to highlight results!
-    }, 2400);
+    // No backend — cannot route to admin, so cannot proceed. Do not fabricate
+    // a score: that was the old behaviour that made it look like the report
+    // was auto-generated from the user's input.
+    setIsAnalyzing(false);
+    alert(
+      "The intelligence pipeline is offline. Your submission cannot be sent to admin for review right now — " +
+      "please try again once the backend is available."
+    );
   };
 
   /* Open a project's report overview on-site. API rows get the full pipeline
@@ -751,6 +690,9 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
         score: m ? Number(m[1]) : 0,
         decision: /GO/.test(p.verdict || "") ? 1 : /PIVOT/.test(p.verdict || "") ? 0 : null,
         clusters: { market: { problem: p.description } },
+        adminScore: p.adminScore ?? null,
+        approvalNote: p.approvalNote ?? null,
+        adminOverrides: p.adminOverrides ?? null,
       },
       moduleResults: {},
     });
@@ -1457,17 +1399,14 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
                         <td className="p-3 font-bold text-[#400A12]">{p.title}</td>
                         <td className="p-3 text-[#8C6D58] font-mono">{p.industry}</td>
                         <td className="p-3">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full font-bold text-[0.65rem] ${
-                              p.status === "ACTIVE"
-                                ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                                : p.status === "UNDER_REVIEW"
-                                ? "bg-amber-100 text-amber-800 border border-amber-300"
-                                : "bg-gray-100 text-gray-800 border border-gray-300"
-                            }`}
-                          >
-                            {p.status}
-                          </span>
+                          {(() => {
+                            const badge = getStatusBadge(p);
+                            return (
+                              <span className={`px-2.5 py-0.5 rounded-full font-bold text-[0.65rem] ${STATUS_BADGE_STYLES[badge.color]}`}>
+                                {badge.label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="p-3 font-mono font-bold">{p.modulesProcessed}</td>
                         <td className="p-3 font-extrabold text-[#400A12]">{p.verdict}</td>
@@ -1724,17 +1663,14 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
                       <span className="font-mono text-[0.68rem] font-bold text-[#B8860B] uppercase bg-[#F5EAD4] px-2 py-0.5 rounded-md">
                         {p.industry}
                       </span>
-                      <span
-                        className={`text-[0.65rem] font-bold px-2.5 py-0.5 rounded-full ${
-                          p.status === "ACTIVE"
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                            : p.status === "UNDER_REVIEW"
-                            ? "bg-amber-100 text-amber-800 border border-amber-300"
-                            : "bg-gray-100 text-gray-800 border border-gray-300"
-                        }`}
-                      >
-                        {p.status}
-                      </span>
+                      {(() => {
+                        const badge = getStatusBadge(p);
+                        return (
+                          <span className={`text-[0.65rem] font-bold px-2.5 py-0.5 rounded-full ${STATUS_BADGE_STYLES[badge.color]}`}>
+                            {badge.label}
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     <h4 className="font-serif text-lg font-bold text-[#400A12]">
