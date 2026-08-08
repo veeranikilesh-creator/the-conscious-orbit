@@ -66,9 +66,47 @@ const SEED_REPORTS = [
   { id: 'r6', name: 'Helix Pharma Ops',       vertical: 'industries', tags: ['Pharma'],             status: 'PUBLISHED',  score: 91 },
 ];
 
+// There is no router — the whole app pivots on a single `page` string. So
+// a browser refresh normally drops the user back on 'home'. Persist the
+// current page (and the signed-in email, so dashboards keep their
+// identity) in localStorage and rehydrate on mount. Also mirror to the
+// history entry so back/forward buttons still feel right.
+const PAGE_KEY = 'co.page';
+const EMAIL_KEY = 'co.userEmail';
+const VALID_PAGES = new Set(['home', 'contact', 'login', 'dashboard', 'admin-dashboard']);
+
+function readStoredPage() {
+  try {
+    const stored = localStorage.getItem(PAGE_KEY);
+    return VALID_PAGES.has(stored) ? stored : 'home';
+  } catch { return 'home'; }
+}
+function readStoredEmail() {
+  try { return localStorage.getItem(EMAIL_KEY) || ''; } catch { return ''; }
+}
+
 function App() {
-  const [page, setPage] = useState('home'); // 'home' | 'login' | 'dashboard' | 'admin-dashboard'
-  const [userEmail, setUserEmail] = useState('');
+  const [page, setPageState] = useState(readStoredPage);
+  const [userEmail, setUserEmailState] = useState(readStoredEmail);
+
+  // Wrap the setters so every navigation and login/logout persists. Never
+  // write from useEffect: React strict-mode double-mounts would clobber
+  // the stored value with the initial default on remount.
+  const setPage = React.useCallback((next) => {
+    setPageState(next);
+    try {
+      if (next === 'home') localStorage.removeItem(PAGE_KEY);
+      else localStorage.setItem(PAGE_KEY, next);
+    } catch { /* storage disabled — in-memory only */ }
+  }, []);
+  const setUserEmail = React.useCallback((next) => {
+    setUserEmailState(next || '');
+    try {
+      if (next) localStorage.setItem(EMAIL_KEY, next);
+      else localStorage.removeItem(EMAIL_KEY);
+    } catch { /* ignore */ }
+  }, []);
+
   const [activeVertical, setActiveVertical] = useState('startups');
   const [activeCluster, setActiveCluster] = useState('market');
   const [selectedTracks, setSelectedTracks] = useState(['validation', 'investor']);
