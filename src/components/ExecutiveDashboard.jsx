@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkHealth, listReports, submitIntake, getReport } from "../api.js";
 import ReportOverview from "./ReportOverview.jsx";
@@ -188,24 +188,41 @@ const STAGE_TO_SERVER = {
 };
 
 function projectFromReport(r) {
-  const score = r.score ?? 0;
-  const verdict =
-    r.decision === 0 ? `PIVOT (${score}%)`
-    : r.decision === 1 ? `GO (${score}%)`
-    : score > 0 ? `CONDITIONAL (${score}%)`
-    : "IN PIPELINE";
+  // Prefer the admin's published values once they exist. Until the admin
+  // publishes, the user sees "PENDING" — no score, no verdict — so the
+  // score can't be inferred before an actual human has reviewed it. Once
+  // published, the verdict comes from what the admin entered on approval.
+  const score = r.adminScore ?? r.score ?? 0;
+  const adminV = (r.adminVerdict || "").toUpperCase();
+  const isPublished = r.status === "PUBLISHED";
+  const verdict = !isPublished
+    ? "PENDING — Awaiting admin approval"
+    : adminV === "GO"          ? `GO (${score}%) — Approved to proceed`
+    : adminV === "CONDITIONAL" ? `CONDITIONAL (${score}%) — Proceed with caveats`
+    : adminV === "PIVOT"       ? `PIVOT (${score}%) — Rework recommended`
+    : adminV === "REJECT"      ? `REJECT (${score}%) — Do not proceed`
+    // Fallback if the admin didn't set an explicit verdict but the pipeline
+    // did (older reports scored before the review UI existed).
+    : r.decision === 1 ? `GO (${score}%) — Approved to proceed`
+    : r.decision === 0 ? `PIVOT (${score}%) — Rework recommended`
+    : score > 0        ? `CONDITIONAL (${score}%) — Proceed with caveats`
+    : "PENDING — Awaiting admin approval";
   return {
     id: r.id,
     title: r.name,
     industry: r.tags?.[0] || r.vertical,
     verdict,
-    status: r.status === "PUBLISHED" ? "ACTIVE" : "UNDER_REVIEW",
+    status: isPublished ? "ACTIVE" : "UNDER_REVIEW",
     modulesProcessed: `${(r.completedModules || []).length}/10`,
     date: (r.createdAt || new Date().toISOString()).split("T")[0],
     description: r.clusters?.market?.problem || "Venture evaluated through the intelligence pipeline.",
     fromApi: true,
     rawStatus: r.status,
     adminScore: r.adminScore ?? null,
+    adminVerdict: r.adminVerdict ?? null,
+    adminAnalysis: r.adminAnalysis ?? null,
+    adminStrengths: r.adminStrengths ?? null,
+    adminRisks: r.adminRisks ?? null,
     approvalNote: r.approvalNote ?? null,
     adminOverrides: r.adminOverrides ?? null,
   };
@@ -461,7 +478,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
   })();
   const emailInitials = emailName.slice(0, 2).toUpperCase();
   // Navigation & View States
-  const [navbarSection, setNavbarSection] = useState("queries"); // 'queries' | 'modules' | 'track' | 'engines'
+  const [navbarSection, setNavbarSection] = useState("intake"); // 'intake' | 'modules' | 'track' | 'engines' | 'queries'
   const [engineTab, setEngineTab] = useState("startup");
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -498,23 +515,71 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
      carries the .doc download box. */
   const [reportOverview, setReportOverview] = useState(null);
 
+  // Newest first — a defensive sort so a freshly-created project always
+  // sits at the top of every list, even if the backend or a local prepend
+  // ever hands us data in a different order.
+  const sortNewestFirst = (arr) =>
+    [...arr].sort((a, b) => (b?.date || "").localeCompare(a?.date || ""));
+
+  // Pulls the report list from the backend and merges it into projectsList.
+  // Kept as a stable callback so it can be reused by the polling effects below
+  // — the admin publishing a report happens on their side, so the executive
+  // portal needs to refresh to see the update; without this the "My Projects"
+  // list stayed frozen on whatever was loaded at mount time.
+  const refreshProjects = useCallback(async (signal) => {
+    try {
+      const data = await listReports(signal);
+      setApiStatus("online");
+      const rows = (data?.reports || []).map(projectFromReport);
+      // Empty DB on first mount shouldn't blank the portal — but once we've
+      // ever seen live rows, trust the server (including "now zero").
+      setProjectsList((prev) => {
+        const wasLive = prev.some((p) => p.fromApi);
+        if (!rows.length && !wasLive) return prev;
+        return sortNewestFirst(rows);
+      });
+    } catch (err) {
+      if (err?.name !== "AbortError") setApiStatus("offline");
+    }
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
       try {
         const health = await checkHealth(controller.signal);
         if (!health.ready) { setApiStatus("offline"); return; }
-        const data = await listReports(controller.signal);
-        setApiStatus("online");
-        const rows = (data?.reports || []).map(projectFromReport);
-        // An empty database shouldn't blank the portal on first run.
-        if (rows.length) setProjectsList(rows);
+        await refreshProjects(controller.signal);
       } catch (err) {
         if (err.name !== "AbortError") setApiStatus("offline");
       }
     })();
     return () => controller.abort();
-  }, []);
+  }, [refreshProjects]);
+
+  // Auto-refresh whenever the user is likely to be looking at their projects:
+  //  - navbar switches to the projects section
+  //  - the View Projects modal is opened
+  //  - browser tab regains focus
+  //  - every 20s while either projects surface is visible
+  // Ensures a report the admin publishes appears here without a page reload.
+  const projectsVisibleRef = useRef(false);
+  projectsVisibleRef.current =
+    navbarSection === "track" || isViewProjectsModalOpen;
+
+  useEffect(() => {
+    if (!projectsVisibleRef.current || apiStatus !== "online") return;
+    refreshProjects();
+    const id = setInterval(() => {
+      if (projectsVisibleRef.current) refreshProjects();
+    }, 20000);
+    const onFocus = () => refreshProjects();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [navbarSection, isViewProjectsModalOpen, apiStatus, refreshProjects]);
 
   const notifications = [
     { id: 1, title: "Module 10 Evaluation Ready", time: "10m ago", read: false },
@@ -636,16 +701,16 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
         // modules, gets Orbita's analysis, adds their own notes, and publishes.
         // Do NOT populate module scores or open the report overview: nothing has
         // been scored yet.
-        setProjectsList((prev) => [projectFromReport(result.report), ...prev]);
+        setProjectsList((prev) => sortNewestFirst([projectFromReport(result.report), ...prev]));
         setIsAnalyzing(false);
         setIsNewProjectModalOpen(false);
         setNewProjectForm(EMPTY_PROJECT_FORM);
         setWizardStep(0);
-        setNavbarSection("projects");
+        setNavbarSection("track");
         alert(
           "Report sent to admin for approval.\n\n" +
           "Our team will review your submission with Orbita AI and publish your strategy report. " +
-          "You'll receive the final report by email once it's approved."
+          "You'll receive the final report by email once it's approved, and it will appear here in My Projects."
         );
         return;
       } catch (err) {
@@ -1002,22 +1067,19 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
           {/* Homepage Nav Format: Clean Tabs with Gold Underline & Active Styling */}
           <nav className="flex items-center justify-center sm:justify-start gap-2 sm:gap-6 w-full overflow-x-auto py-1">
             
-            {/* 1. Query Section */}
+            {/* 1. Intake Engine */}
             <button
               type="button"
-              onClick={() => setNavbarSection("queries")}
-              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-3 sm:px-4 rounded-xl flex items-center gap-2 ${
-                navbarSection === "queries"
+              onClick={() => setNavbarSection("intake")}
+              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-4 rounded-xl flex items-center gap-2 ${
+                navbarSection === "intake"
                   ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
                   : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
               }`}
             >
-              <MessageSquare size={16} className={navbarSection === "queries" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
-              <span>1. Query Section</span>
-              <span className="text-[0.65rem] px-1.5 py-0.2 rounded-full bg-[#D4AF37]/20 font-mono font-normal">
-                {queriesList.length}
-              </span>
-              {navbarSection === "queries" && (
+              <FileText size={16} className={navbarSection === "intake" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
+              <span>1. Intake Engine</span>
+              {navbarSection === "intake" && (
                 <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
               )}
             </button>
@@ -1076,19 +1138,22 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
               )}
             </button>
 
-            {/* 5. The original three-layer intake engine, in this UI's styling */}
+            {/* 5. Query Section */}
             <button
               type="button"
-              onClick={() => setNavbarSection("intake")}
-              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-4 rounded-xl flex items-center gap-2 ${
-                navbarSection === "intake"
+              onClick={() => setNavbarSection("queries")}
+              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-3 sm:px-4 rounded-xl flex items-center gap-2 ${
+                navbarSection === "queries"
                   ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
                   : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
               }`}
             >
-              <FileText size={16} className={navbarSection === "intake" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
-              <span>5. Intake Engine</span>
-              {navbarSection === "intake" && (
+              <MessageSquare size={16} className={navbarSection === "queries" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
+              <span>5. Query Section</span>
+              <span className="text-[0.65rem] px-1.5 py-0.2 rounded-full bg-[#D4AF37]/20 font-mono font-normal">
+                {queriesList.length}
+              </span>
+              {navbarSection === "queries" && (
                 <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
               )}
             </button>
@@ -1483,7 +1548,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
           <IntakeEngine
             apiStatus={apiStatus}
             onComplete={(result) => {
-              setProjectsList((prev) => [projectFromReport(result.report), ...prev]);
+              setProjectsList((prev) => sortNewestFirst([projectFromReport(result.report), ...prev]));
               setReportOverview({ report: result.report, moduleResults: result.moduleResults || {} });
               const results = result.moduleResults || {};
               setModulesList((prev) =>
@@ -1496,7 +1561,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
               );
             }}
             onSimulated={(project, localReport) => {
-              setProjectsList((prev) => [project, ...prev]);
+              setProjectsList((prev) => sortNewestFirst([project, ...prev]));
               if (localReport) setReportOverview({ report: localReport, moduleResults: {} });
             }}
           />
