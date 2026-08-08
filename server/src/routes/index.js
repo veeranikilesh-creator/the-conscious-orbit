@@ -14,7 +14,7 @@ router.get('/health', (_req, res) => {
   res.json({
     ok: true,
     db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    integrations: { anthropic: env.anthropic.enabled, spyfu: env.spyfu.enabled },
+    integrations: { gemini: env.gemini.enabled, spyfu: env.spyfu.enabled },
     uptimeSeconds: Math.round(process.uptime()),
   });
 });

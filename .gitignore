@@ -44,3 +44,6 @@ __pycache__/
 *.db
 
 *.db.bak
+
+# Uploaded client documents (bytes live on disk, metadata in the DB)
+server_python/uploads/

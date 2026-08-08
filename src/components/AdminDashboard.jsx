@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkHealth, listReports, advanceReport, revertReport, getReport, deleteReport, processReport } from "../api.js";
 import { downloadReportDoc } from "../reportDoc.js";
+import QueriesPanel from "./QueriesPanel.jsx";
+import DocumentUpload from "./DocumentUpload.jsx";
+import StrengthBadge from "./StrengthBadge.jsx";
 import {
   ShieldCheck,
   Layers,
@@ -230,6 +233,7 @@ function clientProfilesFromReports(serverReports = []) {
       company: company || "—",
       domain: (r.vertical || "startups").replace(/^./, (ch) => ch.toUpperCase()),
       status: r.status === "PUBLISHED" ? "VERIFIED" : "ACTIVE",
+      strengthBand: r.scoreBand || null,
       accountType: "Client",
       phone: "—",
       location: c.geography?.trim() || "—",
@@ -338,6 +342,8 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
   /* { row, loading, detail } — detail is the server's { report, moduleResults,
      pipeline } for API rows, null for local sample rows. */
   const [reportDetail, setReportDetail] = useState(null);
+  /* Which report the Client Documents section is filtered to; "" = all. */
+  const [adminDocReportId, setAdminDocReportId] = useState("");
   const [ticketFilter, setTicketFilter] = useState("ALL");
 
   // Modals
@@ -731,7 +737,8 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
             { id: "client-forms", label: "2. Client Forms & Profiles", count: clientProfiles.length, icon: UserCheck },
             { id: "registrations", label: "3. Registrations (5 Domains)", count: registrations.length, icon: Folder },
             { id: "report-tracking", label: "4. Report Tracking", count: reports.length, icon: Activity },
-            { id: "queries-investigation", label: "5. Queries & Investigation", count: tickets.length, icon: MessageSquare }
+            { id: "queries-investigation", label: "5. Client Queries", count: null, icon: MessageSquare },
+            { id: "client-documents", label: "6. Client Documents", count: null, icon: FileText }
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeNav === tab.id;
@@ -1020,9 +1027,12 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                       <td className="p-3.5 font-medium">{prof.company}</td>
                       <td className="p-3.5 text-[#7A1C29]">{prof.domain}</td>
                       <td className="p-3.5">
-                        <span className="px-2.5 py-0.5 rounded-full text-[0.65rem] border border-[#D4AF37]/40 bg-[#4A0A13]/5 text-[#4A0A13] font-medium">
-                          {prof.status}
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="px-2.5 py-0.5 rounded-full text-[0.65rem] border border-[#D4AF37]/40 bg-[#4A0A13]/5 text-[#4A0A13] font-medium">
+                            {prof.status}
+                          </span>
+                          {prof.strengthBand && <StrengthBadge band={prof.strengthBand} size="sm" />}
+                        </div>
                       </td>
                       <td className="p-3.5 text-right">
                         <button
@@ -1346,82 +1356,56 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
         {/* ------------------------------------------------------------ */}
         {/* SECTION 5: QUERIES AND INVESTIGATION                          */}
         {/* ------------------------------------------------------------ */}
+        {/* SECTION 5: CLIENT QUERIES - real client questions and responses */}
         {activeNav === "queries-investigation" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#D4AF37]/20 pb-4">
-              <div>
-                <h1 className="text-xl font-semibold text-[#4A0A13]">Queries &amp; Investigation</h1>
-                <p className="text-xs text-[#7A1C29]">Manage client business questions and contact form inquiries.</p>
-              </div>
-
-              <div className="flex items-center gap-1.5 overflow-x-auto">
-                {[
-                  { id: "ALL", label: "All" },
-                  { id: "QUERY", label: "Business Queries" },
-                  { id: "CONTACT", label: "Get In Touch Forms" },
-                  { id: "RESOLVED", label: "Resolved" }
-                ].map((flt) => (
-                  <button
-                    key={flt.id}
-                    onClick={() => setTicketFilter(flt.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
-                      ticketFilter === flt.id
-                        ? "bg-[#4A0A13] text-[#FAF4E8]"
-                        : "bg-[#FAF4E8] text-[#4A0A13] border border-[#D4AF37]/30 hover:bg-[#F5EAD4]"
-                    }`}
-                  >
-                    {flt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {!filteredTickets.length && (
-                <div className="rounded-2xl border border-dashed border-[#D4AF37]/50 bg-[#FAF4E8]/60 p-8 text-center">
-                  <p className="text-sm font-semibold text-[#4A0A13]">No queries or contact forms yet</p>
-                  <p className="text-xs text-[#7A1C29] mt-1">Client business questions and get-in-touch submissions land here.</p>
-                </div>
-              )}
-              {filteredTickets.map((tkt) => (
-                <div
-                  key={tkt.id}
-                  className="rounded-2xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-5 shadow-xs space-y-3"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-[0.65rem] text-[#D4AF37] font-medium uppercase">
-                        {tkt.type === "BUSINESS_QUERY" ? "Business Query" : "Get In Touch Form"}
-                      </span>
-                      <h3 className="font-semibold text-sm text-[#4A0A13]">{tkt.title}</h3>
-                      <p className="text-xs text-[#7A1C29]">{tkt.clientName} ({tkt.email})</p>
-                    </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[0.65rem] border border-[#D4AF37]/40 bg-[#4A0A13]/5 text-[#4A0A13]">
-                      {tkt.status}
-                    </span>
-                  </div>
-
-                  <div className="bg-[#4A0A13]/5 p-3 rounded-xl text-xs text-[#4A0A13]">
-                    {tkt.message}
-                  </div>
-
-                  <div className="text-xs text-[#7A1C29] bg-[#FAF4E8] border border-[#D4AF37]/30 p-3 rounded-xl italic">
-                    Findings: {tkt.investigationNote}
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-1">
-                    <button
-                      onClick={() => setSelectedTicket(tkt)}
-                      className="rounded-full border border-[#D4AF37] bg-[#4A0A13] text-[#F5D77F] px-4 py-1 text-xs font-medium transition cursor-pointer"
-                    >
-                      Respond &amp; Update
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <QueriesPanel role="admin" />
           </motion.div>
         )}
+
+        {/* SECTION 6: CLIENT DOCUMENTS - read-only view of client uploads */}
+        {activeNav === "client-documents" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="border-b border-[#D4AF37]/20 pb-4">
+              <h1 className="text-lg sm:text-xl font-semibold text-[#4A0A13]">Client Documents</h1>
+              <p className="text-xs text-[#7A1C29]">
+                Files clients uploaded in support of their submissions. Pick a report to see what
+                was attached to it, or leave it on All to see everything.
+              </p>
+            </div>
+
+            <div className="space-y-1 max-w-md">
+              <label
+                className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider"
+                htmlFor="admin-doc-report"
+              >
+                Filter by report
+              </label>
+              <select
+                id="admin-doc-report"
+                value={adminDocReportId}
+                onChange={(e) => setAdminDocReportId(e.target.value)}
+                className="w-full rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-2.5 text-xs text-[#4A0A13] focus:border-[#4A0A13] focus:outline-none cursor-pointer"
+              >
+                <option value="">All uploaded documents</option>
+                {reports.filter((r) => r.fromApi).map((r) => (
+                  <option key={r.id} value={r.id}>{r.reportName}</option>
+                ))}
+              </select>
+              <p className="text-[0.65rem] text-[#8C6D58]">
+                Documents are read-only here - the client owns them.
+              </p>
+            </div>
+
+            <DocumentUpload
+              key={adminDocReportId || "all"}
+              reportId={adminDocReportId || undefined}
+              canDelete={false}
+              title="Uploaded by clients"
+            />
+          </motion.div>
+        )}
+
 
       </main>
 

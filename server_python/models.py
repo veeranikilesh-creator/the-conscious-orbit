@@ -204,3 +204,144 @@ class DomainModel(Base):
     description = Column(Text, nullable=True)
     icon = Column(String, default='Building2')
     created_at = Column(DateTime, default=_utcnow)
+
+
+class DocumentModel(Base):
+    """A file a client uploaded in support of a report.
+
+    Bytes live on disk under server_python/uploads/ so the database stays
+    small; only the metadata and the stored filename are persisted.
+    """
+    __tablename__ = 'documents'
+
+    id = Column(String, primary_key=True, index=True)
+    report_id = Column(String, nullable=True, index=True)
+    client_id = Column(String, nullable=True, index=True)
+    filename = Column(String, nullable=False)          # original name shown to users
+    stored_name = Column(String, nullable=False)       # on-disk name, collision-free
+    content_type = Column(String, nullable=True)
+    size_bytes = Column(Integer, default=0)
+    category = Column(String, default='SUPPORTING')    # PITCH_DECK / FINANCIALS / ...
+    note = Column(Text, nullable=True)
+    uploaded_by = Column(String, nullable=True)        # client email
+    created_at = Column(DateTime, default=_utcnow)
+
+    def to_json(self):
+        return {
+            'id': self.id,
+            'reportId': self.report_id,
+            'clientId': self.client_id,
+            'filename': self.filename,
+            'contentType': self.content_type,
+            'sizeBytes': self.size_bytes or 0,
+            'category': self.category,
+            'note': self.note,
+            'uploadedBy': self.uploaded_by,
+            'createdAt': _iso(self.created_at),
+        }
+
+
+class QueryModel(Base):
+    """A question a client raised, and the admin's answer.
+
+    Kept separate from reports so a client can ask something general, but
+    optionally linked to a report when the question is about one.
+    """
+    __tablename__ = 'queries'
+
+    id = Column(String, primary_key=True, index=True)
+    report_id = Column(String, nullable=True, index=True)
+    client_email = Column(String, nullable=True, index=True)
+    client_name = Column(String, nullable=True)
+    subject = Column(String, nullable=False)
+    category = Column(String, default='General')
+    message = Column(Text, nullable=False)
+    status = Column(String, default='OPEN')            # OPEN | IN_REVIEW | ANSWERED
+    response = Column(Text, nullable=True)
+    responded_by = Column(String, nullable=True)
+    responded_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    def to_json(self):
+        return {
+            'id': self.id,
+            'reportId': self.report_id,
+            'clientEmail': self.client_email,
+            'clientName': self.client_name,
+            'subject': self.subject,
+            'category': self.category,
+            'message': self.message,
+            'status': self.status,
+            'response': self.response,
+            'respondedBy': self.responded_by,
+            'respondedAt': _iso(self.responded_at),
+            'createdAt': _iso(self.created_at),
+            'updatedAt': _iso(self.updated_at),
+        }
+
+
+class BrandEquityModel(Base):
+    """Indian Brand Equity assessment submitted alongside a venture.
+
+    Scored on the five pillars the IBEF framework emphasises: awareness,
+    perceived quality, associations, loyalty and distribution reach.
+    """
+    __tablename__ = 'brand_equity'
+
+    id = Column(String, primary_key=True, index=True)
+    report_id = Column(String, nullable=True, index=True)
+    client_email = Column(String, nullable=True, index=True)
+
+    brand_name = Column(String, nullable=False)
+    category = Column(String, nullable=True)           # product/service category
+    home_state = Column(String, nullable=True)         # Indian state of origin
+    years_active = Column(Float, nullable=True)
+    languages = Column(JSON, default=list)             # languages the brand markets in
+
+    # Five pillars, each 0-100 as answered by the client.
+    awareness = Column(Integer, default=0)
+    perceived_quality = Column(Integer, default=0)
+    associations = Column(Integer, default=0)
+    loyalty = Column(Integer, default=0)
+    distribution_reach = Column(Integer, default=0)
+
+    # Supporting facts.
+    monthly_customers = Column(Integer, default=0)
+    repeat_rate = Column(Integer, default=0)           # % returning customers
+    social_following = Column(Integer, default=0)
+    certifications = Column(Text, nullable=True)       # ISI / FSSAI / GI tag etc.
+    differentiator = Column(Text, nullable=True)
+
+    equity_score = Column(Integer, default=0)          # computed 0-100
+    strength_band = Column(String, default='WEAK')     # WEAK | MEDIUM | STRONG
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+    def to_json(self):
+        return {
+            'id': self.id,
+            'reportId': self.report_id,
+            'clientEmail': self.client_email,
+            'brandName': self.brand_name,
+            'category': self.category,
+            'homeState': self.home_state,
+            'yearsActive': self.years_active,
+            'languages': self.languages or [],
+            'pillars': {
+                'awareness': self.awareness,
+                'perceivedQuality': self.perceived_quality,
+                'associations': self.associations,
+                'loyalty': self.loyalty,
+                'distributionReach': self.distribution_reach,
+            },
+            'monthlyCustomers': self.monthly_customers,
+            'repeatRate': self.repeat_rate,
+            'socialFollowing': self.social_following,
+            'certifications': self.certifications,
+            'differentiator': self.differentiator,
+            'equityScore': self.equity_score,
+            'strengthBand': self.strength_band,
+            'createdAt': _iso(self.created_at),
+            'updatedAt': _iso(self.updated_at),
+        }

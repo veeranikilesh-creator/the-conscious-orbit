@@ -8,11 +8,13 @@ export const env = {
   corsOrigin: process.env.CORS_ORIGIN ?? '*',
   nodeEnv: process.env.NODE_ENV ?? 'development',
 
-  anthropic: {
-    apiKey: process.env.ANTHROPIC_API_KEY ?? '',
-    model: process.env.ANTHROPIC_MODEL ?? 'claude-opus-5',
+  /* Gemini is the platform's AI provider. Every AI feature degrades to a
+     deterministic heuristic when no key is set, so the pipeline still runs. */
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY ?? '',
+    model: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
     get enabled() {
-      return Boolean(process.env.ANTHROPIC_API_KEY);
+      return Boolean(process.env.GEMINI_API_KEY);
     },
   },
 

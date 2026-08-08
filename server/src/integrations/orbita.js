@@ -1,4 +1,4 @@
-import { getClient } from './aiProvider.js';
+import { generateJson } from './gemini.js';
 import { env } from '../config/env.js';
 import { fetchDomainIntelligence } from './spyfu.js';
 
@@ -54,8 +54,6 @@ const ANALYSIS_SCHEMA = {
 };
 
 export async function generateOrbitaAnalysis(report, moduleResults) {
-  const anthropic = getClient();
-
   const modulesContext = {};
   for (const mr of moduleResults) {
     modulesContext[mr.moduleKey] = {
@@ -71,73 +69,42 @@ export async function generateOrbitaAnalysis(report, moduleResults) {
     competitorData = { note: 'SpyFu data unavailable' };
   }
 
-  if (!anthropic) {
+  if (!env.gemini.enabled) {
     return {
       ...heuristicOrbitaAnalysis(modulesContext, competitorData),
       live: false,
       model: null,
-      note: 'ANTHROPIC_API_KEY not configured — returning heuristic Orbita analysis.',
+      note: 'GEMINI_API_KEY not configured — returning heuristic Orbita analysis.',
     };
   }
 
-  try {
-    const response = await anthropic.messages.create({
-      model: env.anthropic.model,
-      max_tokens: 16000,
-      thinking: { type: 'adaptive' },
-      output_config: { format: { type: 'json_schema', schema: ANALYSIS_SCHEMA } },
-      system: ORBITA_SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            'Analyze this venture report. For each module, compare the pipeline score against the output data and flag inconsistencies.',
-            '',
-            '## Module Data',
-            '```json',
-            JSON.stringify(modulesContext, null, 2),
-            '```',
-            '',
-            '## Competitor Data (SpyFu)',
-            '```json',
-            JSON.stringify(competitorData, null, 2),
-            '```',
-            '',
-            'Provide your analysis.',
-          ].join('\n'),
-        },
-      ],
-    });
+  const userPrompt = [
+    'Analyze this venture report. For each module, compare the pipeline score against the output data and flag inconsistencies.',
+    '',
+    '## Module Data',
+    '```json',
+    JSON.stringify(modulesContext, null, 2),
+    '```',
+    '',
+    '## Competitor Data (SpyFu)',
+    '```json',
+    JSON.stringify(competitorData, null, 2),
+    '```',
+    '',
+    'Provide your analysis.',
+  ].join('\n');
 
-    if (response.stop_reason === 'refusal') {
-      return {
-        ...heuristicOrbitaAnalysis(modulesContext, competitorData),
-        live: false,
-        model: env.anthropic.model,
-        note: `Model declined — returning heuristic analysis.`,
-      };
-    }
-
-    const text = response.content.find((b) => b.type === 'text')?.text ?? '';
-    const parsed = JSON.parse(text);
-
-    return {
-      ...parsed,
-      live: true,
-      model: response.model,
-      usage: {
-        inputTokens: response.usage?.input_tokens,
-        outputTokens: response.usage?.output_tokens,
-      },
-    };
-  } catch (error) {
+  const result = await generateJson(ORBITA_SYSTEM_PROMPT, userPrompt, ANALYSIS_SCHEMA);
+  if (!result) {
     return {
       ...heuristicOrbitaAnalysis(modulesContext, competitorData),
       live: false,
-      model: env.anthropic.model,
-      note: `Orbita analysis failed (${error.message}) — returning heuristic analysis.`,
+      model: env.gemini.model,
+      note: 'Gemini call failed or returned no usable answer — returning heuristic analysis.',
     };
   }
+
+  return { ...result.data, live: true, model: result.model };
 }
 
 function heuristicOrbitaAnalysis(modulesContext, competitorData) {

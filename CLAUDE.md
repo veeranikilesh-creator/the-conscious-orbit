@@ -43,7 +43,7 @@ The shared architecture, in both stacks:
 - **Ten calculator modules**, each with key/title/action, an input schema (zod in `server/src/modules/*.js`, pydantic in `server_python/modules/*.py`) and a pure `run(input, context)` returning `{ output, score }`. Registries: `server/src/modules/index.js` / `server_python/modules/__init__.py`.
 - **Two coupled state machines**: `RECEIVED → PENDING → PROCESSED → PUBLISHED` paired with `SCRUMING / REQUIREMENT / MAPPING / DELIVERED` (`server/src/state/` / `server_python/state.py`). Advancing is **gated** — a 409 lists the missing module keys; reverting is ungated.
 - **`industryReport` (module 7) is the consolidator** — it weights every other module's score into the Conscious Orbital Score (weights in `MODULE_WEIGHTS`, identical in both), hands a dossier to the AI decision engine, and the controller writes the verdict back to `report.score` / `report.decision`.
-- **Integrations degrade, never throw**: no `ANTHROPIC_API_KEY` → deterministic heuristic verdict; no SpyFu creds → labelled placeholder data (`server/src/integrations/` / `server_python/integrations/`). Keep that property.
+- **Integrations degrade, never throw**: no `GEMINI_API_KEY` → deterministic heuristic verdict; no SpyFu creds → labelled placeholder data (`server/src/integrations/` / `server_python/integrations/`). Keep that property.
 - **Same envelopes**: success shapes (`{ report }`, `{ report, pipeline }`, `{ result, report }`) and the flat error envelope `{ error, message, issues? }` — the FastAPI exception handlers deliberately mimic Express's `errorHandler.js`, including 422 zod/pydantic issues as `{ path, message, code }`.
 - Health: both return `{ ok, db: 'connected' | 'disconnected', integrations, uptimeSeconds }`; `src/api.js#checkHealth()` also still accepts the older FastAPI shape.
 
@@ -97,7 +97,7 @@ The core idea is two coupled state machines over a `Report`:
 
 Modules are dispatched exclusively through the registry in `modules/index.js` — adding one means an import and an entry there, plus adding its key to a stage in `PIPELINE_STAGES`. One generic controller handler (`moduleController.js`) drives all ten and upserts a `ModuleResult` (unique on report+module, so re-running overwrites).
 
-Both integrations degrade instead of throwing: without `ANTHROPIC_API_KEY`, `integrations/aiProvider.js` returns a deterministic heuristic verdict; without SpyFu credentials, `integrations/spyfu.js` returns clearly-labelled placeholder data. Keep that property — the pipeline is expected to always complete.
+Both integrations degrade instead of throwing: without `GEMINI_API_KEY`, `integrations/aiProvider.js` returns a deterministic heuristic verdict; without SpyFu credentials, `integrations/spyfu.js` returns clearly-labelled placeholder data. Keep that property — the pipeline is expected to always complete.
 
 Read env through `config/env.js`, not `process.env`.
 
@@ -127,3 +127,44 @@ The Express error envelope is flat — `{ error, message, issues? }` — not nes
 ## Known dead weight
 
 `src/components/PulpSenseHero.jsx` and the standalone `PulpSenseHero.html` at the repo root are unused. `docs/superpowers/` contains a plan and spec for a *third* backend (TypeScript + Prisma + Postgres) that was never built and contradicts both existing ones — treat it as historical, not as direction. `npm run lint` reports one pre-existing warning (an unused import in `server/src/modules/customerDiscovery.js`); the build is otherwise clean.
+
+## Client-facing features beyond the report pipeline
+
+Added in 2026-08 alongside the pipeline, all additive — none of them touch
+report state, the admin Report Tracking section or the review/approve flow:
+
+- **AI provider is Gemini**, not Claude. `integrations/gemini.{py,js}` speak the
+  REST API directly (no SDK dependency) and translate JSON Schema into Gemini's
+  stricter dialect — it rejects `additionalProperties` and only allows enums on
+  strings, so `_to_gemini_schema()` / `toGeminiSchema()` exist to convert. Both
+  `generate_json` helpers return `None`/`null` on *any* failure (missing
+  `GEMINI_API_KEY`, network error, safety block, unparseable output) and every
+  caller falls back to its deterministic heuristic. Env: `GEMINI_API_KEY`,
+  `GEMINI_MODEL` (default `gemini-2.0-flash`).
+- **Documents** — `routers/documents.py`, `DocumentUpload.jsx`. Bytes go to
+  `server_python/uploads/` under a UUID name; only metadata is in the database.
+  Extension allow-list plus a 15 MB cap. Admins mount the same component with
+  `canDelete={false}` so they can read client evidence without removing it.
+- **Queries** — `routers/queries.py`, `QueriesPanel.jsx`. One component serves
+  both sides via `role="client" | "admin"`; a client only ever receives their own
+  thread because the client view filters by `clientEmail`.
+- **Indian Brand Equity** — `routers/brand_equity.py`, `BrandEquityForm.jsx`.
+  Five Aaker pillars, weighted in `strength.brand_equity_score()`, nudged ±8 by
+  real repeat-rate so self-reported loyalty without repeat customers scores
+  down. Re-submitting for the same `reportId` updates rather than duplicating.
+- **Strength bands** — `strength.py`. `_report_json()` adds two on read:
+  `scoreBand` bands the result, `dataBand` bands the *evidence* (intake
+  completeness + word count, with `enriched: true` at 50+ words). Both are
+  computed on read, so the stored shape is unchanged. Render them with
+  `StrengthBadge.jsx` so the categorisation looks identical everywhere.
+
+`src/index.css` carries global responsive guarantees: `overflow-x: hidden` on
+`html`/`body` so one wide element can't make the page scroll sideways, plus
+`min-height: 40px` on controls and `font-size: 16px` on inputs under
+`(pointer: coarse)` — the latter stops iOS zooming on focus. Wide content
+should scroll inside its own `.scroll-x` container; tab strips use
+`.no-scrollbar`. Tables get a real `<table>` above `sm:` and stacked cards
+below it rather than a horizontally-scrolling table on a phone.
+
+The client dashboard's sections come from the `NAV_SECTIONS` array in
+`ExecutiveDashboard.jsx` — add an entry there and the tab row picks it up.

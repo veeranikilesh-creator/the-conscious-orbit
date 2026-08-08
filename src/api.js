@@ -97,6 +97,47 @@ export const deleteReport   = (id)     => request(`/reports/${id}`, { method: 'D
 export const advanceReport  = (id)     => request(`/reports/${id}/advance`, { method: 'POST' });
 export const revertReport   = (id)     => request(`/reports/${id}/revert`, { method: 'POST' });
 export const generateReport = (id)     => request(`/reports/${id}/generate`, { method: 'POST' });
+/* ---------- documents, queries, brand equity ---------- */
+
+/** Upload a supporting file. FormData, so `request()` is bypassed here —
+ *  setting Content-Type manually would break the multipart boundary. */
+export async function uploadDocument({ file, reportId, category, note, uploadedBy }) {
+  const form = new FormData();
+  form.append('file', file);
+  if (reportId) form.append('reportId', reportId);
+  if (category) form.append('category', category);
+  if (note) form.append('note', note);
+  if (uploadedBy) form.append('uploadedBy', uploadedBy);
+
+  let res;
+  try {
+    res = await fetch(`${API_BASE}/documents`, { method: 'POST', body: form });
+  } catch (err) {
+    throw new ApiUnavailable(err);
+  }
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiError(payload?.message || payload?.detail || `Upload failed (${res.status})`, res.status);
+  }
+  return payload;
+}
+
+export const listDocuments = (params = {}) =>
+  request(`/documents?${new URLSearchParams(params)}`);
+export const deleteDocument = (id) => request(`/documents/${id}`, { method: 'DELETE' });
+/** Direct link — used for the download anchor rather than a fetch. */
+export const documentDownloadUrl = (id) => `${API_BASE}/documents/${id}/download`;
+
+export const listQueries = (params = {}) => request(`/queries?${new URLSearchParams(params)}`);
+export const createQuery = (body) => request('/queries', { method: 'POST', body });
+export const respondToQuery = (id, body) =>
+  request(`/queries/${id}/respond`, { method: 'POST', body });
+export const deleteQuery = (id) => request(`/queries/${id}`, { method: 'DELETE' });
+
+export const listBrandEquity = (params = {}) =>
+  request(`/brand-equity?${new URLSearchParams(params)}`);
+export const submitBrandEquity = (body) => request('/brand-equity', { method: 'POST', body });
+
 export const runModule      = (id, key, input) =>
   request(`/reports/${id}/modules/${key}`, { method: 'POST', body: input });
 

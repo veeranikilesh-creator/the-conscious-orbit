@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkHealth, listReports, submitIntake, getReport } from "../api.js";
 import ReportOverview from "./ReportOverview.jsx";
+import DocumentUpload from "./DocumentUpload.jsx";
+import BrandEquityForm from "./BrandEquityForm.jsx";
+import QueriesPanel from "./QueriesPanel.jsx";
+import StrengthBadge from "./StrengthBadge.jsx";
 import { StartupMarketEngine, MsmeOptimizationEngine, IndustryAnalysisEngine } from "./VerticalEngines.jsx";
 import IntakeEngine from "./IntakeEngine.jsx";
 import {
@@ -34,6 +38,8 @@ import {
   Play,
   Clock,
   Eye,
+  Upload,
+  Award,
   BarChart3,
   Zap,
   RotateCcw
@@ -229,6 +235,19 @@ function projectFromReport(r) {
   };
 }
 
+/* The dashboard's sections, in order. Adding one here is all it takes —
+   the tab row and the content switch both read from this list. `short` is
+   what shows on a phone, where the numbered long label will not fit. */
+const NAV_SECTIONS = [
+  { id: "intake",    label: "Intake Engine",   short: "Intake",    icon: FileText,      hint: "Submit a venture for evaluation" },
+  { id: "track",     label: "My Projects",     short: "Projects",  icon: Activity,      hint: "Status of everything you have submitted" },
+  { id: "documents", label: "Documents",       short: "Files",     icon: Upload,        hint: "Upload files that support your submission" },
+  { id: "brand",     label: "Brand Equity",    short: "Brand",     icon: Award,         hint: "Indian Brand Equity assessment" },
+  { id: "queries",   label: "Queries",         short: "Queries",   icon: MessageSquare, hint: "Ask a question and read the response" },
+  { id: "modules",   label: "Module Scores",   short: "Modules",   icon: Layers,        hint: "Score for each intelligence module" },
+  { id: "engines",   label: "Vertical Engines", short: "Engines",  icon: Cpu,           hint: "Quick TAM/SAM/SOM calculators" },
+];
+
 const getStatusBadge = (report) => {
   if (report.rawStatus === 'REVIEWING') return { label: 'UNDER_REVIEW', color: 'amber' };
   if (report.rawStatus === 'PUBLISHED' && report.adminScore !== null) return { label: 'VERIFIED', color: 'green' };
@@ -403,14 +422,12 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
   
   // Data States
   const [projectsList, setProjectsList] = useState(INITIAL_MY_PROJECTS);
-  const [queriesList, setQueriesList] = useState(INITIAL_QUERIES);
   const [modulesList, setModulesList] = useState(INITIAL_INTELLIGENCE_MODULES);
 
   // Dropdowns & Modals
   const [isMyProjectsDropdownOpen, setIsMyProjectsDropdownOpen] = useState(false);
   const [isViewProjectsModalOpen, setIsViewProjectsModalOpen] = useState(false);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
-  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notificationsRead, setNotificationsRead] = useState(false);
 
@@ -433,6 +450,9 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
   /* { report, moduleResults } — opens the on-site report overview, which
      carries the .doc download box. */
   const [reportOverview, setReportOverview] = useState(null);
+
+  /* Which submission new uploads attach to; "" means general. */
+  const [docReportId, setDocReportId] = useState("");
 
   // Newest first — a defensive sort so a freshly-created project always
   // sits at the top of every list, even if the backend or a local prepend
@@ -507,34 +527,6 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
   ];
 
   // Submit Business Question Handler
-  const handlePostQuestionSubmit = (e) => {
-    e.preventDefault();
-    if (!questionText.trim()) return;
-    setIsSubmittingQuestion(true);
-
-    setTimeout(() => {
-      const newQuery = {
-        id: `q-${Date.now()}`,
-        question: questionText,
-        category: selectedCategory,
-        project: projectsList[0]?.title || "Client Venture Evaluation",
-        status: "COMPLETED",
-        score: Math.floor(Math.random() * 12) + 84, // 84-95%
-        timestamp: "Just now",
-        response: `Cross-module synthesis completed for question. Demand signal strength verified at 88%. Unit economic payback projected within target window. Recommendation: Proceed to Phase 2 Execution.`
-      };
-      setQueriesList((prev) => [newQuery, ...prev]);
-      setIsSubmittingQuestion(false);
-      setQuestionSuccess(true);
-
-      setTimeout(() => {
-        setQuestionSuccess(false);
-        setIsQuestionModalOpen(false);
-        setQuestionText("");
-        setNavbarSection("queries"); // Switch navbar to Query Section to display response!
-      }, 1200);
-    }, 1400);
-  };
 
   // "Do Analysis" Handler for New Project — drives the real pipeline when the
   // API is up, otherwise falls through to the original simulation below.
@@ -682,14 +674,6 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
     });
   };
 
-  // Filtered queries based on search
-  const filteredQueries = queriesList.filter(
-    (q) =>
-      q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.response.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.project.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   // Filtered modules based on search
   const filteredModules = modulesList.filter(
@@ -867,7 +851,7 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
               
               {/* BUTTON 1: ? Post Business Question */}
               <button
-                onClick={() => setIsQuestionModalOpen(true)}
+                onClick={() => setNavbarSection("queries")}
                 type="button"
                 className="group flex items-center gap-2 bg-[#C89B3C] hover:bg-[#D4AF37] active:scale-[0.98] text-[#400A12] font-extrabold px-4 sm:px-5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer border border-[#F5D77F]/40 text-xs tracking-wide"
               >
@@ -983,100 +967,43 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
            ============================================================ */}
         <div className="relative z-20 bg-[#F5EAD4]/90 border border-[#D4AF37]/40 rounded-2xl p-2.5 sm:px-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
           
-          {/* Homepage Nav Format: Clean Tabs with Gold Underline & Active Styling */}
-          <nav className="flex items-center justify-center sm:justify-start gap-2 sm:gap-6 w-full overflow-x-auto py-1">
-            
-            {/* 1. Intake Engine */}
-            <button
-              type="button"
-              onClick={() => setNavbarSection("intake")}
-              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-4 rounded-xl flex items-center gap-2 ${
-                navbarSection === "intake"
-                  ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
-                  : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
-              }`}
-            >
-              <FileText size={16} className={navbarSection === "intake" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
-              <span>1. Intake Engine</span>
-              {navbarSection === "intake" && (
-                <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
-              )}
-            </button>
-
-            {/* 2. Module Wise Score */}
-            <button
-              type="button"
-              onClick={() => setNavbarSection("modules")}
-              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-3 sm:px-4 rounded-xl flex items-center gap-2 ${
-                navbarSection === "modules"
-                  ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
-                  : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
-              }`}
-            >
-              <Layers size={16} className={navbarSection === "modules" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
-              <span>2. Module Wise Score</span>
-              <span className="text-[0.65rem] px-1.5 py-0.2 rounded-full bg-[#D4AF37]/20 font-mono font-normal">
-                10
-              </span>
-              {navbarSection === "modules" && (
-                <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
-              )}
-            </button>
-
-            {/* 3. Track Status */}
-            <button
-              type="button"
-              onClick={() => setNavbarSection("track")}
-              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-4 rounded-xl flex items-center gap-2 ${
-                navbarSection === "track"
-                  ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
-                  : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
-              }`}
-            >
-              <Activity size={16} className={navbarSection === "track" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
-              <span>3. Track Status</span>
-              {navbarSection === "track" && (
-                <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
-              )}
-            </button>
-
-            {/* 4. Vertical Engines */}
-            <button
-              type="button"
-              onClick={() => setNavbarSection("engines")}
-              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-4 rounded-xl flex items-center gap-2 ${
-                navbarSection === "engines"
-                  ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
-                  : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
-              }`}
-            >
-              <Cpu size={16} className={navbarSection === "engines" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
-              <span>4. Vertical Engines</span>
-              {navbarSection === "engines" && (
-                <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
-              )}
-            </button>
-
-            {/* 5. Query Section */}
-            <button
-              type="button"
-              onClick={() => setNavbarSection("queries")}
-              className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-3 sm:px-4 rounded-xl flex items-center gap-2 ${
-                navbarSection === "queries"
-                  ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
-                  : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
-              }`}
-            >
-              <MessageSquare size={16} className={navbarSection === "queries" ? "text-[#F5D77F]" : "text-[#B8860B]"} />
-              <span>5. Query Section</span>
-              <span className="text-[0.65rem] px-1.5 py-0.2 rounded-full bg-[#D4AF37]/20 font-mono font-normal">
-                {queriesList.length}
-              </span>
-              {navbarSection === "queries" && (
-                <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
-              )}
-            </button>
-
+          {/* Section tabs. Data-driven so the set stays consistent and the row
+              scrolls cleanly on a phone instead of wrapping into a wall. */}
+          <nav
+            aria-label="Dashboard sections"
+            className="flex items-center gap-1.5 sm:gap-2 w-full overflow-x-auto py-1 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {NAV_SECTIONS.map((section, i) => {
+              const Icon = section.icon;
+              const active = navbarSection === section.id;
+              const count = section.id === "modules" ? 10 : null;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setNavbarSection(section.id)}
+                  aria-current={active ? "page" : undefined}
+                  title={section.hint}
+                  className={`group relative text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap py-2 px-3 sm:px-4 rounded-xl flex items-center gap-1.5 sm:gap-2 shrink-0 ${
+                    active
+                      ? "bg-[#400A12] text-[#FAF4E8] shadow-md border border-[#D4AF37]/50"
+                      : "text-[#4A0A13] hover:bg-[#FAF4E8]/80 hover:text-[#7A1C29]"
+                  }`}
+                >
+                  <Icon size={16} className={active ? "text-[#F5D77F]" : "text-[#B8860B]"} />
+                  <span className="hidden sm:inline">{i + 1}. {section.label}</span>
+                  <span className="sm:hidden">{section.short}</span>
+                  {count !== null && (
+                    <span className="text-[0.65rem] px-1.5 rounded-full bg-[#D4AF37]/20 font-mono font-normal">
+                      {count}
+                    </span>
+                  )}
+                  {active && (
+                    <motion.span layoutId="navbarUnderline" className="absolute -bottom-1 left-3 right-3 h-0.5 bg-[#D4AF37] rounded-full" />
+                  )}
+                </button>
+              );
+            })}
           </nav>
 
           {/* Right Live System Telemetry Status Indicator */}
@@ -1092,110 +1019,68 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
            ============================================================ */}
 
         {/* ---------------- SECTION 1: QUERY SECTION ---------------- */}
+        {/* ---------------- QUERIES — real client/admin thread ---------------- */}
         {navbarSection === "queries" && (
-          <section className="space-y-6 pt-2">
-            
-            {/* Clean Section Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D4AF37]/30 pb-4">
-              <div>
-                <h3 className="font-serif text-2xl font-bold text-[#4A0A13] flex items-center gap-2">
-                  <MessageSquare size={22} className="text-[#B8860B]" />
-                  <span>Query Section</span>
-                </h3>
-                <p className="text-xs text-[#8C6D58] mt-0.5">
-                  AI intelligence responses for posted business questions.
-                </p>
-              </div>
+          <section className="pt-2">
+            <QueriesPanel
+              role="client"
+              clientEmail={userEmail}
+              clientName={emailName}
+              reportId={projectsList.find((p) => p.fromApi)?.id}
+            />
+          </section>
+        )}
 
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono font-bold bg-[#F5EAD4] text-[#B8860B] px-3 py-1.5 rounded-full border border-[#D4AF37]/30">
-                  {queriesList.length} Active Queries
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsQuestionModalOpen(true)}
-                  className="flex items-center gap-2 bg-[#400A12] hover:bg-[#5C0F1A] text-[#F5D77F] font-bold px-4 py-2 rounded-xl text-xs shadow-md transition cursor-pointer"
-                >
-                  <Plus size={14} />
-                  <span>Post Question</span>
-                </button>
-              </div>
+        {/* ---------------- DOCUMENTS — client uploads ---------------- */}
+        {navbarSection === "documents" && (
+          <section className="space-y-4 pt-2">
+            <div>
+              <h2 className="font-serif text-xl sm:text-2xl font-extrabold text-[#400A12]">
+                Document Upload
+              </h2>
+              <p className="text-xs text-[#7A1C29] max-w-2xl">
+                Upload the files that support your venture — the reviewer reads these alongside your
+                intake answers, so real documents lead to a better-grounded assessment.
+              </p>
             </div>
 
-            {/* Queries Grid */}
-            <div className="grid grid-cols-1 gap-5">
-              {!filteredQueries.length && (
-                <div className="rounded-2xl border border-dashed border-[#D4AF37]/50 bg-white/70 p-8 text-center">
-                  <p className="text-sm font-semibold text-[#400A12]">No questions posted yet</p>
-                  <p className="text-xs text-[#7A1C29] mt-1">Post a business question and the response appears here once reviewed.</p>
-                </div>
-              )}
-              {filteredQueries.map((q) => (
-                <div
-                  key={q.id}
-                  className="bg-white/95 border border-[#D4AF37]/35 hover:border-[#D4AF37] rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-300 space-y-4"
-                >
-                  {/* Header Row */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#D4AF37]/20 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[0.68rem] font-bold uppercase bg-[#F5EAD4] text-[#B8860B] px-2.5 py-0.5 rounded-md">
-                        {q.category}
-                      </span>
-                      <span className="text-xs font-bold text-[#4A0A13]">
-                        {q.project}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className="text-[0.68rem] text-[#8C6D58] font-mono">
-                        {q.timestamp}
-                      </span>
-                      <span className="text-[0.68rem] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        {q.status} ({q.score}%)
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Business Question Statement */}
-                  <div className="space-y-1 pl-1">
-                    <h4 className="font-serif text-lg font-bold text-[#400A12] leading-snug">
-                      "{q.question}"
-                    </h4>
-                  </div>
-
-                  {/* AI Response Card */}
-                  <div className="bg-[#FAF4E8] border border-[#D4AF37]/30 p-4 rounded-xl space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] flex items-center gap-1.5">
-                        <Sparkles size={13} className="text-[#B8860B]" />
-                        <span>AI Verdict & Intelligence Response</span>
-                      </span>
-                      <span className="text-[0.68rem] font-extrabold text-[#400A12] bg-[#F5EAD4] px-2.5 py-0.5 rounded-md">
-                        {q.score}% Confidence
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-[#4A0A13] leading-relaxed">
-                      {q.response}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              {filteredQueries.length === 0 && (
-                <div className="text-center py-12 bg-white/60 border border-dashed border-[#D4AF37]/40 rounded-2xl">
-                  <p className="text-sm font-semibold text-[#8C6D58]">
-                    No queries found matching "{searchQuery}".
-                  </p>
-                  <button
-                    onClick={() => setIsQuestionModalOpen(true)}
-                    className="mt-3 text-xs font-bold text-[#400A12] underline cursor-pointer"
-                  >
-                    Post a new business question
-                  </button>
-                </div>
-              )}
+            {/* Attach to a specific submission when one exists. */}
+            <div className="space-y-1">
+              <label className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider" htmlFor="doc-report">
+                Attach to which submission?
+              </label>
+              <select
+                id="doc-report"
+                value={docReportId}
+                onChange={(e) => setDocReportId(e.target.value)}
+                className="w-full sm:max-w-md rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-2.5 text-xs text-[#4A0A13] focus:border-[#400A12] focus:outline-none cursor-pointer"
+              >
+                <option value="">General — not tied to one venture</option>
+                {projectsList.filter((p) => p.fromApi).map((p) => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+              </select>
+              <p className="text-[0.65rem] text-[#8C6D58]">
+                Linking a file to a venture puts it in front of the reviewer handling that report.
+              </p>
             </div>
 
+            <DocumentUpload
+              key={docReportId || "general"}
+              reportId={docReportId || undefined}
+              uploadedBy={userEmail}
+            />
+          </section>
+        )}
+
+        {/* ---------------- BRAND EQUITY — Indian assessment ---------------- */}
+        {navbarSection === "brand" && (
+          <section className="space-y-4 pt-2">
+            <BrandEquityForm
+              reportId={projectsList.find((p) => p.fromApi)?.id}
+              clientEmail={userEmail}
+              defaultBrandName={projectsList.find((p) => p.fromApi)?.title || ""}
+            />
           </section>
         )}
 
@@ -1365,90 +1250,141 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
               </div>
             </div>
 
-            {/* Active Projects Status Table */}
-            <div className="bg-white/90 border border-[#D4AF37]/40 rounded-2xl p-5 shadow-xs space-y-4">
-              <h4 className="font-serif text-lg font-bold text-[#4A0A13]">
-                Project Evaluation Status Matrix
-              </h4>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-[#4A0A13]">
-                  <thead className="bg-[#F5EAD4] font-mono text-[0.68rem] text-[#B8860B] uppercase">
-                    <tr>
-                      <th className="p-3 rounded-l-xl">Project Name</th>
-                      <th className="p-3">Sector / Industry</th>
-                      <th className="p-3">Evaluation Status</th>
-                      <th className="p-3">Modules Ready</th>
-                      <th className="p-3">Verdict Score</th>
-                      <th className="p-3 rounded-r-xl text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#D4AF37]/20">
-                    {!projectsList.length && (
-                      <tr><td colSpan={6} className="p-8 text-center">
-                        <p className="text-sm font-semibold text-[#400A12]">No ventures submitted yet</p>
-                        <p className="text-xs text-[#7A1C29] mt-1">Submit an intake to start the evaluation — it appears here while an administrator reviews it.</p>
-                      </td></tr>
-                    )}
-                    {!projectsList.length && (
-                  <div className="rounded-2xl border border-dashed border-[#D4AF37]/50 bg-white/70 p-8 text-center">
-                    <p className="text-sm font-semibold text-[#400A12]">No ventures yet</p>
-                    <p className="text-xs text-[#7A1C29] mt-1">Use the intake engine to submit your first venture for evaluation.</p>
-                  </div>
-                )}
-                {projectsList.map((p) => (
-                      <tr key={p.id} className="hover:bg-[#FAF4E8] transition">
-                        <td className="p-3 font-bold text-[#400A12]">{p.title}</td>
-                        <td className="p-3 text-[#8C6D58] font-mono">{p.industry}</td>
-                        <td className="p-3">
-                          {(() => {
-                            const badge = getStatusBadge(p);
-                            return (
-                              <span className={`px-2.5 py-0.5 rounded-full font-bold text-[0.65rem] ${STATUS_BADGE_STYLES[badge.color]}`}>
-                                {badge.label}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        <td className="p-3 font-mono font-bold">{p.modulesProcessed}</td>
-                        <td className="p-3 font-extrabold text-[#400A12]">{p.verdict}</td>
-                        <td className="p-3 text-right">
-                          <div className="inline-flex items-center gap-2">
-                            {/* Approved reports get a prominent View button;
-                                everything else says why it isn't ready. */}
-                            {p.rawStatus === "PUBLISHED" ? (
-                              <button
-                                onClick={() => handleOpenReportOverview(p)}
-                                title="View the approved report and score"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#400A12] hover:bg-[#5C0F1A] text-[#F5D77F] text-[0.68rem] font-bold cursor-pointer border border-[#D4AF37]/40"
-                              >
-                                <Eye size={12} />
-                                <span>View Report</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleOpenReportOverview(p)}
-                                title="Submitted — waiting for an administrator to review and approve"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-[0.68rem] font-bold cursor-pointer hover:bg-amber-100"
-                              >
-                                <Clock size={12} />
-                                <span>Awaiting Approval</span>
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setNavbarSection("modules")}
-                              className="text-[0.68rem] font-bold text-[#400A12] hover:text-[#B8860B] underline cursor-pointer"
-                            >
-                              View Modules
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Project table - scrolls inside its own container on desktop and
+                collapses to stacked cards on phones, so the page itself never
+                scrolls sideways. */}
+            <div className="bg-white/90 border border-[#D4AF37]/40 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h4 className="font-serif text-base sm:text-lg font-bold text-[#4A0A13]">
+                  Project Evaluation Status
+                </h4>
+                <span className="font-mono text-[0.65rem] text-[#8C6D58]">
+                  {projectsList.length} {projectsList.length === 1 ? "venture" : "ventures"}
+                </span>
               </div>
+
+              {projectsList.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[#D4AF37]/50 bg-[#FAF4E8]/60 p-8 text-center">
+                  <p className="text-sm font-semibold text-[#400A12]">No ventures submitted yet</p>
+                  <p className="text-xs text-[#7A1C29] mt-1">
+                    Use the Intake Engine to submit your first venture for evaluation.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop / tablet: real table */}
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full text-left text-xs text-[#4A0A13]">
+                      <thead className="bg-[#F5EAD4] font-mono text-[0.66rem] text-[#B8860B] uppercase">
+                        <tr>
+                          <th scope="col" className="p-3 rounded-l-xl">Project</th>
+                          <th scope="col" className="p-3">Industry</th>
+                          <th scope="col" className="p-3">Status</th>
+                          <th scope="col" className="p-3">Strength</th>
+                          <th scope="col" className="p-3">Modules</th>
+                          <th scope="col" className="p-3">Date</th>
+                          <th scope="col" className="p-3 rounded-r-xl text-right">Report</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#D4AF37]/20">
+                        {projectsList.map((p) => {
+                          const badge = getStatusBadge(p);
+                          return (
+                            <tr key={p.id} className="hover:bg-[#FAF4E8] transition align-top">
+                              <td className="p-3">
+                                <span className="font-bold text-[#400A12]">{p.title}</span>
+                                <span className="block text-[0.68rem] text-[#8C6D58] font-normal max-w-xs truncate">
+                                  {p.verdict}
+                                </span>
+                              </td>
+                              <td className="p-3 text-[#8C6D58] font-mono">{p.industry}</td>
+                              <td className="p-3">
+                                <span className={`px-2.5 py-0.5 rounded-full font-bold text-[0.65rem] ${STATUS_BADGE_STYLES[badge.color]}`}>
+                                  {badge.label}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <div className="flex flex-col gap-1">
+                                  {p.scoreBand && <StrengthBadge band={p.scoreBand} label="Score" size="sm" />}
+                                  {p.dataBand?.band && (
+                                    <StrengthBadge
+                                      band={p.dataBand.band}
+                                      label="Data"
+                                      size="sm"
+                                      title={`Intake ${p.dataBand.completeness}% complete, ${p.dataBand.words} words of detail`}
+                                    />
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-3 font-mono font-bold">{p.modulesProcessed}</td>
+                              <td className="p-3 font-mono text-[#8C6D58]">{p.date}</td>
+                              <td className="p-3 text-right">
+                                {p.rawStatus === "PUBLISHED" ? (
+                                  <button
+                                    onClick={() => handleOpenReportOverview(p)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#400A12] hover:bg-[#5C0F1A] text-[#F5D77F] text-[0.68rem] font-bold cursor-pointer border border-[#D4AF37]/40"
+                                  >
+                                    <Eye size={12} /> View
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleOpenReportOverview(p)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-[0.68rem] font-bold cursor-pointer hover:bg-amber-100"
+                                  >
+                                    <Clock size={12} /> Pending
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Phone: one card per project, same information */}
+                  <div className="sm:hidden space-y-3">
+                    {projectsList.map((p) => {
+                      const badge = getStatusBadge(p);
+                      return (
+                        <div key={p.id} className="rounded-xl border border-[#D4AF37]/40 bg-[#FAF4E8] p-3 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-[#400A12] break-words">{p.title}</p>
+                              <p className="text-[0.68rem] text-[#8C6D58] font-mono">{p.industry}</p>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded-full font-bold text-[0.6rem] shrink-0 ${STATUS_BADGE_STYLES[badge.color]}`}>
+                              {badge.label}
+                            </span>
+                          </div>
+                          <p className="text-[0.7rem] font-bold text-[#400A12]">{p.verdict}</p>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {p.scoreBand && <StrengthBadge band={p.scoreBand} label="Score" size="sm" />}
+                            {p.dataBand?.band && <StrengthBadge band={p.dataBand.band} label="Data" size="sm" />}
+                            <span className="font-mono text-[0.62rem] text-[#8C6D58]">
+                              {p.modulesProcessed} - {p.date}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleOpenReportOverview(p)}
+                            className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[0.7rem] font-bold cursor-pointer ${
+                              p.rawStatus === "PUBLISHED"
+                                ? "bg-[#400A12] text-[#F5D77F] border border-[#D4AF37]/40"
+                                : "border border-amber-300 bg-amber-50 text-amber-800"
+                            }`}
+                          >
+                            {p.rawStatus === "PUBLISHED"
+                              ? <><Eye size={12} /> View Report &amp; Score</>
+                              : <><Clock size={12} /> Awaiting Approval</>}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
+
 
           </section>
         )}
@@ -1523,114 +1459,6 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
          5. MODAL 1: POST BUSINESS QUESTION
          ============================================================ */}
       <AnimatePresence>
-        {isQuestionModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-xl bg-[#FAF4E8] border border-[#D4AF37] rounded-3xl p-6 sm:p-8 shadow-2xl relative text-[#4A0A13]"
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setIsQuestionModalOpen(false)}
-                className="absolute top-5 right-5 p-1.5 rounded-full hover:bg-[#F5EAD4] text-[#8C6D58] hover:text-[#4A0A13] transition cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-
-              {/* Modal Header */}
-              <div className="space-y-1 mb-6">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#B8860B] uppercase tracking-wider font-mono">
-                  <HelpCircle size={14} />
-                  <span>Client Business Intake</span>
-                </div>
-                <h3 className="font-serif text-2xl sm:text-3xl font-extrabold text-[#400A12]">
-                  Post Business Question
-                </h3>
-                <p className="text-xs text-[#7A1C29]">
-                  Submit your core venture problem statement to run automated evaluation across 10 intelligence modules.
-                </p>
-              </div>
-
-              {questionSuccess ? (
-                <div className="py-8 text-center space-y-3">
-                  <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
-                    <Check size={28} />
-                  </div>
-                  <h4 className="font-serif text-xl font-bold text-[#400A12]">
-                    Question Submitted Successfully!
-                  </h4>
-                  <p className="text-xs text-[#8C6D58]">
-                    Synthesizing intelligence modules... Directing you to the Query Section.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handlePostQuestionSubmit} className="space-y-4">
-                  {/* Category Selection */}
-                  <div className="space-y-1">
-                    <label className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">
-                      Evaluation Category
-                    </label>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full rounded-xl border border-[#D4AF37]/60 bg-white px-3.5 py-2.5 text-xs text-[#4A0A13] focus:border-[#400A12] focus:outline-none shadow-xs cursor-pointer font-sans"
-                    >
-                      <option value="Market Foundation">Market Foundation & TAM Whitespace</option>
-                      <option value="Business Viability">Business Viability & Unit Economics</option>
-                      <option value="Launch & Execution">Launch, GTM & Tech Architecture</option>
-                      <option value="Executive Governance">Full 10-Module Executive Verdict</option>
-                    </select>
-                  </div>
-
-                  {/* Question / Problem Statement Field */}
-                  <div className="space-y-1">
-                    <label className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">
-                      Business Question / Problem Statement
-                    </label>
-                    <textarea
-                      required
-                      rows={4}
-                      value={questionText}
-                      onChange={(e) => setQuestionText(e.target.value)}
-                      placeholder="e.g. Can an autonomous drone logistics model for hospital cold-chains achieve positive unit economics in tier-2 cities within 18 months?"
-                      className="w-full rounded-2xl border border-[#D4AF37]/60 bg-white p-3.5 text-xs text-[#4A0A13] placeholder-[#8C6D58]/60 focus:border-[#400A12] focus:outline-none shadow-xs resize-none"
-                    />
-                  </div>
-
-                  {/* Modal Footer Buttons */}
-                  <div className="pt-3 flex items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsQuestionModalOpen(false)}
-                      className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#7A1C29] hover:bg-[#F5EAD4] transition cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmittingQuestion}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#400A12] hover:bg-[#5C0F1A] text-[#F5D77F] font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50"
-                    >
-                      {isSubmittingQuestion ? (
-                        <>
-                          <div className="w-3.5 h-3.5 border-2 border-[#F5D77F] border-t-transparent rounded-full animate-spin" />
-                          <span>Processing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={14} />
-                          <span>Submit & Run Analysis</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </motion.div>
-          </div>
-        )}
       </AnimatePresence>
 
       {/* ============================================================

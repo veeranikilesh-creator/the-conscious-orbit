@@ -8,7 +8,7 @@ async function main() {
   const app = createApp();
   const server = app.listen(env.port, () => {
     console.log(`[api] listening on http://localhost:${env.port}/api`);
-    console.log(`[api] anthropic: ${env.anthropic.enabled ? env.anthropic.model : 'disabled (heuristic verdicts)'}`);
+    console.log(`[api] gemini: ${env.gemini.enabled ? env.gemini.model : 'disabled (heuristic verdicts)'}`);
     console.log(`[api] spyfu: ${env.spyfu.enabled ? 'enabled' : 'disabled (placeholder data)'}`);
   });
 

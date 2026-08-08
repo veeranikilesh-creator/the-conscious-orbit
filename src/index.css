@@ -572,3 +572,72 @@
   transform: translateY(-2px);
   box-shadow: 0 0 25px rgba(212, 175, 55, 0.35);
 }
+
+/* ============================================================
+   RESPONSIVE GUARANTEES
+   Applied globally rather than per-component so a single wide
+   element can never make the whole page scroll sideways on a
+   phone — the usual cause of a "broken" mobile layout.
+   ============================================================ */
+@layer base {
+  html,
+  body {
+    /* Nothing may push the document wider than the viewport. */
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Long unbroken strings (URLs, emails, IDs) wrap instead of
+     stretching their container. */
+  body {
+    overflow-wrap: break-word;
+  }
+
+  /* Media never overflows its column. */
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+}
+
+@layer utilities {
+  /* Wide content that must stay wide scrolls inside its own box. */
+  .scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hide the scrollbar on tab strips while keeping them swipeable. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Comfortable touch targets on phones and tablets: coarse pointers get a
+   minimum tappable height, and iOS stops zooming on focus once inputs are
+   at least 16px. */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  a[role='button'],
+  select,
+  [type='button'],
+  [type='submit'] {
+    min-height: 40px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Range sliders are hard to grab at their default height. */
+  input[type='range'] {
+    height: 28px;
+  }
+}

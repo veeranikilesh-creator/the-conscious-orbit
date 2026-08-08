@@ -1,13 +1,13 @@
 """Orbita AI analysis — port of server/src/integrations/orbita.js.
 
 Provides module-level score analysis and overall venture assessment.
-Degrades gracefully: without ANTHROPIC_API_KEY, returns a deterministic
+Degrades gracefully: without GEMINI_API_KEY, returns a deterministic
 heuristic analysis flagged `live: False`.
 """
 import json
 import os
 
-from .ai_provider import _model_name
+from . import gemini
 from .spyfu import fetch_domain_intelligence
 
 ORBITA_SYSTEM_PROMPT = """You are Orbita, the AI analysis assistant for The Conscious Orbit.
@@ -63,32 +63,18 @@ ANALYSIS_SCHEMA = {
 
 
 def generate_orbita_analysis(report, module_results: list) -> dict:
-    """Generate Orbita's analysis of a report's module scores."""
-    try:
-        import anthropic
-    except ImportError:
+    """Generate Orbita's analysis of a report's module scores via Gemini."""
+    if not gemini.enabled():
         return {
             **_heuristic_orbita_analysis(module_results),
             "live": False,
             "model": None,
-            "note": "The `anthropic` package is not installed — returning heuristic Orbita analysis.",
-        }
-
-    api_key = os.getenv("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        return {
-            **_heuristic_orbita_analysis(module_results),
-            "live": False,
-            "model": None,
-            "note": "ANTHROPIC_API_KEY not configured — returning heuristic Orbita analysis.",
+            "note": "GEMINI_API_KEY not configured - returning heuristic Orbita analysis.",
         }
 
     modules_context = {}
     for mr in module_results:
-        modules_context[mr.module_key] = {
-            "score": mr.score,
-            "output": mr.output,
-        }
+        modules_context[mr.module_key] = {"score": mr.score, "output": mr.output}
 
     try:
         competitor_data = fetch_domain_intelligence(
@@ -97,64 +83,32 @@ def generate_orbita_analysis(report, module_results: list) -> dict:
     except Exception:
         competitor_data = {"note": "SpyFu data unavailable"}
 
-    try:
-        client = anthropic.Anthropic(api_key=api_key)
-        response = client.messages.create(
-            model=_model_name(),
-            max_tokens=16000,
-            thinking={"type": "adaptive"},
-            output_config={"format": {"type": "json_schema", "schema": ANALYSIS_SCHEMA}},
-            system=ORBITA_SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": "\n".join([
-                        "Analyze this venture report. For each module, compare the pipeline score against the output data and flag inconsistencies.",
-                        "",
-                        "## Module Data",
-                        "```json",
-                        json.dumps(modules_context, indent=2),
-                        "```",
-                        "",
-                        "## Competitor Data (SpyFu)",
-                        "```json",
-                        json.dumps(competitor_data, indent=2),
-                        "```",
-                        "",
-                        "Provide your analysis.",
-                    ]),
-                }
-            ],
-        )
+    user_prompt = "\n".join([
+        "Analyze this venture report. For each module, compare the pipeline score against the output data and flag inconsistencies.",
+        "",
+        "## Module Data",
+        "```json",
+        json.dumps(modules_context, indent=2, default=str),
+        "```",
+        "",
+        "## Competitor Data (SpyFu)",
+        "```json",
+        json.dumps(competitor_data, indent=2, default=str),
+        "```",
+        "",
+        "Provide your analysis.",
+    ])
 
-        if response.stop_reason == "refusal":
-            return {
-                **_heuristic_orbita_analysis(module_results),
-                "live": False,
-                "model": _model_name(),
-                "note": "Model declined — returning heuristic analysis.",
-            }
-
-        text = next((b.text for b in response.content if b.type == "text"), "")
-        parsed = json.loads(text)
-
-        usage = getattr(response, "usage", None)
-        return {
-            **parsed,
-            "live": True,
-            "model": response.model,
-            "usage": {
-                "input_tokens": getattr(usage, "input_tokens", None),
-                "output_tokens": getattr(usage, "output_tokens", None),
-            },
-        }
-    except Exception as e:
+    result = gemini.generate_json(ORBITA_SYSTEM_PROMPT, user_prompt, ANALYSIS_SCHEMA)
+    if not result:
         return {
             **_heuristic_orbita_analysis(module_results),
             "live": False,
-            "model": _model_name(),
-            "note": f"Orbita analysis failed ({e}) — returning heuristic analysis.",
+            "model": gemini.model_name(),
+            "note": "Gemini call failed or returned no usable answer - returning heuristic analysis.",
         }
+
+    return {**result["data"], "live": True, "model": result["model"]}
 
 
 def _heuristic_orbita_analysis(module_results: list) -> dict:

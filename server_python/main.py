@@ -42,6 +42,10 @@ from modules import get_module, module_catalogue, run_module
 from scoring import verdict
 from routers.orbita import router as orbita_router
 from routers.review import router as review_router
+from routers.documents import router as documents_router
+from routers.queries import router as queries_router
+from routers.brand_equity import router as brand_equity_router
+from strength import score_band, data_band
 from integrations.email import build_report_docx
 
 Base.metadata.create_all(bind=engine)
@@ -113,6 +117,9 @@ async def request_validation_handler(_request: Request, exc: RequestValidationEr
 
 app.include_router(orbita_router)
 app.include_router(review_router)
+app.include_router(documents_router)
+app.include_router(queries_router)
+app.include_router(brand_equity_router)
 
 
 # ---------- request schemas ----------
@@ -201,7 +208,19 @@ def _client_for(db: Session, report: ReportModel):
 
 
 def _report_json(db: Session, report: ReportModel):
-    return report.to_json(client=_client_for(db, report))
+    """Report JSON plus its strength banding.
+
+    `scoreBand` bands the result; `dataBand` bands the evidence behind it,
+    so a confident number can't hide a nearly-empty intake. Both are added
+    on read, leaving the stored shape untouched.
+    """
+    payload = report.to_json(client=_client_for(db, report))
+    effective_score = payload.get('adminScore')
+    if effective_score is None:
+        effective_score = payload.get('score') or 0
+    payload['scoreBand'] = score_band(effective_score)
+    payload['dataBand'] = data_band(payload)
+    return payload
 
 
 def _pipeline_view(report: ReportModel):
@@ -260,7 +279,7 @@ def api_health():
         'dbType': DB_TYPE,
         'service': f'Python FastAPI + {DB_TYPE}',
         'integrations': {
-            'anthropic': bool(os.getenv('ANTHROPIC_API_KEY')),
+            'gemini': bool(os.getenv('GEMINI_API_KEY')),
             'spyfu': bool(os.getenv('SPYFU_API_ID') and os.getenv('SPYFU_SECRET_KEY')),
         },
         'uptimeSeconds': round(time.time() - START_TIME),

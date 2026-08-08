@@ -18,24 +18,38 @@ const CLUSTER_TABS = [
   { id: "launch", name: "Launch & Execution", cluster: "Cluster 3" },
 ];
 
+/* [key, label, placeholder, multiline, explanation] — the explanation is
+   shown under every field so the question is never ambiguous. */
 const CLUSTER_FIELDS = {
   market: [
-    ["problem", "Core Market Problem", "What broken process or unmet need does this venture attack?", true],
-    ["pain", "Customer Pain Point", "The specific pain the customer feels today", false],
-    ["wtp", "Willingness To Pay", 'e.g. "$15-25 per priority delivery"', false],
-    ["icp", "Ideal Customer Profile (ICP)", "Who exactly buys this", false],
+    ["problem", "Core Market Problem", "What broken process or unmet need does this venture attack?", true,
+     "Describe the problem in your customer's words. The more specific and detailed you are here, the more accurate every downstream score becomes."],
+    ["pain", "Customer Pain Point", "e.g. Wastage from over-ordering perishables", false,
+     "What does this problem cost them today — money, time, risk or reputation?"],
+    ["wtp", "Willingness To Pay", 'e.g. "150 rupees per meal" or "$15-25 per delivery"', false,
+     "What a customer would realistically pay. Include the number and the unit; pricing analysis reads it."],
+    ["icp", "Ideal Customer Profile (ICP)", "e.g. Working professionals aged 22-40 in tier-2 cities", false,
+     "Who exactly buys this. Be narrow — a precise segment scores better than 'everyone'."],
   ],
   viability: [
-    ["revenue", "Revenue Model", "e.g. Per-delivery + monthly retainer", false],
-    ["margin", "Gross Margin Target", "e.g. 62% at scale", false],
-    ["costs", "Key Cost Drivers", "e.g. Fleet, batteries, compliance", false],
-    ["breakeven", "Breakeven Horizon", "e.g. Month 18", false],
+    ["revenue", "Revenue Model", "e.g. Dine-in plus delivery commission", false,
+     "How money actually reaches you, and from whom."],
+    ["margin", "Gross Margin Target", "e.g. 38% by year two", false,
+     "What you keep after direct costs. A percentage or a rough figure is fine."],
+    ["costs", "Key Cost Drivers", "e.g. Raw materials, staff, rent", false,
+     "The two or three costs that dominate your P&L."],
+    ["breakeven", "Breakeven Horizon", "e.g. Month 18", false,
+     "When revenue is expected to cover costs. Anything beyond 24 months is flagged as hard to finance."],
   ],
   launch: [
-    ["geography", "Launch Geography", "e.g. Karnataka pilot zone", false],
-    ["gtm", "Go-To-Market Motion", "e.g. Govt partnerships + NGO tenders", false],
-    ["milestones", "Key Milestones (12mo)", "e.g. 3 hubs live · 10 clinics onboarded", true],
-    ["ask", "Funding Ask", "e.g. $1.2M seed", false],
+    ["geography", "Launch Geography", "e.g. Chennai, then Tamil Nadu", false,
+     "Where you sell first. Start narrow — focus scores better than 'pan-India'."],
+    ["gtm", "Go-To-Market Motion", "e.g. Local delivery apps plus community marketing", false,
+     "How the first hundred customers actually find you."],
+    ["milestones", "Key Milestones (12 months)", "e.g. 2 outlets live -> 500 daily covers -> break even", true,
+     "The checkpoints that prove progress over the next year. Concrete numbers beat ambitions."],
+    ["ask", "Funding Ask", "e.g. INR 40,00,000 or $500,000", false,
+     "How much capital you need and, ideally, what it buys."],
   ],
 };
 
@@ -140,6 +154,17 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
   const [phase, setPhase] = useState("idle"); // 'idle' | 'running' | 'done'
   const [progressText, setProgressText] = useState("");
   const [doneNote, setDoneNote] = useState("");
+
+  /* Total words written across every cluster answer. Drives the detail meter
+     and the 50-word threshold the backend uses to band data strength. */
+  const detailWords = React.useMemo(() => {
+    const text = Object.values(clusters)
+      .flatMap((group) => Object.values(group))
+      .filter((v) => typeof v === "string")
+      .join(" ")
+      .trim();
+    return text ? text.split(/\s+/).length : 0;
+  }, [clusters]);
 
   const setClusterField = (cluster, key, value) =>
     setClusters((prev) => ({ ...prev, [cluster]: { ...prev[cluster], [key]: value } }));
@@ -351,8 +376,38 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
         {/* LAYER 2 — CLUSTER FORMS */}
         <div className="space-y-4">
           <LayerBadge n={2} title="Cluster Forms" note="Report-specific inputs grouped by theme" />
-          <div className="bg-white/90 border border-[#D4AF37]/40 rounded-2xl p-5 shadow-xs space-y-5">
-            <div className="flex items-center gap-1.5 overflow-x-auto">
+
+          {/* Detail meter — the analysis genuinely improves with more written
+              context, so show progress toward the 50-word threshold instead of
+              only claiming it in help text. */}
+          <div className={`rounded-2xl border p-3 sm:p-4 ${
+            detailWords >= 50 ? "border-emerald-300 bg-emerald-50" : "border-[#D4AF37]/50 bg-[#FAF4E8]/70"
+          }`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className={`text-xs font-bold ${detailWords >= 50 ? "text-emerald-800" : "text-[#400A12]"}`}>
+                {detailWords >= 50
+                  ? `Detail level: good — ${detailWords} words captured`
+                  : `Detail level: ${detailWords} of 50 words`}
+              </p>
+              <span className="font-mono text-[0.65rem] text-[#8C6D58]">
+                {Math.min(100, Math.round((detailWords / 50) * 100))}%
+              </span>
+            </div>
+            <div className="mt-2 h-1.5 w-full rounded-full bg-[#4A0A13]/10 overflow-hidden">
+              <div
+                className={`h-1.5 rounded-full transition-all ${detailWords >= 50 ? "bg-emerald-500" : "bg-[#B8860B]"}`}
+                style={{ width: `${Math.min(100, (detailWords / 50) * 100)}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-[0.65rem] text-[#7A1C29]">
+              {detailWords >= 50
+                ? "Enough written context for a properly grounded analysis. More still helps."
+                : "Write about 50 words or more across these answers and the analysis uses that extra context to produce a more accurate result."}
+            </p>
+          </div>
+
+          <div className="bg-white/90 border border-[#D4AF37]/40 rounded-2xl p-4 sm:p-5 shadow-xs space-y-5">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
               {CLUSTER_TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -371,11 +426,12 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {CLUSTER_FIELDS[activeCluster].map(([key, label, placeholder, multiline]) => (
+              {CLUSTER_FIELDS[activeCluster].map(([key, label, placeholder, multiline, explanation]) => (
                 <div key={key} className={`space-y-1 ${multiline ? "sm:col-span-2" : ""}`}>
-                  <label className={labelCls}>{label}</label>
+                  <label className={labelCls} htmlFor={`cluster-${activeCluster}-${key}`}>{label}</label>
                   {multiline ? (
                     <textarea
+                      id={`cluster-${activeCluster}-${key}`}
                       rows={3}
                       value={clusters[activeCluster][key]}
                       onChange={(e) => setClusterField(activeCluster, key, e.target.value)}
@@ -384,12 +440,16 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
                     />
                   ) : (
                     <input
+                      id={`cluster-${activeCluster}-${key}`}
                       type="text"
                       value={clusters[activeCluster][key]}
                       onChange={(e) => setClusterField(activeCluster, key, e.target.value)}
                       placeholder={placeholder}
                       className={fieldCls}
                     />
+                  )}
+                  {explanation && (
+                    <p className="text-[0.65rem] text-[#8C6D58] leading-relaxed">{explanation}</p>
                   )}
                 </div>
               ))}
