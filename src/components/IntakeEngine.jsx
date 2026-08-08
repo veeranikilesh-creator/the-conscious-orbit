@@ -481,7 +481,7 @@ export default function IntakeEngine({ apiStatus, onComplete, onSimulated }) {
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#400A12] hover:bg-[#5C0F1A] text-[#F5D77F] font-extrabold text-xs shadow-lg transition cursor-pointer border border-[#D4AF37]/40 shrink-0"
               >
                 <Play size={14} className="fill-[#F5D77F]" />
-                <span>Generate Full Report</span>
+                <span>Generate Report</span>
               </button>
             </div>
           )}

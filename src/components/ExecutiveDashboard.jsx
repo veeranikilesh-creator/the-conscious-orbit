@@ -33,6 +33,7 @@ import {
   FolderPlus,
   Play,
   Clock,
+  Eye,
   BarChart3,
   Zap,
   RotateCcw
@@ -1413,14 +1414,27 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
                         <td className="p-3 font-extrabold text-[#400A12]">{p.verdict}</td>
                         <td className="p-3 text-right">
                           <div className="inline-flex items-center gap-2">
-                            <button
-                              onClick={() => handleOpenReportOverview(p)}
-                              title="View report overview (with .doc download)"
-                              className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-[#400A12] hover:text-[#B8860B] cursor-pointer"
-                            >
-                              <FileText size={12} />
-                              <span>Report</span>
-                            </button>
+                            {/* Approved reports get a prominent View button;
+                                everything else says why it isn't ready. */}
+                            {p.rawStatus === "PUBLISHED" ? (
+                              <button
+                                onClick={() => handleOpenReportOverview(p)}
+                                title="View the approved report and score"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#400A12] hover:bg-[#5C0F1A] text-[#F5D77F] text-[0.68rem] font-bold cursor-pointer border border-[#D4AF37]/40"
+                              >
+                                <Eye size={12} />
+                                <span>View Report</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenReportOverview(p)}
+                                title="Submitted — waiting for an administrator to review and approve"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-[0.68rem] font-bold cursor-pointer hover:bg-amber-100"
+                              >
+                                <Clock size={12} />
+                                <span>Awaiting Approval</span>
+                              </button>
+                            )}
                             <button
                               onClick={() => setNavbarSection("modules")}
                               className="text-[0.68rem] font-bold text-[#400A12] hover:text-[#B8860B] underline cursor-pointer"
@@ -1693,10 +1707,23 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
 
                     <button
                       onClick={() => handleOpenReportOverview(p)}
-                      className="w-full mt-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#D4AF37]/50 text-[0.68rem] font-bold text-[#400A12] hover:bg-[#F5EAD4] transition cursor-pointer"
+                      className={`w-full mt-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[0.68rem] font-bold transition cursor-pointer ${
+                        p.rawStatus === "PUBLISHED"
+                          ? "bg-[#400A12] hover:bg-[#5C0F1A] text-[#F5D77F] border border-[#D4AF37]/40"
+                          : "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                      }`}
                     >
-                      <FileText size={12} />
-                      <span>View Report Overview</span>
+                      {p.rawStatus === "PUBLISHED" ? (
+                        <>
+                          <Eye size={12} />
+                          <span>View Report & Score</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock size={12} />
+                          <span>Awaiting Admin Approval</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 ))}

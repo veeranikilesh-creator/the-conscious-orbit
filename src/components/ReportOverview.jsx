@@ -68,6 +68,11 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
 
   const scoredModules = Object.entries(MODULE_LABELS).filter(([key]) => moduleResults[key]);
 
+  /* A report only becomes readable once an admin has reviewed and published
+     it. Before that the client sees a waiting notice instead of a zero score,
+     an empty verdict and a download of an unapproved document. */
+  const pending = Boolean(report.status) && report.status !== "PUBLISHED";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
       <motion.div
@@ -95,8 +100,24 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
           </button>
         </div>
 
+        {/* Waiting for approval — nothing below is released until then */}
+        {pending && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-center space-y-2">
+            <p className="text-3xl">⏳</p>
+            <p className="text-sm font-bold text-amber-900">Waiting for admin approval</p>
+            <p className="text-xs text-amber-800 max-w-md mx-auto">
+              Your intake has been submitted and is queued for review. An administrator will
+              process the ten intelligence modules and approve the result — the score, verdict
+              and downloadable report unlock here the moment that happens.
+            </p>
+            <p className="font-mono text-[0.65rem] uppercase tracking-wider text-amber-700 pt-1">
+              Current stage: {report.status}
+            </p>
+          </div>
+        )}
+
         {/* Admin verified score (when available) */}
-        {report.adminScore !== null && report.adminScore !== undefined && (
+        {!pending && report.adminScore !== null && report.adminScore !== undefined && (
           <div className="mb-2 p-4 border border-green-500/20 rounded-lg bg-green-500/5">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-green-400 font-semibold">Verified Score</span>
@@ -110,6 +131,7 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
         )}
 
         {/* Score + verdict strip */}
+        {!pending && (
         <div className="rounded-2xl border-2 border-[#D4AF37] bg-white p-5 flex flex-wrap items-center gap-x-8 gap-y-3">
           <div className="text-center">
             <p className="font-mono text-[0.65rem] uppercase font-bold text-[#B8860B] tracking-wider">Conscious Orbital Score</p>
@@ -122,8 +144,10 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
             <p className="text-xs italic text-[#7A1C29] flex-1 min-w-52">"{verdict.headline}"</p>
           )}
         </div>
+        )}
 
         {/* Download box */}
+        {!pending && (
         <div className="rounded-2xl border border-[#D4AF37]/60 bg-[#F5EAD4]/70 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
             <FileText size={26} className="text-[#B8860B] shrink-0 mt-0.5" />
@@ -142,9 +166,10 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
             <span>Download .doc</span>
           </button>
         </div>
+        )}
 
         {/* Executive verdict */}
-        {verdict && (
+        {!pending && verdict && (
           <div className="rounded-2xl border border-[#D4AF37]/40 bg-white p-5 space-y-3">
             <h3 className="font-mono text-[0.68rem] uppercase font-bold text-[#B8860B] tracking-wider">Executive Verdict</h3>
             {verdict.rationale && <p className="text-xs text-[#4A0A13]">{verdict.rationale}</p>}
@@ -172,7 +197,7 @@ export default function ReportOverview({ report, moduleResults = {}, onClose }) 
         )}
 
         {/* Module scores — collapsible auto-generated pipeline scores */}
-        {scoredModules.length > 0 && (
+        {!pending && scoredModules.length > 0 && (
           <details className="rounded-2xl border border-[#D4AF37]/40 bg-white p-5 space-y-3">
             <summary className="text-sm text-[#9A9A9A] cursor-pointer hover:text-[#CFCFCF] font-mono text-[0.68rem] uppercase font-bold tracking-wider">
               Auto-generated Pipeline Score: {score}/100
