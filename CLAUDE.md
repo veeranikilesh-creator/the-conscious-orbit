@@ -140,7 +140,7 @@ report state, the admin Report Tracking section or the review/approve flow:
   `generate_json` helpers return `None`/`null` on *any* failure (missing
   `GEMINI_API_KEY`, network error, safety block, unparseable output) and every
   caller falls back to its deterministic heuristic. Env: `GEMINI_API_KEY`,
-  `GEMINI_MODEL` (default `gemini-2.0-flash`).
+  `GEMINI_MODEL` (default `gemini-3.6-flash`, the latest GA model). Gemini 3 moved structured output to `generationConfig.responseFormat.text` and warns against lowering `temperature`, so the client detects the generation from the model name, picks the right shape, leaves temperature alone on 3.x, and retries once with the other shape if a request fails.
 - **Documents** — `routers/documents.py`, `DocumentUpload.jsx`. Bytes go to
   `server_python/uploads/` under a UUID name; only metadata is in the database.
   Extension allow-list plus a 15 MB cap. Admins mount the same component with

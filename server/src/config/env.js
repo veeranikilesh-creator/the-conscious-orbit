@@ -12,7 +12,7 @@ export const env = {
      deterministic heuristic when no key is set, so the pipeline still runs. */
   gemini: {
     apiKey: process.env.GEMINI_API_KEY ?? '',
-    model: process.env.GEMINI_MODEL ?? 'gemini-2.0-flash',
+    model: process.env.GEMINI_MODEL ?? 'gemini-3.6-flash',
     get enabled() {
       return Boolean(process.env.GEMINI_API_KEY);
     },
