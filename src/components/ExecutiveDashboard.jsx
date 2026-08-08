@@ -48,11 +48,11 @@ const INITIAL_INTELLIGENCE_MODULES = [
     name: "Market Sizing & Whitespace",
     category: "Market Foundation",
     icon: Target,
-    status: "COMPLETED",
-    score: 88,
+    status: "PENDING",
+    score: null,
     desc: "TAM/SAM/SOM estimation, competitive whitespace mapping, and structural market sizing.",
-    lastUpdated: "2 hours ago",
-    project: "EcoFly Medical Drones"
+    lastUpdated: null,
+    project: null
   },
   {
     id: "mod-2",
@@ -60,11 +60,11 @@ const INITIAL_INTELLIGENCE_MODULES = [
     name: "Competitor Intelligence",
     category: "Market Foundation",
     icon: Layers,
-    status: "COMPLETED",
-    score: 92,
+    status: "PENDING",
+    score: null,
     desc: "Feature teardowns, pricing models, positioning matrices, and defensibility moats.",
-    lastUpdated: "4 hours ago",
-    project: "Apex AI Recruiter"
+    lastUpdated: null,
+    project: null
   },
   {
     id: "mod-3",
@@ -72,11 +72,11 @@ const INITIAL_INTELLIGENCE_MODULES = [
     name: "Financial Viability & Unit Economics",
     category: "Business Viability",
     icon: DollarSign,
-    status: "IN_PROGRESS",
-    score: 76,
+    status: "PENDING",
+    score: null,
     desc: "CAC, LTV, payback period, gross margin modeling, and break-even trajectory.",
-    lastUpdated: "Just now",
-    project: "GreenPack Biodegradable"
+    lastUpdated: null,
+    project: null
   },
   {
     id: "mod-4",
@@ -84,11 +84,11 @@ const INITIAL_INTELLIGENCE_MODULES = [
     name: "Go-To-Market Strategy",
     category: "Launch & Execution",
     icon: TrendingUp,
-    status: "COMPLETED",
-    score: 85,
+    status: "PENDING",
+    score: null,
     desc: "Channel selection, sales cycle optimization, partner ecosystems, and early traction engines.",
-    lastUpdated: "1 day ago",
-    project: "EcoFly Medical Drones"
+    lastUpdated: null,
+    project: null
   },
   {
     id: "mod-5",
@@ -96,11 +96,11 @@ const INITIAL_INTELLIGENCE_MODULES = [
     name: "Risk & Vulnerability Audit",
     category: "Business Viability",
     icon: ShieldAlert,
-    status: "IN_PROGRESS",
-    score: 64,
+    status: "PENDING",
+    score: null,
     desc: "Single points of failure, supply chain exposure, key-person dependencies, and regulatory risks.",
-    lastUpdated: "3 hours ago",
-    project: "Nimbus Cloud Audit"
+    lastUpdated: null,
+    project: null
   },
   {
     id: "mod-6",
@@ -108,11 +108,11 @@ const INITIAL_INTELLIGENCE_MODULES = [
     name: "Customer Persona & Demand Signal",
     category: "Market Foundation",
     icon: Activity,
-    status: "COMPLETED",
-    score: 90,
+    status: "PENDING",
+    score: null,
     desc: "Problem severity validation, willingness-to-pay signals, and user journey bottlenecks.",
-    lastUpdated: "Yesterday",
-    project: "Helix Pharma Ops"
+    lastUpdated: null,
+    project: null
   },
   {
     id: "mod-7",
@@ -121,10 +121,10 @@ const INITIAL_INTELLIGENCE_MODULES = [
     category: "Business Viability",
     icon: Building2,
     status: "PENDING",
-    score: 45,
+    score: null,
     desc: "ISO, GDPR, HIPAA, and industry-specific compliance requirements audit.",
-    lastUpdated: "Queued",
-    project: "Verdant Agri-Tech"
+    lastUpdated: null,
+    project: null
   },
   {
     id: "mod-8",
@@ -132,11 +132,11 @@ const INITIAL_INTELLIGENCE_MODULES = [
     name: "Technology Architecture Audit",
     category: "Launch & Execution",
     icon: Cpu,
-    status: "COMPLETED",
-    score: 95,
+    status: "PENDING",
+    score: null,
     desc: "System scalability, tech stack vulnerability, maintenance debt, and IP audit.",
-    lastUpdated: "2 days ago",
-    project: "Apex AI Recruiter"
+    lastUpdated: null,
+    project: null
   },
   {
     id: "mod-9",
@@ -144,11 +144,11 @@ const INITIAL_INTELLIGENCE_MODULES = [
     name: "Operations & Supply Bottlenecks",
     category: "Launch & Execution",
     icon: PieChart,
-    status: "IN_PROGRESS",
-    score: 82,
+    status: "PENDING",
+    score: null,
     desc: "Process latency, fulfillment overheads, vendor SLA analysis, and operational yield.",
-    lastUpdated: "5 hours ago",
-    project: "Helix Pharma Ops"
+    lastUpdated: null,
+    project: null
   },
   {
     id: "mod-10",
@@ -156,11 +156,11 @@ const INITIAL_INTELLIGENCE_MODULES = [
     name: "Executive Verdict & Scorecard",
     category: "Executive Governance",
     icon: Sparkles,
-    status: "COMPLETED",
-    score: 89,
+    status: "PENDING",
+    score: null,
     desc: "Synthesized binary GO/NO-GO recommendation, capital deployment verdict, and board summary.",
-    lastUpdated: "1 hour ago",
-    project: "EcoFly Medical Drones"
+    lastUpdated: null,
+    project: null
   }
 ];
 
@@ -371,100 +371,18 @@ function ReqSlider({ label, value, onChange }) {
   );
 }
 
-const INITIAL_MY_PROJECTS = [
-  {
-    id: "p1",
-    title: "EcoFly Medical Drones",
-    industry: "Healthcare & Logistics",
-    verdict: "GO (89%)",
-    status: "ACTIVE",
-    modulesProcessed: "10/10",
-    date: "2026-08-01",
-    description: "Autonomous cold-chain drone delivery network for rural tier-2 hospital hubs.",
-    rawStatus: "PUBLISHED",
-    adminScore: 87,
-    approvalNote: "Verified by admin review panel.",
-    adminOverrides: null,
-  },
-  {
-    id: "p2",
-    title: "Apex AI Recruiter",
-    industry: "HR Tech & Enterprise SaaS",
-    verdict: "GO (86%)",
-    status: "ACTIVE",
-    modulesProcessed: "9/10",
-    date: "2026-07-28",
-    description: "AI autonomous agent system for technical engineering candidate screening.",
-    rawStatus: "PUBLISHED",
-    adminScore: null,
-    approvalNote: null,
-    adminOverrides: null,
-  },
-  {
-    id: "p3",
-    title: "GreenPack Biodegradable",
-    industry: "Retail & Packaging",
-    verdict: "CONDITIONAL (72%)",
-    status: "UNDER_REVIEW",
-    modulesProcessed: "6/10",
-    date: "2026-07-25",
-    description: "Bio-polymers derived from agricultural waste for eco-friendly packaging.",
-    rawStatus: "REVIEWING",
-    adminScore: null,
-    approvalNote: null,
-    adminOverrides: null,
-  },
-  {
-    id: "p4",
-    title: "Nimbus Cloud Audit",
-    industry: "Fintech B2B",
-    verdict: "PENDING",
-    status: "INTAKE",
-    modulesProcessed: "2/10",
-    date: "2026-08-03",
-    description: "Automated real-time compliance audit engine for AWS/GCP cloud environments.",
-    rawStatus: "RECEIVED",
-    adminScore: null,
-    approvalNote: null,
-    adminOverrides: null,
-  }
-];
+const INITIAL_MY_PROJECTS = [];
+/* No demo ventures: the portal lists only what this client actually
+   submitted through the intake engine, loaded from the backend. */
+
 
 /* ============================================================
    INITIAL POSTED BUSINESS QUESTIONS & RESPONSES
    ============================================================ */
-const INITIAL_QUERIES = [
-  {
-    id: "q1",
-    question: "Can an autonomous drone logistics model for hospital cold-chains achieve positive unit economics in tier-2 cities within 18 months?",
-    category: "Business Viability",
-    project: "EcoFly Medical Drones",
-    status: "COMPLETED",
-    score: 89,
-    timestamp: "2 hours ago",
-    response: "Unit economics break-even achieved at month 18.4 based on MOD-03 financial modeling with $4.20 per delivery mile overhead. Customer payback period is 4.2 months. GO (89%) capital allocation verdict recommended."
-  },
-  {
-    id: "q2",
-    question: "What is the TAM/SAM competitive whitespace for AI recruiter screening agents in enterprise SaaS hiring?",
-    category: "Market Foundation",
-    project: "Apex AI Recruiter",
-    status: "COMPLETED",
-    score: 86,
-    timestamp: "1 day ago",
-    response: "Global TAM estimated at $14.8B with SAM of $3.2B at 24.5% CAGR. Primary whitespace lies in multi-round live technical coding assessment. Moat defensibility verified across MOD-02."
-  },
-  {
-    id: "q3",
-    question: "What are the primary regulatory compliance barriers for bio-polymer packaging in EU export markets?",
-    category: "Business Viability",
-    project: "GreenPack Biodegradable",
-    status: "IN_PROGRESS",
-    score: 72,
-    timestamp: "3 days ago",
-    response: "EU Single-Use Plastics Directive compliance requires EN 13432 compostability certification. Preliminary MOD-07 score indicates 72% readiness with 2 open compliance action items."
-  }
-];
+const INITIAL_QUERIES = [];
+/* No demo questions — the query desk starts empty and fills as the
+   client posts real questions. */
+
 
 export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
   /* Display name derived from the signed-in email's domain:
@@ -1205,6 +1123,12 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
 
             {/* Queries Grid */}
             <div className="grid grid-cols-1 gap-5">
+              {!filteredQueries.length && (
+                <div className="rounded-2xl border border-dashed border-[#D4AF37]/50 bg-white/70 p-8 text-center">
+                  <p className="text-sm font-semibold text-[#400A12]">No questions posted yet</p>
+                  <p className="text-xs text-[#7A1C29] mt-1">Post a business question and the response appears here once reviewed.</p>
+                </div>
+              )}
               {filteredQueries.map((q) => (
                 <div
                   key={q.id}
@@ -1459,7 +1383,19 @@ export default function ExecutiveDashboard({ onLogout, onGoHome, userEmail }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#D4AF37]/20">
-                    {projectsList.map((p) => (
+                    {!projectsList.length && (
+                      <tr><td colSpan={6} className="p-8 text-center">
+                        <p className="text-sm font-semibold text-[#400A12]">No ventures submitted yet</p>
+                        <p className="text-xs text-[#7A1C29] mt-1">Submit an intake to start the evaluation — it appears here while an administrator reviews it.</p>
+                      </td></tr>
+                    )}
+                    {!projectsList.length && (
+                  <div className="rounded-2xl border border-dashed border-[#D4AF37]/50 bg-white/70 p-8 text-center">
+                    <p className="text-sm font-semibold text-[#400A12]">No ventures yet</p>
+                    <p className="text-xs text-[#7A1C29] mt-1">Use the intake engine to submit your first venture for evaluation.</p>
+                  </div>
+                )}
+                {projectsList.map((p) => (
                       <tr key={p.id} className="hover:bg-[#FAF4E8] transition">
                         <td className="p-3 font-bold text-[#400A12]">{p.title}</td>
                         <td className="p-3 text-[#8C6D58] font-mono">{p.industry}</td>

@@ -41,6 +41,16 @@ export async function submitReview(req, res) {
     report.reviewedAt = new Date();
     report.score = adminScore;
 
+    /* The client portal renders GO/PIVOT from `decision`, so the admin's
+       verdict has to be recorded there too — otherwise an approved report
+       shows as "CONDITIONAL" regardless of what the reviewer decided. An
+       explicit verdict wins; without one, fall back to the 60-point
+       threshold the scoring engine uses. */
+    const verdict = String(adminVerdict || '').trim().toUpperCase();
+    if (['GO', 'PROCEED'].includes(verdict)) report.decision = 1;
+    else if (['PIVOT', 'NO', 'NO-GO', 'NO GO'].includes(verdict)) report.decision = 0;
+    else report.decision = adminScore >= 60 ? 1 : 0;
+
     report.recordTransition('PUBLISHED', 'Admin approved report');
     await report.save();
 

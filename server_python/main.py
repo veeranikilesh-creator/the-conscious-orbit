@@ -124,6 +124,9 @@ class ClientPayload(BaseModel):
     geography: Optional[str] = None
     businessModel: Optional[str] = None
     contact: Optional[str] = None
+    # Delivery address for the approved report. Without this the review step
+    # cannot email the client their strategy document.
+    email: Optional[str] = None
 
 
 class ReportCreateSchema(BaseModel):
@@ -293,6 +296,7 @@ def create_report(payload: ReportCreateSchema, db: Session = Depends(get_db)):
             geography=payload.client.geography,
             business_model=payload.client.businessModel or 'B2B',
             contact=(payload.client.contact or '').lower() or None,
+            email=(payload.client.email or '').strip().lower() or None,
         )
         db.add(client)
         client_id = client.id

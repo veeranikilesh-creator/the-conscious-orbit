@@ -43,6 +43,19 @@ def submit_review(report_id: str, body: ReviewRequest, db: Session = Depends(get
     report.reviewed_at = datetime.now(timezone.utc)
     report.score = body.adminScore
 
+    # The client portal renders GO/PIVOT from `decision`, so the admin's
+    # verdict has to be recorded there too — otherwise an approved report
+    # shows as "CONDITIONAL" no matter what the reviewer decided. An explicit
+    # verdict wins; without one, fall back to the 60-point threshold the
+    # scoring engine uses.
+    verdict = (body.adminVerdict or "").strip().upper()
+    if verdict in ("GO", "PROCEED"):
+        report.decision = 1
+    elif verdict in ("PIVOT", "NO", "NO-GO", "NO GO"):
+        report.decision = 0
+    else:
+        report.decision = 1 if body.adminScore >= 60 else 0
+
     assert_transition(report.status, "PUBLISHED")
     report.status = "PUBLISHED"
     report.action = "DELIVERED"

@@ -1,9 +1,21 @@
 import os
 import logging
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 logger = logging.getLogger("conscious_orbit.db")
+
+# Load server_python/.env before reading any settings, so DATABASE_URL and the
+# integration keys can live in a file rather than the shell environment. Without
+# this the .env is ignored and Postgres silently falls back to SQLite.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(Path(__file__).resolve().parent / ".env")
+except ImportError:  # python-dotenv is optional; env vars still work.
+    pass
 
 # PostgreSQL Database Connection URL with environment variable override
 POSTGRES_URI = os.getenv(

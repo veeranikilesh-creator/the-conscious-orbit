@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { checkHealth, listReports, advanceReport, revertReport, getReport, deleteReport, processReport } from "../api.js";
 import { downloadReportDoc } from "../reportDoc.js";
@@ -59,11 +59,11 @@ const INITIAL_10_MODULES = [
     name: "Market Sizing & Whitespace",
     category: "Market Foundation",
     icon: Target,
-    status: "COMPLETED",
-    score: 88,
+    status: "PENDING",
+    score: null,
     desc: "TAM/SAM/SOM structural estimation, whitespace analysis, and market potential.",
-    leadAuditor: "Dr. Aris Thorne",
-    activeProjects: 4
+    leadAuditor: null,
+    activeProjects: 0
   },
   {
     id: "mod-02",
@@ -71,11 +71,11 @@ const INITIAL_10_MODULES = [
     name: "Competitor Intelligence",
     category: "Market Foundation",
     icon: Layers,
-    status: "COMPLETED",
-    score: 92,
+    status: "PENDING",
+    score: null,
     desc: "Feature teardowns, pricing models, positioning matrices, and defensibility moats.",
-    leadAuditor: "Sophia Vance",
-    activeProjects: 5
+    leadAuditor: null,
+    activeProjects: 0
   },
   {
     id: "mod-03",
@@ -83,11 +83,11 @@ const INITIAL_10_MODULES = [
     name: "Financial Viability & Unit Economics",
     category: "Business Viability",
     icon: DollarSign,
-    status: "IN_PROGRESS",
-    score: 76,
+    status: "PENDING",
+    score: null,
     desc: "CAC, LTV, payback period, gross margin modeling, and break-even trajectory.",
-    leadAuditor: "Admin Governance",
-    activeProjects: 3
+    leadAuditor: null,
+    activeProjects: 0
   },
   {
     id: "mod-04",
@@ -95,11 +95,11 @@ const INITIAL_10_MODULES = [
     name: "Go-To-Market Strategy",
     category: "Launch & Execution",
     icon: TrendingUp,
-    status: "COMPLETED",
-    score: 85,
+    status: "PENDING",
+    score: null,
     desc: "Channel selection, sales cycle optimization, partner ecosystems, and GTM engines.",
-    leadAuditor: "Marcus Sterling",
-    activeProjects: 4
+    leadAuditor: null,
+    activeProjects: 0
   },
   {
     id: "mod-05",
@@ -107,11 +107,11 @@ const INITIAL_10_MODULES = [
     name: "Risk & Vulnerability Audit",
     category: "Business Viability",
     icon: ShieldAlert,
-    status: "IN_PROGRESS",
-    score: 64,
+    status: "PENDING",
+    score: null,
     desc: "Single points of failure, supply chain exposure, and regulatory compliance risks.",
-    leadAuditor: "Elena Rostova",
-    activeProjects: 2
+    leadAuditor: null,
+    activeProjects: 0
   },
   {
     id: "mod-06",
@@ -119,11 +119,11 @@ const INITIAL_10_MODULES = [
     name: "Customer Persona & Demand Signal",
     category: "Market Foundation",
     icon: Activity,
-    status: "COMPLETED",
-    score: 90,
+    status: "PENDING",
+    score: null,
     desc: "Problem severity validation, willingness-to-pay signals, and journey friction.",
-    leadAuditor: "David Chen",
-    activeProjects: 6
+    leadAuditor: null,
+    activeProjects: 0
   },
   {
     id: "mod-07",
@@ -132,10 +132,10 @@ const INITIAL_10_MODULES = [
     category: "Business Viability",
     icon: Building2,
     status: "PENDING",
-    score: 45,
+    score: null,
     desc: "ISO, GDPR, HIPAA, and industry-specific regulatory standards audit.",
-    leadAuditor: "Admin Governance",
-    activeProjects: 2
+    leadAuditor: null,
+    activeProjects: 0
   },
   {
     id: "mod-08",
@@ -143,11 +143,11 @@ const INITIAL_10_MODULES = [
     name: "Technology Architecture Audit",
     category: "Launch & Execution",
     icon: Cpu,
-    status: "COMPLETED",
-    score: 95,
+    status: "PENDING",
+    score: null,
     desc: "System scalability, tech stack vulnerability, maintenance debt, and IP integrity.",
-    leadAuditor: "Sophia Vance",
-    activeProjects: 5
+    leadAuditor: null,
+    activeProjects: 0
   },
   {
     id: "mod-09",
@@ -155,11 +155,11 @@ const INITIAL_10_MODULES = [
     name: "Operations & Supply Bottlenecks",
     category: "Launch & Execution",
     icon: PieChart,
-    status: "IN_PROGRESS",
-    score: 82,
+    status: "PENDING",
+    score: null,
     desc: "Process latency, fulfillment overheads, vendor SLA analysis, and operational yield.",
-    leadAuditor: "David Chen",
-    activeProjects: 3
+    leadAuditor: null,
+    activeProjects: 0
   },
   {
     id: "mod-10",
@@ -167,139 +167,22 @@ const INITIAL_10_MODULES = [
     name: "Executive Verdict & Scorecard",
     category: "Executive Governance",
     icon: Sparkles,
-    status: "COMPLETED",
-    score: 89,
-    desc: "Synthesized binary GO/NO-GO recommendation, capital deployment verdict, and scorecard.",
-    leadAuditor: "Admin Master",
-    activeProjects: 6
-  }
-];
-
-const INITIAL_CLIENT_PROFILES = [
-  {
-    id: "cli-1",
-    fullName: "Dr. Aris Thorne",
-    email: "aris.thorne@ecoflydrones.io",
-    company: "EcoFly Medical Drones",
-    domain: "Startups",
-    status: "VERIFIED",
-    accountType: "Executive",
-    phone: "+1 (555) 234-8901",
-    location: "Boston, MA"
-  },
-  {
-    id: "cli-2",
-    fullName: "Sophia Vance",
-    email: "s.vance@apexrecruiter.ai",
-    company: "Apex AI Recruiter",
-    domain: "Startups",
-    status: "VERIFIED",
-    accountType: "Executive",
-    phone: "+1 (555) 890-1234",
-    location: "San Francisco, CA"
-  },
-  {
-    id: "cli-3",
-    fullName: "Marcus Sterling",
-    email: "m.sterling@greenpack.co",
-    company: "GreenPack Bio-Materials",
-    domain: "MSMEs",
-    status: "ACTIVE",
-    accountType: "Client",
-    phone: "+1 (555) 345-6789",
-    location: "Austin, TX"
-  },
-  {
-    id: "cli-4",
-    fullName: "Elena Rostova",
-    email: "elena@nimbuscloud.net",
-    company: "Nimbus Audit Corp",
-    domain: "Industries",
     status: "PENDING",
-    accountType: "Executive",
-    phone: "+1 (555) 678-9012",
-    location: "New York, NY"
-  },
-  {
-    id: "cli-5",
-    fullName: "Prof. Jonathan Vance",
-    email: "j.vance@stanford.edu",
-    company: "Stanford Robotics Lab",
-    domain: "Educational Institutions",
-    status: "VERIFIED",
-    accountType: "Partner",
-    phone: "+1 (555) 901-2345",
-    location: "Palo Alto, CA"
+    score: null,
+    desc: "Synthesized binary GO/NO-GO recommendation, capital deployment verdict, and scorecard.",
+    leadAuditor: null,
+    activeProjects: 0
   }
 ];
 
-const INITIAL_PROJECT_REGISTRATIONS = [
-  {
-    id: "reg-101",
-    projectName: "EcoFly Medical Drone Logistics",
-    domain: "Startups",
-    domainIcon: Rocket,
-    clientName: "Dr. Aris Thorne",
-    clientEmail: "aris.thorne@ecoflydrones.io",
-    regDate: "2026-08-01",
-    status: "APPROVED",
-    priority: "HIGH",
-    capabilitiesRequested: ["Customer Discovery", "TAM / SAM Sizing", "Orbital Index Score"],
-    notes: "Validation for tier-2 city hospital cold chain delivery."
-  },
-  {
-    id: "reg-102",
-    projectName: "University Curriculum Modernization",
-    domain: "Educational Institutions",
-    domainIcon: School,
-    clientName: "Prof. Jonathan Vance",
-    clientEmail: "j.vance@stanford.edu",
-    regDate: "2026-08-02",
-    status: "APPROVED",
-    priority: "MEDIUM",
-    capabilitiesRequested: ["Curriculum Diagnosis", "Accreditation Pipelines", "Faculty Workflow"],
-    notes: "AI integration benchmarking across engineering departments."
-  },
-  {
-    id: "reg-103",
-    projectName: "Bio-Polymer Yield Optimization",
-    domain: "MSMEs",
-    domainIcon: Factory,
-    clientName: "Marcus Sterling",
-    clientEmail: "m.sterling@greenpack.co",
-    regDate: "2026-07-28",
-    status: "UNDER_AUDIT",
-    priority: "HIGH",
-    capabilitiesRequested: ["Operational Bottleneck Audit", "Gross Margin Sizing", "Regional Scaling"],
-    notes: "Factory yield optimization and raw material cost reduction."
-  },
-  {
-    id: "reg-104",
-    projectName: "Global Enterprise Risk Architecture",
-    domain: "Industries",
-    domainIcon: Building2,
-    clientName: "Elena Rostova",
-    clientEmail: "elena@nimbuscloud.net",
-    regDate: "2026-08-03",
-    status: "PENDING_REVIEW",
-    priority: "URGENT",
-    capabilitiesRequested: ["Systemic Optimization", "Cross-Sector Architecture", "Regulatory Risk Matrix"],
-    notes: "Multi-stakeholder risk analysis for cloud deployment."
-  },
-  {
-    id: "reg-105",
-    projectName: "Scholar Research Capstone Network",
-    domain: "Students & Scholars",
-    domainIcon: GraduationCap,
-    clientName: "Kavya Patel",
-    clientEmail: "kavya@scholarexcel.org",
-    regDate: "2026-07-31",
-    status: "APPROVED",
-    priority: "MEDIUM",
-    capabilitiesRequested: ["Academic Counseling", "Research Mentorship", "Capstone Strategy"],
-    notes: "Mentorship framework for 150 graduate scholars."
-  }
-];
+const INITIAL_CLIENT_PROFILES = [];
+/* Profiles are derived from the clients attached to real submitted
+   reports — see clientProfilesFromReports() below. */
+
+
+const INITIAL_PROJECT_REGISTRATIONS = [];
+/* Registrations mirror real client submissions rather than demo rows. */
+
 
 /* ---- Backend bridge ------------------------------------------------------
    Maps the server's four-status pipeline onto this console's report rows.
@@ -328,84 +211,62 @@ function adminReportFromServer(r) {
   };
 }
 
-const INITIAL_REPORTS = [
-  {
-    id: "rep-001",
-    reportName: "EcoFly Medical Drone Market Valuation Report",
-    domain: "Startups",
-    tags: ["Logistics", "Healthcare"],
-    status: "COMPLETED",
-    progressPct: 100,
-    score: 89,
-    auditor: "Dr. Aris Thorne"
-  },
-  {
-    id: "rep-002",
-    reportName: "Apex AI Recruiter Tech Vulnerability Teardown",
-    domain: "Startups",
-    tags: ["HR Tech", "AI Arch"],
-    status: "PROCESSED",
-    progressPct: 85,
-    score: 86,
-    auditor: "Sophia Vance"
-  },
-  {
-    id: "rep-003",
-    reportName: "GreenPack Gross Margin & Payback Model",
-    domain: "MSMEs",
-    tags: ["Eco", "Unit Economics"],
-    status: "IN_PROGRESS",
-    progressPct: 60,
-    score: 72,
-    auditor: "Marcus Sterling"
-  },
-  {
-    id: "rep-004",
-    reportName: "Nimbus Cloud Real-Time GDPR & ISO Audit",
-    domain: "Industries",
-    tags: ["Cloud", "Compliance"],
-    status: "PENDING",
-    progressPct: 20,
-    score: 54,
-    auditor: "Admin Governance"
+/* Client profiles and project registrations have no endpoints of their own —
+   they are the client record attached to each submitted report, so both views
+   are derived from the real report list rather than kept as separate demo
+   data. One profile per distinct client email/company. */
+function clientProfilesFromReports(serverReports = []) {
+  const byKey = new Map();
+  for (const r of serverReports) {
+    const c = (r.client && typeof r.client === "object") ? r.client : {};
+    const email = (c.email || c.contact || "").trim();
+    const company = (c.company || r.name || "").trim();
+    const key = (email || company).toLowerCase();
+    if (!key || byKey.has(key)) continue;
+    byKey.set(key, {
+      id: `cli-${key.replace(/[^a-z0-9]+/g, "-")}`,
+      fullName: c.contact?.trim() || company || "Unnamed client",
+      email: email || "—",
+      company: company || "—",
+      domain: (r.vertical || "startups").replace(/^./, (ch) => ch.toUpperCase()),
+      status: r.status === "PUBLISHED" ? "VERIFIED" : "ACTIVE",
+      accountType: "Client",
+      phone: "—",
+      location: c.geography?.trim() || "—",
+      stage: c.stage || "—",
+      businessModel: c.businessModel || "—",
+      fromApi: true,
+    });
   }
-];
+  return [...byKey.values()];
+}
 
-const INITIAL_TICKETS = [
-  {
-    id: "tkt-01",
-    type: "BUSINESS_QUERY",
-    title: "Drone Logistics Unit Payback in Tier-2 Hubs",
-    clientName: "Dr. Aris Thorne",
-    email: "aris.thorne@ecoflydrones.io",
-    category: "Financial Viability",
-    status: "RESOLVED",
-    message: "Can an autonomous drone logistics model for hospital cold-chains achieve positive unit economics in tier-2 cities within 18 months?",
-    investigationNote: "Audited against MOD-03 model. Payback period calculated at 18.4 months. GO (89%) verdict issued."
-  },
-  {
-    id: "tkt-02",
-    type: "CONTACT_FORM",
-    title: "Institutional Partnership Demo & Integration",
-    clientName: "Prof. Jonathan Vance",
-    email: "j.vance@stanford.edu",
-    category: "Institutional Support",
-    status: "IN_INVESTIGATION",
-    message: "Requesting an executive walkthrough of the Conscious Orbital platform for engineering department leads.",
-    investigationNote: "Scheduled initial briefing call with Admin Governance lead."
-  },
-  {
-    id: "tkt-03",
-    type: "BUSINESS_QUERY",
-    title: "Bio-Polymer EU Directive Compliance",
-    clientName: "Marcus Sterling",
-    email: "m.sterling@greenpack.co",
-    category: "Regulatory & Compliance",
-    status: "PENDING",
-    message: "What are the primary regulatory compliance barriers for bio-polymer packaging in EU export markets?",
-    investigationNote: "Awaiting compliance audit report from MOD-07."
-  }
-];
+function registrationsFromReports(serverReports = []) {
+  return serverReports.map((r) => {
+    const c = (r.client && typeof r.client === "object") ? r.client : {};
+    return {
+      id: `reg-${r.id}`,
+      projectName: r.name,
+      domain: (r.vertical || "startups").replace(/^./, (ch) => ch.toUpperCase()),
+      clientName: c.contact?.trim() || c.company?.trim() || "—",
+      clientEmail: (c.email || c.contact || "—").trim(),
+      status: r.status === "PUBLISHED" ? "APPROVED" : r.status === "RECEIVED" ? "NEW" : "UNDER_AUDIT",
+      notes: r.clusters?.market?.problem || "",
+      icon: Rocket,
+      submitted: (r.createdAt || "").split("T")[0],
+      fromApi: true,
+    };
+  });
+}
+
+const INITIAL_REPORTS = [];
+/* Reports come from the backend: every client submission lands here for
+   admin review and approval. Nothing is pre-seeded. */
+
+
+const INITIAL_TICKETS = [];
+/* No demo tickets — the desk fills with real client queries. */
+
 
 export default function AdminDashboard({ onLogout, onGoHome }) {
   // Navigation State
@@ -422,22 +283,50 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
   const [reports, setReports] = useState(INITIAL_REPORTS);
   const [apiStatus, setApiStatus] = useState("checking");
 
+  /* Pull the report list and derive every console view from it. Kept as a
+     stable callback so the polling effect below can reuse it — clients submit
+     on their own side, so the admin console has to refresh to notice a new
+     submission rather than staying frozen on what loaded at mount. */
+  const refreshReports = useCallback(async (signal) => {
+    const data = await listReports(signal);
+    setApiStatus("online");
+    const serverReports = data?.reports || [];
+    /* Trust the server unconditionally — with no demo seeds left, an empty
+       database must render as an empty console, not as stale rows. */
+    setReports(serverReports.map(adminReportFromServer));
+    setClientProfiles(clientProfilesFromReports(serverReports));
+    setRegistrations(registrationsFromReports(serverReports));
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
       try {
         const health = await checkHealth(controller.signal);
         if (!health.ready) { setApiStatus("offline"); return; }
-        const data = await listReports(controller.signal);
-        setApiStatus("online");
-        const rows = (data?.reports || []).map(adminReportFromServer);
-        if (rows.length) setReports(rows);
+        await refreshReports(controller.signal);
       } catch (err) {
         if (err.name !== "AbortError") setApiStatus("offline");
       }
     })();
     return () => controller.abort();
-  }, []);
+  }, [refreshReports]);
+
+  // Poll for newly submitted client reports, and refresh on tab focus.
+  useEffect(() => {
+    if (apiStatus !== "online") return undefined;
+    const id = setInterval(() => {
+      refreshReports().catch(() => {});
+    }, 15000);
+    const onFocus = () => {
+      if (document.visibilityState === "visible") refreshReports().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [apiStatus, refreshReports]);
   const [tickets, setTickets] = useState(INITIAL_TICKETS);
 
   // Filters
@@ -1116,6 +1005,12 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#D4AF37]/20 text-[#4A0A13]">
+                  {!filteredProfiles.length && (
+                    <tr><td colSpan={5} className="p-8 text-center">
+                      <p className="text-sm font-semibold text-[#4A0A13]">No client profiles yet</p>
+                      <p className="text-xs text-[#7A1C29] mt-1">Profiles are created from the client details attached to submitted reports.</p>
+                    </td></tr>
+                  )}
                   {filteredProfiles.map((prof) => (
                     <tr key={prof.id} className="hover:bg-[#F5EAD4]/40 transition">
                       <td className="p-3.5">
@@ -1191,6 +1086,12 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
 
             {/* Registrations List */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {!filteredRegistrations.length && (
+                <div className="rounded-2xl border border-dashed border-[#D4AF37]/50 bg-[#FAF4E8]/60 p-8 text-center">
+                  <p className="text-sm font-semibold text-[#4A0A13]">No project registrations yet</p>
+                  <p className="text-xs text-[#7A1C29] mt-1">Registrations appear here as clients submit ventures through the intake engine.</p>
+                </div>
+              )}
               {filteredRegistrations.map((reg) => {
                 const DomIcon = reg.domainIcon || Building2;
                 return (
@@ -1283,6 +1184,12 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
 
             {reportView === "list" ? (
               <div className="space-y-4">
+                {!filteredReports.length && (
+                  <div className="rounded-2xl border border-dashed border-[#D4AF37]/50 bg-[#FAF4E8]/60 p-8 text-center">
+                    <p className="text-sm font-semibold text-[#4A0A13]">No client reports yet</p>
+                    <p className="text-xs text-[#7A1C29] mt-1">When a client submits an intake it appears here for review, processing and approval.</p>
+                  </div>
+                )}
                 {filteredReports.map((rep) => (
                   <div
                     key={rep.id}
@@ -1470,6 +1377,12 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
             </div>
 
             <div className="space-y-4">
+              {!filteredTickets.length && (
+                <div className="rounded-2xl border border-dashed border-[#D4AF37]/50 bg-[#FAF4E8]/60 p-8 text-center">
+                  <p className="text-sm font-semibold text-[#4A0A13]">No queries or contact forms yet</p>
+                  <p className="text-xs text-[#7A1C29] mt-1">Client business questions and get-in-touch submissions land here.</p>
+                </div>
+              )}
               {filteredTickets.map((tkt) => (
                 <div
                   key={tkt.id}
