@@ -5,6 +5,7 @@ import { downloadReportDoc } from "../reportDoc.js";
 import QueriesPanel from "./QueriesPanel.jsx";
 import DocumentUpload from "./DocumentUpload.jsx";
 import StrengthBadge from "./StrengthBadge.jsx";
+import AiAssessmentPanel from "./AiAssessmentPanel.jsx";
 import {
   ShieldCheck,
   Layers,
@@ -1673,6 +1674,24 @@ export default function AdminDashboard({ onLogout, onGoHome }) {
                       ))}
                     </div>
                   </div>
+
+                  {/* AI assessment - recommends a mark; the admin decides */}
+                  <AiAssessmentPanel
+                    reportId={reviewReportId}
+                    currentAdminScore={reviewForm.adminScore}
+                    onApply={(a) => {
+                      /* Prefill from the recommendation so the admin edits rather
+                         than retypes. Their submitted values still publish. */
+                      setReviewForm((prev) => ({
+                        ...prev,
+                        adminScore: String(a.recommendedScore ?? prev.adminScore ?? ""),
+                        verdict: a.verdict || prev.verdict,
+                        analysis: a.analysis || prev.analysis,
+                        strengths: (a.strengths || []).join("\n") || prev.strengths,
+                        risks: (a.risks || []).join("\n") || prev.risks,
+                      }));
+                    }}
+                  />
 
                   {/* Middle: Orbitaa AI assist */}
                   <div className="p-5 border-t border-[#D4AF37]/30 space-y-3 bg-[#FBF7ED]">

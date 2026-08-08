@@ -45,6 +45,7 @@ from routers.review import router as review_router
 from routers.documents import router as documents_router
 from routers.queries import router as queries_router
 from routers.brand_equity import router as brand_equity_router
+from routers.assessment import router as assessment_router
 from strength import score_band, data_band
 from integrations.email import build_report_docx
 
@@ -120,6 +121,7 @@ app.include_router(review_router)
 app.include_router(documents_router)
 app.include_router(queries_router)
 app.include_router(brand_equity_router)
+app.include_router(assessment_router)
 
 
 # ---------- request schemas ----------

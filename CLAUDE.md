@@ -168,3 +168,32 @@ below it rather than a horizontally-scrolling table on a phone.
 
 The client dashboard's sections come from the `NAV_SECTIONS` array in
 `ExecutiveDashboard.jsx` — add an entry there and the tab row picks it up.
+
+### AI report assessment (the admin's second opinion)
+
+`integrations/report_ai.py` + `routers/assessment.py` +
+`AiAssessmentPanel.jsx`. `POST /api/reports/{id}/ai-assessment` reads the
+intake, every module score *and its output*, uploaded document metadata and the
+brand equity assessment, then returns a **recommendation**: a 0-100 mark with a
+five-dimension breakdown (market opportunity, customer evidence, business
+model, competitive position, execution readiness), a GO/CONDITIONAL/PIVOT/REJECT
+verdict, evidence-backed strengths and risks, specific suggestions, the data
+gaps to chase, and a per-module audit flagging scores its own output data does
+not support.
+
+Two properties are load-bearing and must not be relaxed:
+
+1. **It never publishes.** The endpoint writes only `orbita_analysis` (audit
+   trail) — never `score`, `decision` or `status`. The admin's submitted mark is
+   what publishes, so "Use this mark" merely *prefills* the review form. A test
+   asserts the admin's number wins over the recommendation.
+2. **Confidence bands the evidence, not the opinion.** LOW confidence on a thin
+   intake is the signal to go back to the client before publishing, and the
+   prompt forbids inflating a mark to look helpful. `_heuristic_assessment()`
+   reproduces the same shape deterministically so the review screen is never
+   empty without a key.
+
+The prompt is the product here — it separates PROVEN from CLAIMED, requires the
+client's own numbers to be quoted, and rejects generic advice in favour of
+naming the binding constraint. Treat edits to `SYSTEM_PROMPT` as behavioural
+changes and re-run `scratchpad/verify_assessment.mjs`-style checks after.
